@@ -4,6 +4,12 @@
     <title>Index</title>
   </head>
   <body>
-    {{ .Title }} {{ .Username }}
+    {{ .Username }}
+
+    <ul>
+      {{ range .NotRegisteredRepos }}
+      <li>{{ .FullName }}</li>
+      {{ end }}
+    </ul>
   </body>
 </html>

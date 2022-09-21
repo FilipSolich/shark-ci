@@ -11,6 +11,7 @@ type User struct {
 	Username string
 	Service  string
 	Token    OAuth2Token
+	Webhooks []Webhook
 }
 
 func GetOrCreateUser(user *User, token *OAuth2Token) (*User, error) {

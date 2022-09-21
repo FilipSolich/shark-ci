@@ -27,7 +27,7 @@ func initDatabase() {
 		log.Fatal("failed to connect to database", err)
 	}
 
-	db.DB.AutoMigrate(&models.User{}, &models.OAuth2Token{})
+	db.DB.AutoMigrate(&models.User{}, &models.OAuth2Token{}, &models.Webhook{})
 }
 
 func initGitServices() {
@@ -61,6 +61,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", middlewares.AuthMiddleware(handlers.IndexHandler))
 	r.HandleFunc("/login", handlers.LoginHandler)
+	r.HandleFunc("/logout", handlers.LogoutHandler)
 
 	s := r.PathPrefix("/oauth2").Subrouter()
 	s.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
