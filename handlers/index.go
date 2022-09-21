@@ -39,7 +39,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request, user *models.User) {
 		}
 	}
 
-	configs.Templates.ExecuteTemplate(w, "index.html", templateData{
+	configs.RenderTemplate(w, "index.html", templateData{
 		Username:           user.Username,
 		NotRegisteredRepos: notRegisteredRepos,
 	})

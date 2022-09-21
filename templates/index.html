@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Index</title>
-  </head>
-  <body>
-    {{ .Username }}
+{{ define "content" }}
+  {{ .Username }}
 
-    <ul>
-      {{ range .NotRegisteredRepos }}
-      <li>{{ .FullName }}</li>
-      {{ end }}
-    </ul>
-  </body>
-</html>
+  <ul>
+    {{ range .NotRegisteredRepos }}
+    <li>{{ .FullName }}</li>
+    {{ end }}
+  </ul>
+{{ end }}

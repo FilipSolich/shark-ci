@@ -15,5 +15,5 @@ type loginData struct {
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	GitHubLoginURL := services.GitHubOAut2Config.AuthCodeURL("state", oauth2.AccessTypeOffline)
 
-	configs.Templates.ExecuteTemplate(w, "login.html", loginData{GitHubLoginURL: GitHubLoginURL})
+	configs.RenderTemplate(w, "login.html", loginData{GitHubLoginURL: GitHubLoginURL})
 }
