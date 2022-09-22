@@ -10,20 +10,9 @@ import (
 	"github.com/google/go-github/v47/github"
 )
 
-func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
-	codes, ok := r.URL.Query()["code"]
-	if !ok || len(codes) != 1 {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	code := codes[0]
-
-	servicesNames, ok := r.URL.Query()["service"]
-	if !ok || len(servicesNames) != 1 {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	serviceName := servicesNames[0]
+func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+	serviceName := r.URL.Query().Get("service")
 
 	ctx := context.Background()
 	token, err := services.GitHubOAut2Config.Exchange(ctx, code)

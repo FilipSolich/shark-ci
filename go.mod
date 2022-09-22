@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/google/go-github/v47 v47.1.0
 	github.com/gorilla/csrf v1.7.1
+	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/joho/godotenv v1.4.0
@@ -14,6 +15,7 @@ require (
 )
 
 require (
+	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect

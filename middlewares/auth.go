@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func AuthMiddleware(fn func(http.ResponseWriter, *http.Request, *models.User)) http.HandlerFunc {
+func Auth(fn func(http.ResponseWriter, *http.Request, *models.User)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user models.User
 		session, _ := sessions.Store.Get(r, "session")

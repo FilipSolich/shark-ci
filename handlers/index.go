@@ -7,7 +7,7 @@ import (
 	"github.com/FilipSolich/ci-server/models"
 )
 
-func IndexHandler(w http.ResponseWriter, r *http.Request, user *models.User) {
+func Index(w http.ResponseWriter, r *http.Request, user *models.User) {
 	configs.RenderTemplate(w, "index.html", struct {
 		Username string
 	}{

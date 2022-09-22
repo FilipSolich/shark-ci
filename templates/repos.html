@@ -8,7 +8,14 @@
     {{ range .RegisteredWebhooks }}
       <tr>
         <td>{{ .RepoFullName }}</td>
-        <td><button>Text</button></td>
+        <td>
+          <form method="POST" action="/repositories/unregister">
+            {{ $.csrfField }}
+            <input type="hidden" name="repo_id" value="{{ .RepoID }}" />
+            <input type="hidden" name="repo_name" value="{{ .RepoName}}" />
+            <input type="submit" value="Unregister" />
+          </form>
+        </td>
       </tr>
     {{ end }}
   </table>
@@ -22,9 +29,11 @@
       <tr>
         <td>{{ .FullName }}</td>
         <td>
-          <form method="POST" action="/repositories">
+          <form method="POST" action="/repositories/register">
             {{ $.csrfField }}
             <input type="hidden" name="repo_id" value="{{ .ID }}" />
+            <input type="hidden" name="repo_name" value="{{ .Name}}" />
+            <input type="hidden" name="repo_full_name" value="{{ .FullName }}" />
             <input type="submit" value="Register" />
           </form>
         </td>

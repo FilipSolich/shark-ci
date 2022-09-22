@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
@@ -13,7 +13,21 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-func ReposGetHandler(w http.ResponseWriter, r *http.Request, user *models.User) {
+func getRepoInfoFromRequest(r *http.Request) (int64, string, string, error) {
+	r.ParseForm()
+	repoIDString := r.Form.Get("repo_id")
+	repoName := r.Form.Get("repo_name")
+	repoFullName := r.Form.Get("repo_full_name")
+
+	repoID, err := strconv.ParseInt(repoIDString, 10, 64)
+	if err != nil {
+		return 0, "", "", err
+	}
+
+	return repoID, repoName, repoFullName, nil
+}
+
+func Repos(w http.ResponseWriter, r *http.Request, user *models.User) {
 	ctx := context.Background()
 	ghClient := services.GetGitHubClientByUser(ctx, user)
 	repos, _, err := ghClient.Repositories.List(ctx, "", nil)
@@ -49,18 +63,54 @@ func ReposGetHandler(w http.ResponseWriter, r *http.Request, user *models.User) 
 		"RegisteredWebhooks": registeredWebhooks,
 		"NotRegisteredRepos": notRegisteredRepos,
 	})
-
-	//configs.RenderTemplate(w, "repos.html", struct {
-	//	RegisteredWebhooks []*models.Webhook
-	//	NotRegisteredRepos []*github.Repository
-	//	CSRFToken          string
-	//}{
-	//	RegisteredWebhooks: registeredWebhooks,
-	//	NotRegisteredRepos: notRegisteredRepos,
-	//	CSRFToken:          "token",
-	//})
 }
 
-func ReposPostHandler(w http.ResponseWriter, r *http.Request, user *models.User) {
-	fmt.Println("Here")
+func ReposRegister(w http.ResponseWriter, r *http.Request, user *models.User) {
+	repoID, repoName, repoFullName, err := getRepoInfoFromRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repoID})
+	if result.RowsAffected > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	hook, err := services.CreateWebhook(ctx, user, repoName, repoID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	hook.RepoFullName = repoFullName
+	result = db.DB.Create(hook)
+	http.Redirect(w, r, "/repositories", http.StatusFound)
+}
+
+func ReposUnregister(w http.ResponseWriter, r *http.Request, user *models.User) {
+	repoID, _, _, err := getRepoInfoFromRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	hook := &models.Webhook{}
+	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repoID}).First(hook)
+	if result.Error != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	services.DeleteWebhook(ctx, user, hook)
+	db.DB.Delete(hook)
+	http.Redirect(w, r, "/repositories", http.StatusFound)
+}
+
+func ReposActivate(w http.ResponseWriter, r *http.Request, user *models.User) {
+}
+
+func ReposDeactivate(w http.ResponseWriter, r *http.Request, user *models.User) {
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/csrf"
+	gorilla_handlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
@@ -62,18 +63,27 @@ func main() {
 	CSRF := csrf.Protect([]byte(os.Getenv("CSRF_KEY")))
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", middlewares.AuthMiddleware(handlers.IndexHandler))
-	r.HandleFunc("/repositories", middlewares.AuthMiddleware(handlers.ReposGetHandler)).Methods(http.MethodGet)
-	r.HandleFunc("/repositories", middlewares.AuthMiddleware(handlers.ReposPostHandler)).Methods(http.MethodPost)
-	r.HandleFunc("/login", handlers.LoginHandler)
-	r.HandleFunc("/logout", handlers.LogoutHandler)
+	r.Use()
+	r.HandleFunc("/", middlewares.Auth(handlers.Index))
+	r.HandleFunc("/login", handlers.Login)
+	r.HandleFunc("/logout", handlers.Logout)
 
-	s := r.PathPrefix("/oauth2").Subrouter()
-	s.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
+	sOAuth2 := r.PathPrefix("/oauth2").Subrouter()
+	sOAuth2.HandleFunc("/callback", handlers.OAuth2Callback)
+
+	sRepos := r.PathPrefix("/repositories").Subrouter()
+	sRepos.HandleFunc("", middlewares.Auth(handlers.Repos))
+	sRepos.HandleFunc("/register", middlewares.Auth(handlers.ReposRegister)).Methods(http.MethodPost)
+	sRepos.HandleFunc("/unregister", middlewares.Auth(handlers.ReposUnregister)).Methods(http.MethodPost)
+	sRepos.HandleFunc("/activate", middlewares.Auth(handlers.ReposActivate)).Methods(http.MethodPost)
+	sRepos.HandleFunc("/deactivate", middlewares.Auth(handlers.ReposDeactivate)).Methods(http.MethodPost)
+
+	handler := gorilla_handlers.CombinedLoggingHandler(os.Stdout, r)
+	handler = CSRF(handler)
 
 	server := &http.Server{
 		Addr:         ":8080",
-		Handler:      CSRF(r),
+		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 20 * time.Second,
 		IdleTimeout:  120 * time.Second,
