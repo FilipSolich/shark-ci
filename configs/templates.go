@@ -8,17 +8,18 @@ import (
 
 var Templates = make(map[string]*template.Template)
 
-func LoadTemplates(pattern string) {
-	prefix := "templates"
-	base := path.Join(prefix, "_base.html")
-	files := []string{
-		"index.html",
-		"login.html",
-		"registered_repos.html",
-	}
+var prefix = "templates"
+var base = path.Join(prefix, "_base.html")
+var layout = path.Join(prefix, "_layout.html")
+var templatesFiles = map[string][]string{
+	"login.html": {base, path.Join(prefix, "login.html")},
+	"index.html": {base, layout, path.Join(prefix, "index.html")},
+	"repos.html": {base, layout, path.Join(prefix, "repos.html")},
+}
 
-	for _, file := range files {
-		Templates[file] = template.Must(template.ParseFiles(path.Join(prefix, file), base))
+func LoadTemplates() {
+	for tmpl, files := range templatesFiles {
+		Templates[tmpl] = template.Must(template.ParseFiles(files...))
 	}
 }
 

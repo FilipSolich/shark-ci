@@ -1,0 +1,34 @@
+{{ define "main" }}
+  <h2>Registered repositories</h2>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Action</th>
+    </tr>
+    {{ range .RegisteredWebhooks }}
+      <tr>
+        <td>{{ .RepoFullName }}</td>
+        <td><button>Text</button></td>
+      </tr>
+    {{ end }}
+  </table>
+  <h2>Not registered repositories</h2>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Action</th>
+    </tr>
+    {{ range .NotRegisteredRepos }}
+      <tr>
+        <td>{{ .FullName }}</td>
+        <td>
+          <form method="POST" action="/repositories">
+            {{ $.csrfField }}
+            <input type="hidden" name="repo_id" value="{{ .ID }}" />
+            <input type="submit" value="Register" />
+          </form>
+        </td>
+      </tr>
+    {{ end }}
+  </table>
+{{ end }}

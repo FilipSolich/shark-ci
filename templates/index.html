@@ -1,9 +1,3 @@
-{{ define "content" }}
+{{ define "main" }}
   {{ .Username }}
-
-  <ul>
-    {{ range .NotRegisteredRepos }}
-    <li>{{ .FullName }}</li>
-    {{ end }}
-  </ul>
 {{ end }}

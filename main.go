@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
@@ -45,7 +46,7 @@ func initGitServices() {
 }
 
 func initTemplates() {
-	configs.LoadTemplates("templates/*.html")
+	configs.LoadTemplates()
 }
 
 func main() {
@@ -58,8 +59,12 @@ func main() {
 	initDatabase()
 	initGitServices()
 
+	CSRF := csrf.Protect([]byte(os.Getenv("CSRF_KEY")))
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", middlewares.AuthMiddleware(handlers.IndexHandler))
+	r.HandleFunc("/repositories", middlewares.AuthMiddleware(handlers.ReposGetHandler)).Methods(http.MethodGet)
+	r.HandleFunc("/repositories", middlewares.AuthMiddleware(handlers.ReposPostHandler)).Methods(http.MethodPost)
 	r.HandleFunc("/login", handlers.LoginHandler)
 	r.HandleFunc("/logout", handlers.LogoutHandler)
 
@@ -68,7 +73,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         ":8080",
-		Handler:      r,
+		Handler:      CSRF(r),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 20 * time.Second,
 		IdleTimeout:  120 * time.Second,

@@ -5,6 +5,7 @@
 | Key                    | Type     | Description                                                         |
 |------------------------|----------|---------------------------------------------------------------------|
 | `SESSION_KEY`          | `string` | Random key for session encryption.                                  |
+| `CSRF_KEY`             | `string` | Random key for csrf encryption.                                     |
 | `GITHUB_SERVICE`       | `bool`   | Allow GitHub repositories for CI.                                   |
 | `GITHUB_CLIENT_ID`     | `string` | GitHub client ID (Required only if `GITHUB_SERVICE` == `true`).     |
 | `GITHUB_CLIENT_SECRET` | `string` | GitHub client secret (Required only if `GITHUB_SERVICE` == `true`). |
