@@ -104,12 +104,38 @@ func ReposUnregister(w http.ResponseWriter, r *http.Request, user *models.User) 
 	}
 
 	ctx := context.Background()
-	services.DeleteWebhook(ctx, user, hook)
+	err = services.DeleteWebhook(ctx, user, hook)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	db.DB.Delete(hook)
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
 func ReposActivate(w http.ResponseWriter, r *http.Request, user *models.User) {
+	repoID, _, _, err := getRepoInfoFromRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	hook := &models.Webhook{}
+	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repoID}).First(hook)
+	if result.Error != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	err = services.ActivateWebhook(ctx, user, hook)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	db.DB.Save(hook)
+	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
 func ReposDeactivate(w http.ResponseWriter, r *http.Request, user *models.User) {

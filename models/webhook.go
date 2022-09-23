@@ -4,8 +4,10 @@ import "gorm.io/gorm"
 
 type Webhook struct {
 	gorm.Model
-	Service      string
-	RepoID       int64
-	RepoName     string
-	RepoFullName string
+	ServiceWebhookID int64
+	Service          string
+	RepoID           int64
+	RepoName         string
+	RepoFullName     string
+	Active           bool
 }

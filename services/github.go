@@ -9,10 +9,13 @@ import (
 	"github.com/google/go-github/v47/github"
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
-	"gorm.io/gorm"
 )
 
 var GitHubOAut2Config *oauth2.Config
+
+func GetServiceName() string {
+	return "github"
+}
 
 func NewGitHubOAuth2Config(clientID string, clientSecret string) {
 	GitHubOAut2Config = &oauth2.Config{
@@ -49,22 +52,31 @@ func CreateWebhook(ctx context.Context, user *models.User, repoName string, repo
 	}
 
 	modelHook := &models.Webhook{
-		Model:    gorm.Model{ID: uint(hook.GetID())},
-		Service:  "github",
-		RepoID:   repoID,
-		RepoName: repoName,
+		ServiceWebhookID: hook.GetID(),
+		Service:          "github",
+		RepoID:           repoID,
+		RepoName:         repoName,
+		Active:           true,
 	}
 	return modelHook, nil
 }
 
 func DeleteWebhook(ctx context.Context, user *models.User, hook *models.Webhook) error {
 	client := GetGitHubClientByUser(ctx, user)
-	fmt.Println("HERE", user.Username, hook.RepoName, hook.ID)
-	_, err := client.Repositories.DeleteHook(ctx, user.Username, hook.RepoName, int64(hook.ID))
+	_, err := client.Repositories.DeleteHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID))
 	return err
 }
 
-func ActivateWebhook() {
+func ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) error {
+	client := GetGitHubClientByUser(ctx, user)
+	ghHook := github.Hook{
+		Config: map[string]any{
+			"secret": os.Getenv("WEBHOOK_SECRET"),
+		},
+		Active: github.Bool(false),
+	}
+	_, _, err := client.Repositories.EditHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID), &ghHook)
+	return err
 }
 
 func DeactivateWebhook() {
