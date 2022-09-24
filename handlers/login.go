@@ -9,7 +9,7 @@ import (
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	GitHubLoginURL := services.GitHubOAut2Config.AuthCodeURL("state", oauth2.AccessTypeOffline)
+	GitHubLoginURL := services.GitHub.OAuth2Config.AuthCodeURL("state", oauth2.AccessTypeOffline)
 
 	configs.RenderTemplate(w, "login.html", map[string]any{
 		"GitHubLoginURL": GitHubLoginURL,

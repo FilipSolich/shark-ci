@@ -15,13 +15,13 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	serviceName := r.URL.Query().Get("service")
 
 	ctx := context.Background()
-	token, err := services.GitHubOAut2Config.Exchange(ctx, code)
+	token, err := services.GitHub.OAuth2Config.Exchange(ctx, code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	client := services.GitHubOAut2Config.Client(ctx, token)
+	client := services.GitHub.OAuth2Config.Client(ctx, token)
 	ghClient := github.NewClient(client)
 
 	userInfo, _, err := ghClient.Users.Get(ctx, "")

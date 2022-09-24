@@ -31,7 +31,7 @@ func initDatabase() {
 
 func initGitServices() {
 	if configs.GitHubService {
-		services.NewGitHubOAuth2Config(configs.GitHubClientID, configs.GitHubClientSecret)
+		services.NewGitHub(configs.GitHubClientID, configs.GitHubClientSecret)
 	}
 
 	// TODO: Add GitLab service.
@@ -77,7 +77,7 @@ func main() {
 	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivate).Methods(http.MethodPost)
 
 	server := &http.Server{
-		Addr:         "" + configs.Port,
+		Addr:         ":" + configs.Port,
 		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 20 * time.Second,

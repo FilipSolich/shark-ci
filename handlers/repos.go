@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -15,18 +14,20 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-func getRepoInfoFromRequest(r *http.Request) (int64, string, string, error) {
+func getRepoInfoFromRequest(r *http.Request) (services.RepoInfo, error) {
 	r.ParseForm()
-	repoIDString := r.Form.Get("repo_id")
-	repoName := r.Form.Get("repo_name")
-	repoFullName := r.Form.Get("repo_full_name")
+	repo := services.RepoInfo{}
+	repo.Name = r.Form.Get("repo_name")
+	repo.FullName = r.Form.Get("repo_full_name")
 
+	repoIDString := r.Form.Get("repo_id")
 	repoID, err := strconv.ParseInt(repoIDString, 10, 64)
 	if err != nil {
-		return 0, "", "", err
+		return services.RepoInfo{}, err
 	}
 
-	return repoID, repoName, repoFullName, nil
+	repo.ID = repoID
+	return repo, nil
 }
 
 func Repos(w http.ResponseWriter, r *http.Request) {
@@ -80,26 +81,30 @@ func ReposRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoID, repoName, repoFullName, err := getRepoInfoFromRequest(r)
+	repo, err := getRepoInfoFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repoID})
+	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repo.ID})
 	if result.RowsAffected > 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	ctx := context.Background()
-	hook, err := services.CreateWebhook(ctx, user, repoName, repoID)
+	hook, err := services.CreateWebhook(ctx, user, repo)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	hook.RepoFullName = repoFullName
+
 	result = db.DB.Create(hook)
+	if result.Error != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
@@ -110,14 +115,14 @@ func ReposUnregister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoID, _, _, err := getRepoInfoFromRequest(r)
+	repo, err := getRepoInfoFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	hook := &models.Webhook{}
-	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repoID}).First(hook)
+	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repo.ID}).First(hook)
 	if result.Error != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -140,27 +145,26 @@ func ReposActivate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoID, _, _, err := getRepoInfoFromRequest(r)
+	repo, err := getRepoInfoFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	hook := &models.Webhook{}
-	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repoID}).First(hook)
+	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repo.ID}).First(hook)
 	if result.Error != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	ctx := context.Background()
-	err = services.ActivateWebhook(ctx, user, hook)
+	hook, err = services.ActivateWebhook(ctx, user, hook)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	hook.Active = true
 	db.DB.Save(hook)
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
@@ -171,5 +175,27 @@ func ReposDeactivate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(user.Username)
+
+	repo, err := getRepoInfoFromRequest(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	hook := &models.Webhook{}
+	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repo.ID}).First(hook)
+	if result.Error != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+	hook, err = services.DeactivateWebhook(ctx, user, hook)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	db.DB.Save(hook)
+	http.Redirect(w, r, "/repositories", http.StatusFound)
 }

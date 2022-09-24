@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/models"
@@ -11,14 +10,47 @@ import (
 	oauth2_github "golang.org/x/oauth2/github"
 )
 
-var GitHubOAut2Config *oauth2.Config
+var GitHub GitHubService
 
-func GetServiceName() string {
-	return "github"
+type RepoInfo struct {
+	ID       int64
+	Name     string
+	FullName string
 }
 
-func NewGitHubOAuth2Config(clientID string, clientSecret string) {
-	GitHubOAut2Config = &oauth2.Config{
+type GitHubService struct {
+	OAuth2Config *oauth2.Config
+}
+
+func defaultWebhookConfig() map[string]any {
+	return map[string]any{
+		"url":          "https://" + configs.Hostname + "/webhooks",
+		"content_type": "json",
+		"secret":       configs.WebhookSecret,
+	}
+}
+
+func defaultWebhook() *github.Hook {
+	return &github.Hook{
+		Config: defaultWebhookConfig(),
+		Events: []string{"push", "pull_request"},
+		Active: github.Bool(true),
+	}
+}
+
+func changeWebhookState(ctx context.Context, user *models.User, hook *models.Webhook, active bool) (*models.Webhook, error) {
+	client := GetGitHubClientByUser(ctx, user)
+	ghHook := defaultWebhook()
+	ghHook.Active = github.Bool(active)
+	_, _, err := client.Repositories.EditHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID), ghHook)
+	if err == nil {
+		hook.Active = active
+	}
+	return hook, err
+}
+
+func NewGitHub(clientID string, clientSecret string) {
+	GitHub.OAuth2Config = &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Scopes:       []string{"repo"},
@@ -26,36 +58,31 @@ func NewGitHubOAuth2Config(clientID string, clientSecret string) {
 	}
 }
 
+func (s *GitHubService) GetServiceName() string {
+	return "github"
+}
+
 func GetGitHubClientByUser(ctx context.Context, user *models.User) *github.Client {
 	token := user.Token.Token
-	client := GitHubOAut2Config.Client(ctx, &token)
+	client := GitHub.OAuth2Config.Client(ctx, &token)
 	ghClient := github.NewClient(client)
 	return ghClient
 }
 
-func CreateWebhook(ctx context.Context, user *models.User, repoName string, repoID int64) (*models.Webhook, error) {
+func CreateWebhook(ctx context.Context, user *models.User, repo RepoInfo) (*models.Webhook, error) {
 	client := GetGitHubClientByUser(ctx, user)
-	hook := &github.Hook{
-		Config: map[string]any{
-			"url":          "https://" + configs.Hostname + "/webhooks",
-			"content_type": "json",
-			"secret":       configs.WebhookSecret,
-		},
-		Events: []string{"push", "pull_request"},
-		Active: github.Bool(true),
-	}
-	// TODO: Log error.
-	hook, _, err := client.Repositories.CreateHook(ctx, user.Username, repoName, hook)
+	hook := defaultWebhook()
+	hook, _, err := client.Repositories.CreateHook(ctx, user.Username, repo.Name, hook)
 	if err != nil {
-		fmt.Println("cannot create webhook", err.Error())
 		return nil, err
 	}
 
 	modelHook := &models.Webhook{
 		ServiceWebhookID: hook.GetID(),
 		Service:          "github",
-		RepoID:           repoID,
-		RepoName:         repoName,
+		RepoID:           repo.ID,
+		RepoName:         repo.Name,
+		RepoFullName:     repo.FullName,
 		Active:           true,
 	}
 	return modelHook, nil
@@ -67,20 +94,10 @@ func DeleteWebhook(ctx context.Context, user *models.User, hook *models.Webhook)
 	return err
 }
 
-func ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) error {
-	client := GetGitHubClientByUser(ctx, user)
-	ghHook := github.Hook{
-		Config: map[string]any{
-			"url":          "https://" + configs.Hostname + "/webhooks",
-			"content_type": "json",
-			"secret":       configs.WebhookSecret,
-		},
-		Active: github.Bool(true),
-	}
-	_, _, err := client.Repositories.EditHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID), &ghHook)
-	fmt.Println(err)
-	return err
+func ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) (*models.Webhook, error) {
+	return changeWebhookState(ctx, user, hook, true)
 }
 
-func DeactivateWebhook() {
+func DeactivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) (*models.Webhook, error) {
+	return changeWebhookState(ctx, user, hook, false)
 }
