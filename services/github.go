@@ -71,11 +71,14 @@ func ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhoo
 	client := GetGitHubClientByUser(ctx, user)
 	ghHook := github.Hook{
 		Config: map[string]any{
-			"secret": os.Getenv("WEBHOOK_SECRET"),
+			"url":          "https://" + os.Getenv("HOSTNAME") + "/webhooks",
+			"content_type": "json",
+			"secret":       os.Getenv("WEBHOOK_SECRET"),
 		},
-		Active: github.Bool(false),
+		Active: github.Bool(true),
 	}
 	_, _, err := client.Repositories.EditHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID), &ghHook)
+	fmt.Println(err)
 	return err
 }
 

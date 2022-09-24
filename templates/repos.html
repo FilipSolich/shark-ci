@@ -2,12 +2,29 @@
   <h2>Registered repositories</h2>
   <table>
     <tr>
+      <th>Active</th>
       <th>Name</th>
-      <th>Action</th>
+      <th>Activate/Deactivate</th>
+      <th>Unregister</th>
     </tr>
     {{ range .RegisteredWebhooks }}
       <tr>
+        <td>
+          {{ if .Active }}
+            <i class="bi bi-check-lg text-success"></i>
+          {{ else }}
+            <i class="bi bi-x-lg text-danger"></i>
+          {{ end }}
+        </td>
         <td>{{ .RepoFullName }}</td>
+        <td>
+          <form method="POST" action="/repositories/{{ if .Active }}deactivate{{ else }}activate{{ end }}">
+            {{ $.csrfField }}
+            <input type="hidden" name="repo_id" value="{{ .RepoID }}" />
+            <input type="hidden" name="repo_name" value="{{ .RepoName}}" />
+            <input type="submit" value="{{ if .Active }}Deactivate{{ else }}Activate{{ end }}" />
+          </form>
+        </td>
         <td>
           <form method="POST" action="/repositories/unregister">
             {{ $.csrfField }}
@@ -23,7 +40,7 @@
   <table>
     <tr>
       <th>Name</th>
-      <th>Action</th>
+      <th>Register</th>
     </tr>
     {{ range .NotRegisteredRepos }}
       <tr>

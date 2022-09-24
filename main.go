@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/csrf"
-	gorilla_handlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
@@ -21,7 +20,6 @@ import (
 	"github.com/FilipSolich/ci-server/services"
 )
 
-// TODO: Change to postgres
 func initDatabase() {
 	var err error
 	db.DB, err = gorm.Open(sqlite.Open("db.sqlite3"), &gorm.Config{})
@@ -63,6 +61,8 @@ func main() {
 	CSRF := csrf.Protect([]byte(os.Getenv("CSRF_KEY")))
 
 	r := mux.NewRouter()
+	r.Use(CSRF)
+	r.Use(middlewares.LoggingMiddleware)
 	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.Index)))
 	r.HandleFunc("/login", handlers.Login)
 	r.HandleFunc("/logout", handlers.Logout)
@@ -78,12 +78,9 @@ func main() {
 	sRepos.HandleFunc("/activate", handlers.ReposActivate).Methods(http.MethodPost)
 	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivate).Methods(http.MethodPost)
 
-	handler := gorilla_handlers.CombinedLoggingHandler(os.Stdout, r)
-	handler = CSRF(handler)
-
 	server := &http.Server{
 		Addr:         ":" + os.Getenv("PORT"),
-		Handler:      handler,
+		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 20 * time.Second,
 		IdleTimeout:  120 * time.Second,

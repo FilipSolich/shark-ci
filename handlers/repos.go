@@ -160,6 +160,7 @@ func ReposActivate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hook.Active = true
 	db.DB.Save(hook)
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
