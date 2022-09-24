@@ -30,7 +30,7 @@ func getRepoInfoFromRequest(r *http.Request) (services.RepoInfo, error) {
 	return repo, nil
 }
 
-func Repos(w http.ResponseWriter, r *http.Request) {
+func ReposHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := middlewares.UserFromContext(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -74,7 +74,7 @@ func Repos(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func ReposRegister(w http.ResponseWriter, r *http.Request) {
+func ReposRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := middlewares.UserFromContext(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -108,7 +108,7 @@ func ReposRegister(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposUnregister(w http.ResponseWriter, r *http.Request) {
+func ReposUnregisterHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := middlewares.UserFromContext(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -138,7 +138,7 @@ func ReposUnregister(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposActivate(w http.ResponseWriter, r *http.Request) {
+func ReposActivateHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := middlewares.UserFromContext(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -169,7 +169,7 @@ func ReposActivate(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposDeactivate(w http.ResponseWriter, r *http.Request) {
+func ReposDeactivateHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := middlewares.UserFromContext(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)

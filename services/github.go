@@ -12,19 +12,13 @@ import (
 
 var GitHub GitHubService
 
-type RepoInfo struct {
-	ID       int64
-	Name     string
-	FullName string
-}
-
 type GitHubService struct {
 	OAuth2Config *oauth2.Config
 }
 
 func defaultWebhookConfig() map[string]any {
 	return map[string]any{
-		"url":          "https://" + configs.Hostname + "/webhooks",
+		"url":          "https://" + configs.Hostname + configs.EventHandlerPath,
 		"content_type": "json",
 		"secret":       configs.WebhookSecret,
 	}
@@ -100,4 +94,8 @@ func ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhoo
 
 func DeactivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) (*models.Webhook, error) {
 	return changeWebhookState(ctx, user, hook, false)
+}
+
+func UpdateStatus() {
+
 }

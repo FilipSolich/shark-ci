@@ -7,7 +7,7 @@ import (
 	"github.com/FilipSolich/ci-server/middlewares"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := middlewares.UserFromContext(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)

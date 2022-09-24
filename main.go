@@ -61,20 +61,21 @@ func main() {
 	r := mux.NewRouter()
 	r.Use(CSRF)
 	r.Use(middlewares.LoggingMiddleware)
-	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.Index)))
-	r.HandleFunc("/login", handlers.Login)
-	r.HandleFunc("/logout", handlers.Logout)
+	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.IndexHandler)))
+	r.HandleFunc("/login", handlers.LoginHandler)
+	r.HandleFunc("/logout", handlers.LogoutHandler)
+	r.HandleFunc(configs.EventHandlerPath, handlers.EventHandler)
 
 	sOAuth2 := r.PathPrefix("/oauth2").Subrouter()
-	sOAuth2.HandleFunc("/callback", handlers.OAuth2Callback)
+	sOAuth2.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
 
 	sRepos := r.PathPrefix("/repositories").Subrouter()
 	sRepos.Use(middlewares.AuthMiddleware)
-	sRepos.HandleFunc("", handlers.Repos)
-	sRepos.HandleFunc("/register", handlers.ReposRegister).Methods(http.MethodPost)
-	sRepos.HandleFunc("/unregister", handlers.ReposUnregister).Methods(http.MethodPost)
-	sRepos.HandleFunc("/activate", handlers.ReposActivate).Methods(http.MethodPost)
-	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivate).Methods(http.MethodPost)
+	sRepos.HandleFunc("", handlers.ReposHandler)
+	sRepos.HandleFunc("/register", handlers.ReposRegisterHandler).Methods(http.MethodPost)
+	sRepos.HandleFunc("/unregister", handlers.ReposUnregisterHandler).Methods(http.MethodPost)
+	sRepos.HandleFunc("/activate", handlers.ReposActivateHandler).Methods(http.MethodPost)
+	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivateHandler).Methods(http.MethodPost)
 
 	server := &http.Server{
 		Addr:         ":" + configs.Port,

@@ -8,7 +8,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	GitHubLoginURL := services.GitHub.OAuth2Config.AuthCodeURL("state", oauth2.AccessTypeOffline)
 
 	configs.RenderTemplate(w, "login.html", map[string]any{

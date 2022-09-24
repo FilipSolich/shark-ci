@@ -6,7 +6,7 @@ import (
 	"github.com/FilipSolich/ci-server/sessions"
 )
 
-func Logout(w http.ResponseWriter, r *http.Request) {
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := sessions.Store.Get(r, "session")
 	session.Options.MaxAge = -1
 	err := session.Save(r, w)

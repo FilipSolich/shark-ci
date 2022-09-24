@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+const EventHandlerPath = "/event_handler"
+
 var (
 	Hostname      string
 	Port          string

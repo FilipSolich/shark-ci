@@ -10,7 +10,7 @@ import (
 	"github.com/google/go-github/v47/github"
 )
 
-func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
+func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	serviceName := r.URL.Query().Get("service")
 
