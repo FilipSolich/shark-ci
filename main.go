@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/csrf"
@@ -31,17 +30,11 @@ func initDatabase() {
 }
 
 func initGitServices() {
-	GitHubService := os.Getenv("GITHUB_SERVICE") == "true"
-	GitLabService := os.Getenv("GITLAB_SERVICE") == "true"
-	if !GitHubService && !GitLabService {
-		log.Fatal("error: at least one service (*_SERVICE) has to be set as `true`")
+	if configs.GitHubService {
+		services.NewGitHubOAuth2Config(configs.GitHubClientID, configs.GitHubClientSecret)
 	}
 
-	if GitHubService {
-		clientID := os.Getenv("GITHUB_CLIENT_ID")
-		clientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
-		services.NewGitHubOAuth2Config(clientID, clientSecret)
-	}
+	// TODO: Add GitLab service.
 }
 
 func initTemplates() {
@@ -51,14 +44,19 @@ func initTemplates() {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("error loading .env file")
+		log.Fatal(err)
+	}
+
+	err = configs.LoadEnv()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	initTemplates()
 	initDatabase()
 	initGitServices()
 
-	CSRF := csrf.Protect([]byte(os.Getenv("CSRF_KEY")))
+	CSRF := csrf.Protect([]byte(configs.CSRFSecret))
 
 	r := mux.NewRouter()
 	r.Use(CSRF)
@@ -79,7 +77,7 @@ func main() {
 	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivate).Methods(http.MethodPost)
 
 	server := &http.Server{
-		Addr:         ":" + os.Getenv("PORT"),
+		Addr:         "" + configs.Port,
 		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 20 * time.Second,

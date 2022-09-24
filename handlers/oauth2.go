@@ -17,7 +17,8 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	token, err := services.GitHubOAut2Config.Exchange(ctx, code)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	client := services.GitHubOAut2Config.Client(ctx, token)
@@ -25,7 +26,8 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 
 	userInfo, _, err := ghClient.Users.Get(ctx, "")
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	userName := userInfo.GetLogin()
 
@@ -38,11 +40,12 @@ func OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := models.GetOrCreateUser(u, t)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	session, _ := sessions.Store.Get(r, "session")
-	session.Values["id"] = user.ID
+	session.Values[sessions.SessionKey] = user.ID
 	err = session.Save(r, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

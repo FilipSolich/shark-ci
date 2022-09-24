@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
-	"os"
 
+	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/models"
 	"github.com/google/go-github/v47/github"
 	"golang.org/x/oauth2"
@@ -37,9 +37,9 @@ func CreateWebhook(ctx context.Context, user *models.User, repoName string, repo
 	client := GetGitHubClientByUser(ctx, user)
 	hook := &github.Hook{
 		Config: map[string]any{
-			"url":          "https://" + os.Getenv("HOSTNAME") + "/webhooks",
+			"url":          "https://" + configs.Hostname + "/webhooks",
 			"content_type": "json",
-			"secret":       os.Getenv("WEBHOOK_SECRET"),
+			"secret":       configs.WebhookSecret,
 		},
 		Events: []string{"push", "pull_request"},
 		Active: github.Bool(true),
@@ -71,9 +71,9 @@ func ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhoo
 	client := GetGitHubClientByUser(ctx, user)
 	ghHook := github.Hook{
 		Config: map[string]any{
-			"url":          "https://" + os.Getenv("HOSTNAME") + "/webhooks",
+			"url":          "https://" + configs.Hostname + "/webhooks",
 			"content_type": "json",
-			"secret":       os.Getenv("WEBHOOK_SECRET"),
+			"secret":       configs.WebhookSecret,
 		},
 		Active: github.Bool(true),
 	}

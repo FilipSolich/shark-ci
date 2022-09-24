@@ -6,9 +6,9 @@ import (
 	"github.com/FilipSolich/ci-server/models"
 )
 
-type userKey int
+type contextKey int
 
-const key userKey = 1
+const key contextKey = 1
 
 func ContextWithUser(ctx context.Context, user *models.User) context.Context {
 	return context.WithValue(ctx, key, user)

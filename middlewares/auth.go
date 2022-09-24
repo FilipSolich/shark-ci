@@ -13,7 +13,7 @@ func AuthMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user models.User
 		session, _ := sessions.Store.Get(r, "session")
-		id, ok := session.Values["id"].(uint)
+		id, ok := session.Values[sessions.SessionKey].(uint)
 		result := db.DB.Preload(clause.Associations).First(&user, id)
 		if !ok || result.Error != nil {
 			http.Redirect(w, r, "/login", http.StatusFound)

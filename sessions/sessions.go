@@ -1,9 +1,10 @@
 package sessions
 
 import (
-	"os"
-
+	"github.com/FilipSolich/ci-server/configs"
 	"github.com/gorilla/sessions"
 )
 
-var Store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+const SessionKey = "id"
+
+var Store = sessions.NewCookieStore([]byte(configs.SessionSecret))
