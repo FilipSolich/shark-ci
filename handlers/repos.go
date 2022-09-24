@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
+	"github.com/FilipSolich/ci-server/middlewares"
 	"github.com/FilipSolich/ci-server/models"
 	"github.com/FilipSolich/ci-server/services"
 	"github.com/google/go-github/v47/github"
@@ -27,7 +29,13 @@ func getRepoInfoFromRequest(r *http.Request) (int64, string, string, error) {
 	return repoID, repoName, repoFullName, nil
 }
 
-func Repos(w http.ResponseWriter, r *http.Request, user *models.User) {
+func Repos(w http.ResponseWriter, r *http.Request) {
+	user, ok := middlewares.UserFromContext(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	ctx := context.Background()
 	ghClient := services.GetGitHubClientByUser(ctx, user)
 	repos, _, err := ghClient.Repositories.List(ctx, "", nil)
@@ -65,7 +73,13 @@ func Repos(w http.ResponseWriter, r *http.Request, user *models.User) {
 	})
 }
 
-func ReposRegister(w http.ResponseWriter, r *http.Request, user *models.User) {
+func ReposRegister(w http.ResponseWriter, r *http.Request) {
+	user, ok := middlewares.UserFromContext(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	repoID, repoName, repoFullName, err := getRepoInfoFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -89,7 +103,13 @@ func ReposRegister(w http.ResponseWriter, r *http.Request, user *models.User) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposUnregister(w http.ResponseWriter, r *http.Request, user *models.User) {
+func ReposUnregister(w http.ResponseWriter, r *http.Request) {
+	user, ok := middlewares.UserFromContext(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	repoID, _, _, err := getRepoInfoFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -113,7 +133,13 @@ func ReposUnregister(w http.ResponseWriter, r *http.Request, user *models.User) 
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposActivate(w http.ResponseWriter, r *http.Request, user *models.User) {
+func ReposActivate(w http.ResponseWriter, r *http.Request) {
+	user, ok := middlewares.UserFromContext(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	repoID, _, _, err := getRepoInfoFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -138,5 +164,11 @@ func ReposActivate(w http.ResponseWriter, r *http.Request, user *models.User) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposDeactivate(w http.ResponseWriter, r *http.Request, user *models.User) {
+func ReposDeactivate(w http.ResponseWriter, r *http.Request) {
+	user, ok := middlewares.UserFromContext(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fmt.Println(user.Username)
 }

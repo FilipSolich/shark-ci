@@ -4,13 +4,17 @@ import (
 	"net/http"
 
 	"github.com/FilipSolich/ci-server/configs"
-	"github.com/FilipSolich/ci-server/models"
+	"github.com/FilipSolich/ci-server/middlewares"
 )
 
-func Index(w http.ResponseWriter, r *http.Request, user *models.User) {
-	configs.RenderTemplate(w, "index.html", struct {
-		Username string
-	}{
-		Username: user.Username,
+func Index(w http.ResponseWriter, r *http.Request) {
+	user, ok := middlewares.UserFromContext(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	configs.RenderTemplate(w, "index.html", map[string]any{
+		"Username": user.Username,
 	})
 }

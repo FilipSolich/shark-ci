@@ -9,8 +9,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func Auth(fn func(http.ResponseWriter, *http.Request, *models.User)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func AuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user models.User
 		session, _ := sessions.Store.Get(r, "session")
 		id, ok := session.Values["id"].(uint)
@@ -20,6 +20,9 @@ func Auth(fn func(http.ResponseWriter, *http.Request, *models.User)) http.Handle
 			return
 		}
 
-		fn(w, r, &user)
-	}
+		ctx := r.Context()
+		ctx = ContextWithUser(ctx, &user)
+		r = r.WithContext(ctx)
+		h.ServeHTTP(w, r)
+	})
 }

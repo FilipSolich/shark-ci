@@ -63,8 +63,7 @@ func main() {
 	CSRF := csrf.Protect([]byte(os.Getenv("CSRF_KEY")))
 
 	r := mux.NewRouter()
-	r.Use()
-	r.HandleFunc("/", middlewares.Auth(handlers.Index))
+	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.Index)))
 	r.HandleFunc("/login", handlers.Login)
 	r.HandleFunc("/logout", handlers.Logout)
 
@@ -72,17 +71,18 @@ func main() {
 	sOAuth2.HandleFunc("/callback", handlers.OAuth2Callback)
 
 	sRepos := r.PathPrefix("/repositories").Subrouter()
-	sRepos.HandleFunc("", middlewares.Auth(handlers.Repos))
-	sRepos.HandleFunc("/register", middlewares.Auth(handlers.ReposRegister)).Methods(http.MethodPost)
-	sRepos.HandleFunc("/unregister", middlewares.Auth(handlers.ReposUnregister)).Methods(http.MethodPost)
-	sRepos.HandleFunc("/activate", middlewares.Auth(handlers.ReposActivate)).Methods(http.MethodPost)
-	sRepos.HandleFunc("/deactivate", middlewares.Auth(handlers.ReposDeactivate)).Methods(http.MethodPost)
+	sRepos.Use(middlewares.AuthMiddleware)
+	sRepos.HandleFunc("", handlers.Repos)
+	sRepos.HandleFunc("/register", handlers.ReposRegister).Methods(http.MethodPost)
+	sRepos.HandleFunc("/unregister", handlers.ReposUnregister).Methods(http.MethodPost)
+	sRepos.HandleFunc("/activate", handlers.ReposActivate).Methods(http.MethodPost)
+	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivate).Methods(http.MethodPost)
 
 	handler := gorilla_handlers.CombinedLoggingHandler(os.Stdout, r)
 	handler = CSRF(handler)
 
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":" + os.Getenv("PORT"),
 		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 20 * time.Second,
