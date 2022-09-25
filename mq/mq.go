@@ -1,8 +1,10 @@
 package mq
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/FilipSolich/ci-server/models"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -44,12 +46,17 @@ func (mq *MessageQueue) Close() {
 	mq.conn.Close()
 }
 
-func (mq *MessageQueue) PublishJob(data []byte) error {
+func (mq *MessageQueue) PublishJob(job *models.Job) error {
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+
 	pub := amqp.Publishing{
 		DeliveryMode: amqp.Persistent,
 		ContentType:  "application/json",
 		Body:         data,
 	}
-	err := mq.ch.Publish("", queueName, false, false, pub)
+	err = mq.ch.Publish("", queueName, false, false, pub)
 	return err
 }

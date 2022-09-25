@@ -27,7 +27,7 @@ func initDatabase() {
 		log.Fatal("failed to connect to database", err)
 	}
 
-	db.DB.AutoMigrate(&models.User{}, &models.OAuth2Token{}, &models.Webhook{})
+	db.DB.AutoMigrate(&models.User{}, &models.OAuth2Token{}, &models.Webhook{}, &models.Job{})
 }
 
 func initGitServices() {
