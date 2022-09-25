@@ -8,11 +8,16 @@ import (
 const EventHandlerPath = "/event_handler"
 
 var (
-	Hostname      string
+	Host          string
 	Port          string
 	SessionSecret string
 	CSRFSecret    string
 	WebhookSecret string
+
+	RabbitMQHost     string
+	RabbitMQPort     string
+	RabbitMQUsername string
+	RabbitMQPassword string
 
 	GitHubService      bool
 	GitHubClientID     string
@@ -22,6 +27,29 @@ var (
 	GitLabClientID     string
 	GitLabClientSecret string
 )
+
+func LoadEnv() error {
+	Host = getEnv("HOST", "")
+	Port = getEnv("PORT", "8080")
+	SessionSecret = getEnv("SESSION_SECRET", "insecure-secret")
+	CSRFSecret = getEnv("CSRF_SECRET", "insecure-secret")
+	WebhookSecret = getEnv("WEBHOOK_SECRET", "insecure-secret")
+
+	RabbitMQHost = getEnv("RABBITMQ_HOST", "localhost")
+	RabbitMQPort = getEnv("RABBITMQ_PORT", "5672")
+	RabbitMQUsername = getEnv("RABBITMQ_USERNAME", "guest")
+	RabbitMQPassword = getEnv("RABBITMQ_PASSWORD", "guest")
+
+	GitHubService = boolEnv(getEnv("GITHUB_SERVICE", "false"))
+	GitHubClientID = getEnv("GITHUB_CLIENT_ID", "")
+	GitHubClientSecret = getEnv("GITHUB_CLIENT_SECRET", "")
+
+	GitLabService = boolEnv(getEnv("GITLAB_SERVICE", "false"))
+	GitLabClientID = getEnv("GITLAB_CLIENT_ID", "")
+	GitLabClientSecret = getEnv("GITLAB_CLIENT_SECRET", "")
+
+	return validateEnv()
+}
 
 func getEnv(key string, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
@@ -40,6 +68,10 @@ func boolEnv(value string) bool {
 }
 
 func validateEnv() error {
+	if len(Host) == 0 {
+		return errors.New("HOST must be set")
+	}
+
 	if !GitHubService && !GitLabService {
 		return errors.New("at least one service (*_SERVICE) must be set as `true`")
 	}
@@ -53,22 +85,4 @@ func validateEnv() error {
 	}
 
 	return nil
-}
-
-func LoadEnv() error {
-	Hostname = getEnv("HOSTNAME", "")
-	Port = getEnv("PORT", "8080")
-	SessionSecret = getEnv("SESSION_SECRET", "insecure-secret")
-	CSRFSecret = getEnv("CSRF_SECRET", "insecure-secret")
-	WebhookSecret = getEnv("WEBHOOK_SECRET", "insecure-secret")
-
-	GitHubService = boolEnv(getEnv("GITHUB_SERVICE", "false"))
-	GitHubClientID = getEnv("GITHUB_CLIENT_ID", "")
-	GitHubClientSecret = getEnv("GITHUB_CLIENT_SECRET", "")
-
-	GitLabService = boolEnv(getEnv("GITLAB_SERVICE", "false"))
-	GitLabClientID = getEnv("GITLAB_CLIENT_ID", "")
-	GitLabClientSecret = getEnv("GITLAB_CLIENT_SECRET", "")
-
-	return validateEnv()
 }

@@ -16,33 +16,6 @@ type GitHubService struct {
 	OAuth2Config *oauth2.Config
 }
 
-func defaultWebhookConfig() map[string]any {
-	return map[string]any{
-		"url":          "https://" + configs.Hostname + configs.EventHandlerPath,
-		"content_type": "json",
-		"secret":       configs.WebhookSecret,
-	}
-}
-
-func defaultWebhook() *github.Hook {
-	return &github.Hook{
-		Config: defaultWebhookConfig(),
-		Events: []string{"push", "pull_request"},
-		Active: github.Bool(true),
-	}
-}
-
-func changeWebhookState(ctx context.Context, user *models.User, hook *models.Webhook, active bool) (*models.Webhook, error) {
-	client := GetGitHubClientByUser(ctx, user)
-	ghHook := defaultWebhook()
-	ghHook.Active = github.Bool(active)
-	_, _, err := client.Repositories.EditHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID), ghHook)
-	if err == nil {
-		hook.Active = active
-	}
-	return hook, err
-}
-
 func NewGitHub(clientID string, clientSecret string) {
 	GitHub.OAuth2Config = &oauth2.Config{
 		ClientID:     clientID,
@@ -98,4 +71,31 @@ func DeactivateWebhook(ctx context.Context, user *models.User, hook *models.Webh
 
 func UpdateStatus() {
 
+}
+
+func defaultWebhookConfig() map[string]any {
+	return map[string]any{
+		"url":          "https://" + configs.Host + configs.EventHandlerPath,
+		"content_type": "json",
+		"secret":       configs.WebhookSecret,
+	}
+}
+
+func defaultWebhook() *github.Hook {
+	return &github.Hook{
+		Config: defaultWebhookConfig(),
+		Events: []string{"push", "pull_request"},
+		Active: github.Bool(true),
+	}
+}
+
+func changeWebhookState(ctx context.Context, user *models.User, hook *models.Webhook, active bool) (*models.Webhook, error) {
+	client := GetGitHubClientByUser(ctx, user)
+	ghHook := defaultWebhook()
+	ghHook.Active = github.Bool(active)
+	_, _, err := client.Repositories.EditHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID), ghHook)
+	if err == nil {
+		hook.Active = active
+	}
+	return hook, err
 }

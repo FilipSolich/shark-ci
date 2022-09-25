@@ -14,22 +14,6 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-func getRepoInfoFromRequest(r *http.Request) (services.RepoInfo, error) {
-	r.ParseForm()
-	repo := services.RepoInfo{}
-	repo.Name = r.Form.Get("repo_name")
-	repo.FullName = r.Form.Get("repo_full_name")
-
-	repoIDString := r.Form.Get("repo_id")
-	repoID, err := strconv.ParseInt(repoIDString, 10, 64)
-	if err != nil {
-		return services.RepoInfo{}, err
-	}
-
-	repo.ID = repoID
-	return repo, nil
-}
-
 func ReposHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := middlewares.UserFromContext(r.Context())
 	if !ok {
@@ -198,4 +182,20 @@ func ReposDeactivateHandler(w http.ResponseWriter, r *http.Request) {
 
 	db.DB.Save(hook)
 	http.Redirect(w, r, "/repositories", http.StatusFound)
+}
+
+func getRepoInfoFromRequest(r *http.Request) (services.RepoInfo, error) {
+	r.ParseForm()
+	repo := services.RepoInfo{}
+	repo.Name = r.Form.Get("repo_name")
+	repo.FullName = r.Form.Get("repo_full_name")
+
+	repoIDString := r.Form.Get("repo_id")
+	repoID, err := strconv.ParseInt(repoIDString, 10, 64)
+	if err != nil {
+		return services.RepoInfo{}, err
+	}
+
+	repo.ID = repoID
+	return repo, nil
 }
