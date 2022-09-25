@@ -16,6 +16,7 @@ import (
 	"github.com/FilipSolich/ci-server/handlers"
 	"github.com/FilipSolich/ci-server/middlewares"
 	"github.com/FilipSolich/ci-server/models"
+	"github.com/FilipSolich/ci-server/mq"
 	"github.com/FilipSolich/ci-server/services"
 )
 
@@ -55,21 +56,32 @@ func main() {
 	initTemplates()
 	initDatabase()
 	initGitServices()
+	messageQueue, err := mq.NewMQ(
+		configs.RabbitMQHost,
+		configs.RabbitMQPort,
+		configs.RabbitMQUsername,
+		configs.RabbitMQPassword,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	mq.MQ = messageQueue
+	defer messageQueue.Close()
 
 	CSRF := csrf.Protect([]byte(configs.CSRFSecret))
 
 	r := mux.NewRouter()
-	r.Use(CSRF)
 	r.Use(middlewares.LoggingMiddleware)
 	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.IndexHandler)))
 	r.HandleFunc("/login", handlers.LoginHandler)
 	r.HandleFunc("/logout", handlers.LogoutHandler)
-	r.HandleFunc(configs.EventHandlerPath, handlers.EventHandler)
+	r.HandleFunc(configs.EventHandlerPath, handlers.EventHandler).Methods(http.MethodPost)
 
 	sOAuth2 := r.PathPrefix("/oauth2").Subrouter()
 	sOAuth2.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
 
 	sRepos := r.PathPrefix("/repositories").Subrouter()
+	sRepos.Use(CSRF)
 	sRepos.Use(middlewares.AuthMiddleware)
 	sRepos.HandleFunc("", handlers.ReposHandler)
 	sRepos.HandleFunc("/register", handlers.ReposRegisterHandler).Methods(http.MethodPost)
