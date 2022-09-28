@@ -28,7 +28,7 @@ func NewGitHubManager(clientID string, clientSecret string) {
 	}
 }
 
-func (s *GitHubManager) GetServiceName() string {
+func (*GitHubManager) GetServiceName() string {
 	return GitHubName
 }
 

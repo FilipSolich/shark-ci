@@ -20,6 +20,10 @@ func NewOAuth2State(state *OAuth2State) (*OAuth2State, error) {
 	return state, result.Error
 }
 
+func (*OAuth2State) TableName() string {
+	return "oauth2_state"
+}
+
 func (state *OAuth2State) IsValid() bool {
 	valid := time.Now().Before(state.Expiry)
 	if !valid {

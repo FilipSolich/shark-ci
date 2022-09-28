@@ -27,6 +27,7 @@ func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "incorrect state", http.StatusBadRequest)
 		return
 	}
+	db.DB.Delete(&oauth2State)
 
 	ctx := context.Background()
 	config := service.GetOAuth2Config()

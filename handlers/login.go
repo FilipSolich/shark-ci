@@ -24,7 +24,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var data map[string]string
+	data := map[string]string{}
 	for _, service := range services.Services {
 		config := service.GetOAuth2Config()
 		url := config.AuthCodeURL(oauth2State.State, oauth2.AccessTypeOffline)

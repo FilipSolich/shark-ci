@@ -34,3 +34,7 @@ func GetOrCreateOAuth2Token(token *OAuth2Token) (*OAuth2Token, error) {
 
 	return getToken, err
 }
+
+func (*OAuth2Token) TableName() string {
+	return "oauth2_token"
+}

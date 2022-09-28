@@ -7,7 +7,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var Services map[string]ServiceManager
+var Services = map[string]ServiceManager{}
 
 //type StatusState int
 
