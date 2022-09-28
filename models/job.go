@@ -1,13 +1,20 @@
 package models
 
 import (
-	"golang.org/x/oauth2"
+	"github.com/FilipSolich/ci-server/db"
 	"gorm.io/gorm"
 )
 
 type Job struct {
 	gorm.Model
-	oauth2.Token
-	CommitSHA string `json:"commit_sha"`
-	CloneURL  string `json:"clone_url"`
+	OAuth2TokenID   uint
+	CommitSHA       string `json:"commit_sha"`
+	CloneURL        string `json:"clone_url"`
+	ReportStatusURL string
+	PublishLogsURL  string
+}
+
+func CreateJob(job *Job) (*Job, error) {
+	result := db.DB.Create(job)
+	return job, result.Error
 }

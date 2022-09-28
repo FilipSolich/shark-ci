@@ -1,3 +1,5 @@
 {{ define "content" }}
-  <a href="{{ .GitHubLoginURL }}">link</a>
+  {{ range .URLs }}
+    <a href="{{ . }}">link</a> // TODO: FIX
+  {{ end }}
 {{ end }}

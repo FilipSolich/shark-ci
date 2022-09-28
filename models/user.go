@@ -1,34 +1,34 @@
 package models
 
 import (
+	"errors"
+
 	"github.com/FilipSolich/ci-server/db"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type User struct {
 	gorm.Model
-	Username string
-	Service  string
-	Token    OAuth2Token
+	Identities []UserIdentity
+	Repos      []Repository
 }
 
-func GetOrCreateUser(user *User, token *OAuth2Token) (*User, error) {
-	var u User
-	result := db.DB.Preload(clause.Associations).First(&u, user)
+func CreateUser(user *User) (*User, error) {
+	result := db.DB.Create(user)
+	return user, result.Error
+}
+
+func GetOrCreateUser(user *User) (*User, error) {
+	var getUser *User
+	var err error
+	result := db.DB.First(getUser, user)
 	if result.Error != nil {
-		user.Token = *token
-		result = db.DB.Create(user)
-		if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, result.Error
 		}
-		return user, nil
+
+		getUser, err = CreateUser(user)
 	}
-	db.DB.Delete(&u.Token)
-	u.Token = *token
-	a := db.DB.Save(&u)
-	if a.Error != nil {
-		panic(a.Error)
-	}
-	return &u, nil
+
+	return getUser, err
 }

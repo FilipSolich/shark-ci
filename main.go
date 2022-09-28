@@ -27,12 +27,21 @@ func initDatabase() {
 		log.Fatal("failed to connect to database", err)
 	}
 
-	db.DB.AutoMigrate(&models.User{}, &models.OAuth2Token{}, &models.Webhook{}, &models.Job{})
+	db.DB.AutoMigrate(
+		&models.User{},
+		&models.UserIdentity{},
+		&models.OAuth2Token{},
+		&models.OAuth2State{},
+		&models.Repository{},
+		&models.Webhook{},
+		&models.Job{},
+	)
 }
 
 func initGitServices() {
 	if configs.GitHubService {
-		services.NewGitHub(configs.GitHubClientID, configs.GitHubClientSecret)
+		services.NewGitHubManager(configs.GitHubClientID, configs.GitHubClientSecret)
+		services.Services[services.GitHub.GetServiceName()] = &services.GitHub
 	}
 
 	// TODO: Add GitLab service.

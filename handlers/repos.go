@@ -71,7 +71,7 @@ func ReposRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := db.DB.Where(&models.Webhook{Service: "github", RepoID: repo.ID})
+	result := db.DB.Where(&models.Webhook{Service: services.GitHubName, RepoID: repo.ID})
 	if result.RowsAffected > 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
