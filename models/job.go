@@ -8,6 +8,6 @@ import (
 type Job struct {
 	gorm.Model
 	oauth2.Token
-	CommitSHA string `json:"commitSHA"`
-	CloneURL  string `json:"cloneURL"`
+	CommitSHA string `json:"commit_sha"`
+	CloneURL  string `json:"clone_url"`
 }

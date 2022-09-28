@@ -58,5 +58,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		//services.UpdateStatus()
 	}
 }

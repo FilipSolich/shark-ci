@@ -69,8 +69,10 @@ func DeactivateWebhook(ctx context.Context, user *models.User, hook *models.Webh
 	return changeWebhookState(ctx, user, hook, false)
 }
 
-func UpdateStatus() {
-
+func UpdateStatus(ctx context.Context, user *models.User, repo string, ref string) {
+	//client := GetGitHubClientByUser(ctx, user)
+	//status := github.RepoStatus{}
+	//client.Repositories.CreateStatus(ctx, user.Username, repo, ref)
 }
 
 func defaultWebhookConfig() map[string]any {
