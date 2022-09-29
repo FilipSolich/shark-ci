@@ -1,15 +1,51 @@
 package handlers
 
 import (
+	"context"
+	"log"
 	"net/http"
+
+	"github.com/FilipSolich/ci-server/configs"
+	"github.com/FilipSolich/ci-server/middlewares"
+	"github.com/FilipSolich/ci-server/models"
+	"github.com/FilipSolich/ci-server/services"
+	"github.com/gorilla/csrf"
 )
 
 func ReposHandler(w http.ResponseWriter, r *http.Request) {
-	//user, ok := middlewares.UserFromContext(r.Context())
-	//if !ok {
-	//	w.WriteHeader(http.StatusInternalServerError)
-	//	return
-	//}
+	user, ok := middlewares.UserFromContext(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	ctx := context.Background()
+	serviceRepos := map[string]map[string][]*models.Repository{}
+	for serviceName, service := range services.Services {
+		repos, err := service.GetUsersRepos(ctx, user)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+
+		registered := []*models.Repository{}
+		notRegistered := []*models.Repository{}
+		for _, repo := range repos {
+			if repo.Webhook.ID == 0 {
+				notRegistered = append(notRegistered, repo)
+			} else {
+				registered = append(registered, repo)
+			}
+		}
+		serviceRepos[serviceName] = map[string][]*models.Repository{}
+		serviceRepos[serviceName]["registered"] = registered
+		serviceRepos[serviceName]["not_registered"] = notRegistered
+	}
+
+	configs.RenderTemplate(w, "repos.html", map[string]any{
+		csrf.TemplateTag: csrf.TemplateField(r),
+		"ServicesRepos":  serviceRepos,
+	})
 
 	//ctx := context.Background()
 	//ghClient := services.GetGitHubClientByUser(ctx, user)

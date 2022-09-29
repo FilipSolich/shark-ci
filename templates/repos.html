@@ -1,60 +1,65 @@
 {{ define "main" }}
-  <h2>Registered repositories</h2>
-  <table>
-    <tr>
-      <th>Active</th>
-      <th>Name</th>
-      <th>Activate/Deactivate</th>
-      <th>Unregister</th>
-    </tr>
-    {{ range .RegisteredWebhooks }}
+  {{ range $serviceName, $repos := .ServicesRepos }}
+    <h1>{{ $serviceName }}</h1>
+
+    <h2>Registered repositories</h2>
+    <table>
       <tr>
-        <td>
-          {{ if .Active }}
-            <i class="bi bi-check-lg text-success"></i>
-          {{ else }}
-            <i class="bi bi-x-lg text-danger"></i>
-          {{ end }}
-        </td>
-        <td>{{ .RepoFullName }}</td>
-        <td>
-          <form method="POST" action="/repositories/{{ if .Active }}deactivate{{ else }}activate{{ end }}">
-            {{ $.csrfField }}
-            <input type="hidden" name="repo_id" value="{{ .RepoID }}" />
-            <input type="hidden" name="repo_name" value="{{ .RepoName}}" />
-            <input type="submit" value="{{ if .Active }}Deactivate{{ else }}Activate{{ end }}" />
-          </form>
-        </td>
-        <td>
-          <form method="POST" action="/repositories/unregister">
-            {{ $.csrfField }}
-            <input type="hidden" name="repo_id" value="{{ .RepoID }}" />
-            <input type="hidden" name="repo_name" value="{{ .RepoName}}" />
-            <input type="submit" value="Unregister" />
-          </form>
-        </td>
+        <th>Active</th>
+        <th>Name</th>
+        <th>Activate/Deactivate</th>
+        <th>Unregister</th>
       </tr>
-    {{ end }}
-  </table>
-  <h2>Not registered repositories</h2>
-  <table>
-    <tr>
-      <th>Name</th>
-      <th>Register</th>
-    </tr>
-    {{ range .NotRegisteredRepos }}
+      {{ range index $repos "registered" }}
+        <tr>
+          <td>
+            {{ if .Webhook.Active }}
+              <i class="bi bi-check-lg text-success"></i>
+            {{ else }}
+              <i class="bi bi-x-lg text-danger"></i>
+            {{ end }}
+          </td>
+          <td>{{ .FullName }}</td>
+          <td>
+            <form method="POST" action="/repositories/{{ if .Webhook.Active }}deactivate{{ else }}activate{{ end }}">
+              {{ $.csrfField }}
+              <input type="hidden" name="repo_id" value="{{ .ServiceRepoID }}" />
+              <input type="hidden" name="repo_name" value="{{ .Name }}" />
+              <input type="submit" value="{{ if .Webhook.Active }}Deactivate{{ else }}Activate{{ end }}" />
+            </form>
+          </td>
+          <td>
+            <form method="POST" action="/repositories/unregister">
+              {{ $.csrfField }}
+              <input type="hidden" name="repo_id" value="{{ .ServiceRepoID }}" />
+              <input type="hidden" name="repo_name" value="{{ .Name }}" />
+              <input type="submit" value="Unregister" />
+            </form>
+          </td>
+        </tr>
+      {{ end }}
+    </table>
+
+    <h2>Not registered repositories</h2>
+    <table>
       <tr>
-        <td>{{ .FullName }}</td>
-        <td>
-          <form method="POST" action="/repositories/register">
-            {{ $.csrfField }}
-            <input type="hidden" name="repo_id" value="{{ .ID }}" />
-            <input type="hidden" name="repo_name" value="{{ .Name}}" />
-            <input type="hidden" name="repo_full_name" value="{{ .FullName }}" />
-            <input type="submit" value="Register" />
-          </form>
-        </td>
+        <th>Name</th>
+        <th>Register</th>
       </tr>
-    {{ end }}
-  </table>
+      {{ range index $repos "not_registered" }}
+        <tr>
+          <td>{{ .FullName }}</td>
+          <td>
+            <form method="POST" action="/repositories/register">
+              {{ $.csrfField }}
+              <input type="hidden" name="repo_id" value="{{ .ServiceRepoID }}" />
+              <input type="hidden" name="repo_name" value="{{ .Name}}" />
+              <input type="hidden" name="repo_full_name" value="{{ .FullName }}" />
+              <input type="submit" value="Register" />
+            </form>
+          </td>
+        </tr>
+      {{ end }}
+    </table>
+  {{ end }}
 {{ end }}

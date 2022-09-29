@@ -45,7 +45,7 @@ type ServiceManager interface {
 
 	GetOrCreateUserIdentity(ctx context.Context, token *oauth2.Token) (*models.UserIdentity, error) // Get or create user using OAuth2 token.
 
-	GetUsersRepos(user *models.User) ([]*models.Repository, error) // Return user's repos on from service.
+	GetUsersRepos(ctx context.Context, user *models.User) ([]*models.Repository, error) // Return user's repos on from service.
 
 	// Legacy code
 	//GetStatusName(status StatusState) string

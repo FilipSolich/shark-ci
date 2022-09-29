@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"log"
 
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/models"
@@ -11,7 +12,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const GitHubName = "github"
+const GitHubName = "GitHub"
 
 var GitHub GitHubManager
 
@@ -54,8 +55,7 @@ func (s *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, token *oaut
 }
 
 // Get repositories which aren't archived and are owned by `user`.
-func (s *GitHubManager) GetUsersRepos(user *models.User) ([]*models.Repository, error) {
-	ctx := context.Background()
+func (s *GitHubManager) GetUsersRepos(ctx context.Context, user *models.User) ([]*models.Repository, error) {
 	client := getClientByUser(ctx, user)
 	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{
 		Type: "owner",
@@ -65,10 +65,16 @@ func (s *GitHubManager) GetUsersRepos(user *models.User) ([]*models.Repository, 
 	for _, repo := range ghRepos {
 		if !repo.GetArchived() {
 			r := &models.Repository{
+				UserID:        user.ID,
 				ServiceName:   GitHubName,
 				ServiceRepoID: repo.GetID(),
 				Name:          repo.GetName(),
 				FullName:      repo.GetFullName(),
+			}
+			result := db.DB.Preload(clause.Associations).FirstOrCreate(r, r)
+			if result.Error != nil {
+				log.Print(result.Error)
+				continue
 			}
 			repos = append(repos, r)
 		}
@@ -141,8 +147,8 @@ func (s *GitHubManager) GetUsersRepos(user *models.User) ([]*models.Repository, 
 //}
 
 func getClientByUser(ctx context.Context, user *models.User) *github.Client {
-	var identity *models.UserIdentity
-	err := db.DB.Preload(clause.Associations).First(identity, &models.UserIdentity{UserID: user.ID}).Error
+	var identity models.UserIdentity
+	err := db.DB.Preload(clause.Associations).First(&identity, &models.UserIdentity{UserID: user.ID}).Error
 	if err != nil {
 		return nil
 	}
