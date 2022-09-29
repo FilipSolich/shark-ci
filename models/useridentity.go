@@ -22,31 +22,34 @@ func CreateUserIdentity(ui *UserIdentity) (*UserIdentity, error) {
 }
 
 func GetOrCreateUserIdentity(ui *UserIdentity) (*UserIdentity, error) {
-	var identity *UserIdentity
+	var identity UserIdentity
 	var err error
-	result := db.DB.First(identity, ui)
+	result := db.DB.First(&identity, ui)
 	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, result.Error
 		}
 
-		identity, err = CreateUserIdentity(ui)
+		_, err = CreateUserIdentity(ui)
+		if err != nil {
+			return nil, err
+		}
+
+		user := &User{
+			Identities: []UserIdentity{*ui},
+		}
+		user, err = GetOrCreateUser(user)
+		return ui, err
 	}
 
-	user := &User{
-		Identities: []UserIdentity{*identity},
-	}
-	user, err = GetOrCreateUser(user)
-	identity.UserID = user.ID
-	return identity, err
+	return &identity, nil
 }
 
 func (ui *UserIdentity) UpdateOAuth2Token(token *oauth2.Token) error {
-	t, err := GetOrCreateOAuth2Token(&OAuth2Token{UserIdentityID: ui.ID})
-	if err != nil {
-		return err
+	db.DB.Where("user_identity_id = ?", ui.ID).Delete(&ui.Token)
+	t := OAuth2Token{
+		Token: *token,
 	}
-
-	t.Token = *token
-	return db.DB.Save(t).Error
+	ui.Token = t
+	return db.DB.Save(ui).Error
 }

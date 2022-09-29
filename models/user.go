@@ -19,16 +19,16 @@ func CreateUser(user *User) (*User, error) {
 }
 
 func GetOrCreateUser(user *User) (*User, error) {
-	var getUser *User
+	var getUser User
 	var err error
-	result := db.DB.First(getUser, user)
+	result := db.DB.First(&getUser, user)
 	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, result.Error
 		}
 
-		getUser, err = CreateUser(user)
+		return CreateUser(user)
 	}
 
-	return getUser, err
+	return &getUser, err
 }

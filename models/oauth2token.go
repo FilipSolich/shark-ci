@@ -21,18 +21,18 @@ func CreateOAuth2Token(token *OAuth2Token) (*OAuth2Token, error) {
 }
 
 func GetOrCreateOAuth2Token(token *OAuth2Token) (*OAuth2Token, error) {
-	var getToken *OAuth2Token
+	var getToken OAuth2Token
 	var err error
-	result := db.DB.First(getToken, token)
+	result := db.DB.First(&getToken, token)
 	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, result.Error
 		}
 
-		getToken, err = CreateOAuth2Token(token)
+		return CreateOAuth2Token(token)
 	}
 
-	return getToken, err
+	return &getToken, err
 }
 
 func (*OAuth2Token) TableName() string {
