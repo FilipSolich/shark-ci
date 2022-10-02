@@ -47,13 +47,12 @@ type ServiceManager interface {
 
 	GetUsersRepos(ctx context.Context, user *models.User) ([]*models.Repository, error) // Return user's repos on from service.
 
-	// Legacy code
 	//GetStatusName(status StatusState) string
 
-	//CreatWebhook(ctx context.Context, user *models.User, repo RepoInfo) (*models.Webhook, error)
-	//DeleteWebhook(ctx context.Context, user *models.User, hook *models.Webhook) error
-	//ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) (*models.Webhook, error)
-	//DeactivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) (*models.Webhook, error)
+	CreateWebhook(ctx context.Context, user *models.User, repo *models.Repository) (*models.Webhook, error)
+	DeleteWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) error
+	ActivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
+	DeactivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
 
 	//CreateStatus(ctx context.Context, user *models.User, repo RepoInfo, commit CommitInfo, status Status) error
 }

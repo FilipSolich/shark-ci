@@ -8,9 +8,8 @@ import (
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := middlewares.UserFromContext(r.Context())
+	user, ok := middlewares.UserFromContext(r.Context(), w)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

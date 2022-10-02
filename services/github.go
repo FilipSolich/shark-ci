@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/models"
 	"github.com/google/go-github/v47/github"
@@ -33,12 +34,12 @@ func (*GitHubManager) GetServiceName() string {
 	return GitHubName
 }
 
-func (s *GitHubManager) GetOAuth2Config() *oauth2.Config {
-	return s.oauth2Config
+func (ghm *GitHubManager) GetOAuth2Config() *oauth2.Config {
+	return ghm.oauth2Config
 }
 
-func (s *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, token *oauth2.Token) (*models.UserIdentity, error) {
-	oauth2Client := s.oauth2Config.Client(ctx, token)
+func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, token *oauth2.Token) (*models.UserIdentity, error) {
+	oauth2Client := ghm.oauth2Config.Client(ctx, token)
 	ghClient := github.NewClient(oauth2Client)
 
 	ghUser, _, err := ghClient.Users.Get(ctx, "")
@@ -55,8 +56,12 @@ func (s *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, token *oaut
 }
 
 // Get repositories which aren't archived and are owned by `user`.
-func (s *GitHubManager) GetUsersRepos(ctx context.Context, user *models.User) ([]*models.Repository, error) {
-	client := getClientByUser(ctx, user)
+func (*GitHubManager) GetUsersRepos(ctx context.Context, user *models.User) ([]*models.Repository, error) {
+	_, client, err := getIdentityClientByUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
 	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{
 		Type: "owner",
 	})
@@ -83,88 +88,102 @@ func (s *GitHubManager) GetUsersRepos(ctx context.Context, user *models.User) ([
 	return repos, err
 }
 
-// Legacy code
-//func GetGitHubClientByUser(ctx context.Context, user *models.User) *github.Client {
-//	token := user.Token.Token
-//	client := GitHub.OAuth2Config.Client(ctx, &token)
-//	ghClient := github.NewClient(client)
-//	return ghClient
-//}
+func (*GitHubManager) CreateWebhook(ctx context.Context, user *models.User, repo *models.Repository) (*models.Webhook, error) {
+	identity, client, err := getIdentityClientByUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
 
-//func CreateWebhook(ctx context.Context, user *models.User, repo RepoInfo) (*models.Webhook, error) {
-//	client := GetGitHubClientByUser(ctx, user)
-//	hook := defaultWebhook()
-//	hook, _, err := client.Repositories.CreateHook(ctx, user.Username, repo.Name, hook)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	modelHook := &models.Webhook{
-//		ServiceWebhookID: hook.GetID(),
-//		Service:          "github",
-//		RepoID:           repo.ID,
-//		RepoName:         repo.Name,
-//		RepoFullName:     repo.FullName,
-//		Active:           true,
-//	}
-//	return modelHook, nil
-//}
-//
-//func DeleteWebhook(ctx context.Context, user *models.User, hook *models.Webhook) error {
-//	client := GetGitHubClientByUser(ctx, user)
-//	_, err := client.Repositories.DeleteHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID))
-//	return err
-//}
-//
-//func ActivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) (*models.Webhook, error) {
-//	return changeWebhookState(ctx, user, hook, true)
-//}
-//
-//func DeactivateWebhook(ctx context.Context, user *models.User, hook *models.Webhook) (*models.Webhook, error) {
-//	return changeWebhookState(ctx, user, hook, false)
-//}
-//
+	hook := defaultWebhook()
+	hook, _, err = client.Repositories.CreateHook(ctx, identity.Username, repo.Name, hook)
+	if err != nil {
+		return nil, err
+	}
+
+	modelHook := &models.Webhook{
+		ServiceWebhookID: hook.GetID(),
+		ServiceName:      GitHubName,
+		RepositoryID:     repo.ID,
+		Active:           true,
+	}
+
+	return modelHook, nil
+}
+
+func (*GitHubManager) DeleteWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) error {
+	identity, client, err := getIdentityClientByUser(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Repositories.DeleteHook(ctx, identity.Username, repo.Name, int64(hook.ServiceWebhookID))
+	return err
+}
+
+func (*GitHubManager) ActivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error) {
+	return changeWebhookState(ctx, user, repo, hook, true)
+}
+
+func (*GitHubManager) DeactivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error) {
+	return changeWebhookState(ctx, user, repo, hook, false)
+}
+
 //func UpdateStatus(ctx context.Context, user *models.User, repo string, ref string) {
 //	//client := GetGitHubClientByUser(ctx, user)
 //	//status := github.RepoStatus{}
 //	//client.Repositories.CreateStatus(ctx, user.Username, repo, ref)
 //}
-//
-//func defaultWebhookConfig() map[string]any {
-//	return map[string]any{
-//		"url":          "https://" + configs.Host + configs.EventHandlerPath,
-//		"content_type": "json",
-//		"secret":       configs.WebhookSecret,
-//	}
-//}
-//
-//func defaultWebhook() *github.Hook {
-//	return &github.Hook{
-//		Config: defaultWebhookConfig(),
-//		Events: []string{"push", "pull_request"},
-//		Active: github.Bool(true),
-//	}
-//}
 
-func getClientByUser(ctx context.Context, user *models.User) *github.Client {
+func defaultWebhookConfig() map[string]any {
+	return map[string]any{
+		"url":          "https://" + configs.Host + configs.EventHandlerPath,
+		"content_type": "json",
+		"secret":       configs.WebhookSecret,
+	}
+}
+
+func defaultWebhook() *github.Hook {
+	return &github.Hook{
+		Config: defaultWebhookConfig(),
+		Events: []string{"push", "pull_request"},
+		Active: github.Bool(true),
+	}
+}
+
+func getIdentityClientByUser(ctx context.Context, user *models.User) (*models.UserIdentity, *github.Client, error) {
+	identity, err := getIdentityByUser(user)
+	if err != nil {
+		return nil, nil, err
+	}
+	client := getClientByIdentity(ctx, identity)
+	return identity, client, nil
+}
+
+func getIdentityByUser(user *models.User) (*models.UserIdentity, error) {
 	var identity models.UserIdentity
 	err := db.DB.Preload(clause.Associations).First(&identity, &models.UserIdentity{UserID: user.ID}).Error
-	if err != nil {
-		return nil
-	}
+	return &identity, err
+}
 
+func getClientByIdentity(ctx context.Context, identity *models.UserIdentity) *github.Client {
 	token := identity.Token.Token
 	client := GitHub.oauth2Config.Client(ctx, &token)
 	return github.NewClient(client)
 }
 
-//func changeWebhookState(ctx context.Context, user *models.User, hook *models.Webhook, active bool) (*models.Webhook, error) {
-//	client := GetGitHubClientByUser(ctx, user)
-//	ghHook := defaultWebhook()
-//	ghHook.Active = github.Bool(active)
-//	_, _, err := client.Repositories.EditHook(ctx, user.Username, hook.RepoName, int64(hook.ServiceWebhookID), ghHook)
-//	if err == nil {
-//		hook.Active = active
-//	}
-//	return hook, err
-//}
+func changeWebhookState(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook, active bool) (*models.Webhook, error) {
+	identity, client, err := getIdentityClientByUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	ghHook := defaultWebhook()
+	ghHook.Active = github.Bool(active)
+	_, _, err = client.Repositories.EditHook(ctx, identity.Username, repo.Name, int64(hook.ServiceWebhookID), ghHook)
+	if err != nil {
+		return nil, err
+	}
+
+	hook.Active = active
+	return hook, nil
+}
