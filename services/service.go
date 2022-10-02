@@ -2,42 +2,40 @@ package services
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/FilipSolich/ci-server/models"
 	"golang.org/x/oauth2"
 )
 
+const (
+	StatusSuccess  StatusState = iota // GitHub -> Success, GitLab -> Success
+	StatusPending                     // GitHub -> Pendign, GitLab -> Pending
+	StatusRunning                     // GitHub -> Pending, GitLab -> Running
+	StatusCanceled                    // GitHub -> Error, GitLab -> Canceled
+	StatusError                       // GitHub -> Error, GitLab -> Failed
+)
+
 var Services = map[string]ServiceManager{}
 
-//type StatusState int
+type StatusState int
 
-// GitHub: Success, Pending, Error, Failure
-// GitLab: Success, Pending, Running, Failed, Canceled
+//	type RepoInfo struct {
+//		ID       int64
+//		Name     string
+//		FullName string
+//	}
+//
+//	type CommitInfo struct {
+//		SHA string
+//	}
 
-//const (
-//	StatusSuccess  StatusState = iota // GitHub -> Success, GitLab -> Success
-//	StatusPending                     // GitHub -> Pendign, GitLab -> Pending
-//	StatusRunning                     // GitHub -> Pending, GitLab -> Running
-//	StatusCanceled                    // GitHub -> Error, GitLab -> Canceled
-//	StatusError                       // GitHub -> Error, GitLab -> Failed
-//)
-//
-//type RepoInfo struct {
-//	ID       int64
-//	Name     string
-//	FullName string
-//}
-//
-//type CommitInfo struct {
-//	SHA string
-//}
-//
-//type Status struct {
-//	State       string
-//	TargetUrl   string
-//	Description string
-//	Context     string
-//}
+type Status struct {
+	State       StatusState
+	TargetURL   string
+	Context     string
+	Description string
+}
 
 type ServiceManager interface {
 	GetServiceName() string          // Return service name.
@@ -47,12 +45,15 @@ type ServiceManager interface {
 
 	GetUsersRepos(ctx context.Context, user *models.User) ([]*models.Repository, error) // Return user's repos on from service.
 
-	//GetStatusName(status StatusState) string
-
 	CreateWebhook(ctx context.Context, user *models.User, repo *models.Repository) (*models.Webhook, error)
 	DeleteWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) error
 	ActivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
 	DeactivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
 
+	CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
+
+	UpdateStatus(ctx context.Context, status Status, job *models.Job) error
+
+	//GetStatusName(status StatusState) string
 	//CreateStatus(ctx context.Context, user *models.User, repo RepoInfo, commit CommitInfo, status Status) error
 }

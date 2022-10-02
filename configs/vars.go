@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+const CIServer = "CI Server"
 const EventHandlerPath = "/event_handler"
 
 var (

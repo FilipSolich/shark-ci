@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
@@ -14,6 +16,7 @@ import (
 )
 
 const GitHubName = "GitHub"
+const EventHandlerPath = configs.EventHandlerPath + "/" + GitHubName
 
 var GitHub GitHubManager
 
@@ -128,6 +131,43 @@ func (*GitHubManager) DeactivateWebhook(ctx context.Context, user *models.User, 
 	return changeWebhookState(ctx, user, repo, hook, false)
 }
 
+func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*models.Job, error) {
+	payload, err := github.ValidatePayload(r, []byte(configs.WebhookSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := github.ParseWebHook(github.WebHookType(r), payload)
+	if err != nil {
+		return nil, err
+	}
+
+	switch event := event.(type) {
+	case *github.PushEvent:
+		commit := event.Commits[len(event.Commits)-1]
+
+		username := event.Repo.Owner.GetLogin()
+		var identity models.UserIdentity
+		err = db.DB.Preload(clause.Associations).Where("username = ?", username).First(&identity).Error
+		if err != nil {
+			return nil, err
+		}
+
+		job := &models.Job{
+			OAuth2TokenID: identity.Token.ID,
+			CommitSHA:     commit.GetID(),
+			CloneURL:      event.Repo.GetCloneURL(),
+		}
+
+		return job, nil
+	}
+	return nil, nil
+}
+
+func (*GitHubManager) UpdateStatus(ctx context.Context, status Status, job *models.Job) error {
+	return nil
+}
+
 //func UpdateStatus(ctx context.Context, user *models.User, repo string, ref string) {
 //	//client := GetGitHubClientByUser(ctx, user)
 //	//status := github.RepoStatus{}
@@ -136,7 +176,7 @@ func (*GitHubManager) DeactivateWebhook(ctx context.Context, user *models.User, 
 
 func defaultWebhookConfig() map[string]any {
 	return map[string]any{
-		"url":          "https://" + configs.Host + configs.EventHandlerPath,
+		"url":          fmt.Sprintf("https://%s:%s%s", configs.Host, configs.Port, EventHandlerPath),
 		"content_type": "json",
 		"secret":       configs.WebhookSecret,
 	}

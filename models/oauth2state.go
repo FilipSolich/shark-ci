@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/FilipSolich/ci-server/db"
@@ -29,7 +29,7 @@ func (state *OAuth2State) IsValid() bool {
 	if !valid {
 		result := db.DB.Delete(state)
 		if result.Error != nil {
-			fmt.Println(result.Error) // TODO: log
+			log.Println(result.Error)
 		}
 	}
 	return valid

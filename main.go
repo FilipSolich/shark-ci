@@ -83,7 +83,7 @@ func main() {
 	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.IndexHandler)))
 	r.HandleFunc("/login", handlers.LoginHandler)
 	r.HandleFunc("/logout", handlers.LogoutHandler)
-	r.HandleFunc(configs.EventHandlerPath, handlers.EventHandler).Methods(http.MethodPost)
+	r.HandleFunc(configs.EventHandlerPath+"/{service}", handlers.EventHandler).Methods(http.MethodPost)
 
 	sOAuth2 := r.PathPrefix("/oauth2").Subrouter()
 	sOAuth2.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
@@ -100,9 +100,9 @@ func main() {
 	server := &http.Server{
 		Addr:         ":" + configs.Port,
 		Handler:      r,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 20 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 	log.Println("Server running on " + server.Addr)
 	log.Fatal(server.ListenAndServe())

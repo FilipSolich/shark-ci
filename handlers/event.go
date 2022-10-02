@@ -2,56 +2,66 @@ package handlers
 
 import (
 	"net/http"
+
+	"github.com/FilipSolich/ci-server/configs"
+	"github.com/FilipSolich/ci-server/db"
+	"github.com/FilipSolich/ci-server/services"
+	"github.com/gorilla/mux"
 )
 
 func EventHandler(w http.ResponseWriter, r *http.Request) {
-	//payload, err := github.ValidatePayload(r, []byte(configs.WebhookSecret))
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
+	params := mux.Vars(r)
+	serviceName, ok := params["service"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	//event, err := github.ParseWebHook(github.WebHookType(r), payload)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
+	service, ok := services.Services[serviceName]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	//switch event := event.(type) {
-	//case *github.PushEvent:
-	//	commit := event.Commits[len(event.Commits)-1]
+	job, err := service.CreateJob(r.Context(), r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if job == nil && err == nil {
+		http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
+		return
+	}
 
-	//	var user models.User
-	//	username := event.Repo.Owner.GetLogin()
-	//	result := db.DB.Where(&models.User{Service: "github", Username: username}).First(&user)
-	//	if result.Error != nil {
-	//		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-	//		return
-	//	}
+	err = db.DB.Save(job).Error
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	//	var token models.OAuth2Token
-	//	result = db.DB.Where(&models.OAuth2Token{UserID: user.ID}).First(&token)
-	//	if result.Error != nil {
-	//		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-	//		return
-	//	}
+	job.ReportStatusURL = "" // TODO: Generate URL for status reporting
+	job.PublishLogsURL = ""  // TODO: Generate URL for logs publishinng
+	err = db.DB.Save(job).Error
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	//	job := &models.Job{
-	//		CommitSHA: commit.GetID(),
-	//		CloneURL:  event.Repo.GetCloneURL(),
-	//		Token:     token.Token,
-	//	}
-	//	result = db.DB.Save(job)
-	//	if result.Error != nil {
-	//		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-	//		return
-	//	}
-
+	// TODO: Puiblish to message queue and update state
 	//	err = mq.MQ.PublishJob(job)
 	//	if err != nil {
 	//		fmt.Println(err)
 	//	}
 
-	//	//services.UpdateStatus()
-	//}
+	status := services.Status{
+		State:       services.StatusPending,
+		TargetURL:   "", // TODO: Generate target URL
+		Context:     configs.CIServer,
+		Description: "", // TODO: Add description
+	}
+	err = service.UpdateStatus(r.Context(), status, job)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
