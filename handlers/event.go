@@ -39,9 +39,9 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job.ReportStatusURL = "" // TODO: Generate URL for status reporting
-	job.PublishLogsURL = ""  // TODO: Generate URL for logs publishinng
-	err = db.DB.Save(job).Error
+	err = job.CreateTargetURL()
+	err = job.CreateReportStatusURL()
+	err = job.CreatePublishLogsURL()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -55,7 +55,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := services.Status{
 		State:       services.StatusPending,
-		TargetURL:   "", // TODO: Generate target URL
+		TargetURL:   job.TargetURL,
 		Context:     configs.CIServer,
 		Description: "", // TODO: Add description
 	}

@@ -5,8 +5,15 @@ import (
 	"os"
 )
 
-const CIServer = "CI Server"
-const EventHandlerPath = "/event_handler"
+const (
+	CIServer = "CI Server"
+
+	EventHandlerPath = "/event_handler"
+
+	JobsPath                    = "/jobs"
+	JobsReportStatusHandlerPath = "/status"
+	JobsPublishLogsHandlerPath  = "/logs"
+)
 
 var (
 	Host          string
