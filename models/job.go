@@ -25,46 +25,31 @@ func CreateJob(job *Job) (*Job, error) {
 	return job, result.Error
 }
 
-func (j *Job) CreateTargetURL() error {
-	URL, err := createJobURL(fmt.Sprint(j.ID), "")
-	if err != nil {
-		return err
-	}
-
-	j.TargetURL = URL.String()
-	return db.DB.Save(j).Error
-}
-
-func (j *Job) CreateReportStatusURL() error {
-	URL, err := createJobURL(fmt.Sprint(j.ID), configs.JobsReportStatusHandlerPath)
-	if err != nil {
-		return err
-	}
-
-	j.ReportStatusURL = URL.String()
-	return db.DB.Save(j).Error
-}
-
-func (j *Job) CreatePublishLogsURL() error {
-	URL, err := createJobURL(fmt.Sprint(j.ID), configs.JobsPublishLogsHandlerPath)
-	if err != nil {
-		return err
-	}
-
-	j.PublishLogsURL = URL.String()
-	return db.DB.Save(j).Error
-}
-
-func createJobURL(jobID string, endpoint string) (url.URL, error) {
-	path, err := url.JoinPath(configs.JobsPath, endpoint, jobID)
-	if err != nil {
-		return url.URL{}, err
-	}
-
-	URL := url.URL{
+func (j *Job) CreateJobURLs() error {
+	baseURL := url.URL{
 		Scheme: "https",
 		Host:   net.JoinHostPort(configs.Host, configs.Port),
-		Path:   path,
 	}
-	return URL, nil
+	var err error
+
+	targetURL := baseURL
+	targetURL.Path, err = url.JoinPath(configs.JobsPath, fmt.Sprint(j.ID))
+	if err != nil {
+		return err
+	}
+	reportStatusURL := baseURL
+	reportStatusURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsReportStatusHandlerPath, fmt.Sprint(j.ID))
+	if err != nil {
+		return err
+	}
+	publishLogsURL := baseURL
+	publishLogsURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsPublishLogsHandlerPath, fmt.Sprint(j.ID))
+	if err != nil {
+		return err
+	}
+
+	j.TargetURL = targetURL.String()
+	j.ReportStatusURL = reportStatusURL.String()
+	j.PublishLogsURL = publishLogsURL.String()
+	return db.DB.Save(j).Error
 }

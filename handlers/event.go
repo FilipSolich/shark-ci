@@ -39,9 +39,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = job.CreateTargetURL()
-	err = job.CreateReportStatusURL()
-	err = job.CreatePublishLogsURL()
+	err = job.CreateJobURLs()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -57,7 +55,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		State:       services.StatusPending,
 		TargetURL:   job.TargetURL,
 		Context:     configs.CIServer,
-		Description: "", // TODO: Add description
+		Description: "Job in progress",
 	}
 	err = service.UpdateStatus(r.Context(), status, job)
 	if err != nil {

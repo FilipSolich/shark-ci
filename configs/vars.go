@@ -27,11 +27,11 @@ var (
 	RabbitMQUsername string
 	RabbitMQPassword string
 
-	GitHubService      bool
+	GitHubEnabled      bool
 	GitHubClientID     string
 	GitHubClientSecret string
 
-	GitLabService      bool
+	GitLabEnabled      bool
 	GitLabClientID     string
 	GitLabClientSecret string
 )
@@ -48,11 +48,11 @@ func LoadEnv() error {
 	RabbitMQUsername = getEnv("RABBITMQ_USERNAME", "guest")
 	RabbitMQPassword = getEnv("RABBITMQ_PASSWORD", "guest")
 
-	GitHubService = boolEnv(getEnv("GITHUB_SERVICE", "false"))
+	GitHubEnabled = boolEnv(getEnv("GITHUB_ENABLED", "false"))
 	GitHubClientID = getEnv("GITHUB_CLIENT_ID", "")
 	GitHubClientSecret = getEnv("GITHUB_CLIENT_SECRET", "")
 
-	GitLabService = boolEnv(getEnv("GITLAB_SERVICE", "false"))
+	GitLabEnabled = boolEnv(getEnv("GITLAB_ENABLED", "false"))
 	GitLabClientID = getEnv("GITLAB_CLIENT_ID", "")
 	GitLabClientSecret = getEnv("GITLAB_CLIENT_SECRET", "")
 
@@ -80,15 +80,15 @@ func validateEnv() error {
 		return errors.New("HOST must be set")
 	}
 
-	if !GitHubService && !GitLabService {
+	if !GitHubEnabled && !GitLabEnabled {
 		return errors.New("at least one service (*_SERVICE) must be set as `true`")
 	}
 
-	if GitHubService && (GitHubClientID == "" || GitHubClientSecret == "") {
+	if GitHubEnabled && (GitHubClientID == "" || GitHubClientSecret == "") {
 		return errors.New("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET must be set")
 	}
 
-	if GitLabService && (GitLabClientID == "" || GitLabClientSecret == "") {
+	if GitLabEnabled && (GitLabClientID == "" || GitLabClientSecret == "") {
 		return errors.New("GITLAB_CLIENT_ID and GITLAB_CLIENT_SECRET must be set")
 	}
 
