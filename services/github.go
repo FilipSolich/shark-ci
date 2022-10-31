@@ -45,6 +45,7 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, token *oa
 	oauth2Client := ghm.oauth2Config.Client(ctx, token)
 	ghClient := github.NewClient(oauth2Client)
 
+	// TODO: what if user is not logged in
 	ghUser, _, err := ghClient.Users.Get(ctx, "")
 	if err != nil {
 		return nil, err
@@ -164,7 +165,14 @@ func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*models.J
 	return nil, nil
 }
 
-func (*GitHubManager) UpdateStatus(ctx context.Context, status Status, job *models.Job) error {
+func (*GitHubManager) UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error {
+	//identity, client, err := getIdentityClientByUser(ctx, user)
+	//if err != nil {
+	//	return err
+	//}
+
+	//client.Repositories.CreateStatus(ctx, identity.Username, job.CommitSHA)
+
 	return nil
 }
 

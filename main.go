@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
@@ -50,12 +51,12 @@ func initTemplates() {
 }
 
 func main() {
-	//err := godotenv.Load()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	err := configs.LoadEnv()
+	err = configs.LoadEnv()
 	if err != nil {
 		log.Fatal(err)
 	}

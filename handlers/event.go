@@ -5,6 +5,7 @@ import (
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
+	"github.com/FilipSolich/ci-server/models"
 	"github.com/FilipSolich/ci-server/services"
 	"github.com/gorilla/mux"
 )
@@ -57,7 +58,8 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		Context:     configs.CIServer,
 		Description: "Job in progress",
 	}
-	err = service.UpdateStatus(r.Context(), status, job)
+	// TODO: Change blank user on actual user
+	err = service.UpdateStatus(r.Context(), &models.User{}, status, job)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

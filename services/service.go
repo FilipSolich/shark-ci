@@ -9,11 +9,10 @@ import (
 )
 
 const (
-	StatusSuccess  StatusState = iota // GitHub -> Success, GitLab -> Success
-	StatusPending                     // GitHub -> Pendign, GitLab -> Pending
-	StatusRunning                     // GitHub -> Pending, GitLab -> Running
-	StatusCanceled                    // GitHub -> Error, GitLab -> Canceled
-	StatusError                       // GitHub -> Error, GitLab -> Failed
+	StatusSuccess StatusState = iota // GitHub -> Success, GitLab -> Success
+	StatusPending                    // GitHub -> Pendign, GitLab -> Pending
+	StatusRunning                    // GitHub -> Pending, GitLab -> Running
+	StatusError                      // GitHub -> Error, GitLab -> Failed
 )
 
 var Services = map[string]ServiceManager{}
@@ -52,7 +51,7 @@ type ServiceManager interface {
 
 	CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
 
-	UpdateStatus(ctx context.Context, status Status, job *models.Job) error
+	UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error
 
 	//GetStatusName(status StatusState) string
 	//CreateStatus(ctx context.Context, user *models.User, repo RepoInfo, commit CommitInfo, status Status) error

@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
+	github.com/joho/godotenv v1.4.0
 	github.com/rabbitmq/amqp091-go v1.5.0
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 	gorm.io/driver/sqlite v1.3.6
