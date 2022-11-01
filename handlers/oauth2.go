@@ -21,6 +21,7 @@ func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for valid state in HTTP request.
 	var oauth2State models.OAuth2State
 	result := db.DB.First(&oauth2State, models.OAuth2State{State: state})
 	if result.Error != nil || !oauth2State.IsValid() {
@@ -29,6 +30,7 @@ func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	db.DB.Delete(&oauth2State)
 
+	// Get Oauth2 token from auth service.
 	ctx := context.Background()
 	config := service.GetOAuth2Config()
 	token, err := config.Exchange(ctx, code)
@@ -37,18 +39,21 @@ func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get or create new UserIdentity and new User if needed.
 	userIdentity, err := service.GetOrCreateUserIdentity(ctx, token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Update OAuth2 token for UserIdentity.
 	err = userIdentity.UpdateOAuth2Token(token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Store session.
 	session, _ := sessions.Store.Get(r, "session")
 	session.Values[sessions.SessionKey] = userIdentity.UserID
 	err = session.Save(r, w)

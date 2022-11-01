@@ -38,7 +38,8 @@ func GetOrCreateUserIdentity(ui *UserIdentity) (*UserIdentity, error) {
 		user := &User{
 			Identities: []UserIdentity{*ui},
 		}
-		user, err = GetOrCreateUser(user)
+		_, err = GetOrCreateUser(user)
+		ui.UserID = user.ID
 		return ui, err
 	}
 

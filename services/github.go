@@ -6,24 +6,28 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/FilipSolich/ci-server/configs"
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/models"
 	"github.com/google/go-github/v47/github"
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 	"gorm.io/gorm/clause"
+
+	"github.com/FilipSolich/ci-server/configs"
+	"github.com/FilipSolich/ci-server/db"
+	"github.com/FilipSolich/ci-server/models"
 )
 
-const GitHubName = "GitHub"
-const EventHandlerPath = configs.EventHandlerPath + "/" + GitHubName
+const GitHubName = "GitHub"                                          // Service name.
+const EventHandlerPath = configs.EventHandlerPath + "/" + GitHubName // URL path for events webhook.
 
-var GitHub GitHubManager
+var GitHub GitHubManager // Global instance of GitHubManager
 
+// Manager struct for service config.
 type GitHubManager struct {
 	oauth2Config *oauth2.Config
 }
 
+// Craete new global instance of GitHubManager.
+// Needs clientID and clientSecret generated from GitHub.
 func NewGitHubManager(clientID string, clientSecret string) {
 	GitHub.oauth2Config = &oauth2.Config{
 		ClientID:     clientID,
@@ -33,6 +37,7 @@ func NewGitHubManager(clientID string, clientSecret string) {
 	}
 }
 
+// Return service name.
 func (*GitHubManager) GetServiceName() string {
 	return GitHubName
 }
@@ -45,7 +50,6 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, token *oa
 	oauth2Client := ghm.oauth2Config.Client(ctx, token)
 	ghClient := github.NewClient(oauth2Client)
 
-	// TODO: what if user is not logged in
 	ghUser, _, err := ghClient.Users.Get(ctx, "")
 	if err != nil {
 		return nil, err
