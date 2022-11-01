@@ -46,6 +46,10 @@ func GetOrCreateUserIdentity(ui *UserIdentity) (*UserIdentity, error) {
 	return &identity, nil
 }
 
+func (*UserIdentity) TableName() string {
+	return "user_identity"
+}
+
 func (ui *UserIdentity) UpdateOAuth2Token(token *oauth2.Token) error {
 	db.DB.Where("user_identity_id = ?", ui.ID).Delete(&ui.Token)
 	t := OAuth2Token{

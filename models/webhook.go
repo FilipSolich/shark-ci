@@ -17,3 +17,7 @@ func CreateWebhook(hook *Webhook) (*Webhook, error) {
 	result := db.DB.Create(hook)
 	return hook, result.Error
 }
+
+func (*Webhook) TableName() string {
+	return "webhook"
+}

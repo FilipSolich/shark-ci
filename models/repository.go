@@ -19,3 +19,7 @@ func CreateRepository(repo *Repository) (*Repository, error) {
 	result := db.DB.Create(repo)
 	return repo, result.Error
 }
+
+func (*Repository) TableName() string {
+	return "repository"
+}

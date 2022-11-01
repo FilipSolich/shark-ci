@@ -32,3 +32,7 @@ func GetOrCreateUser(user *User) (*User, error) {
 
 	return &getUser, err
 }
+
+func (*User) TableName() string {
+	return "user"
+}

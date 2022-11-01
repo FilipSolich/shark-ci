@@ -25,6 +25,10 @@ func CreateJob(job *Job) (*Job, error) {
 	return job, result.Error
 }
 
+func (*Job) TableName() string {
+	return "job"
+}
+
 func (j *Job) CreateJobURLs() error {
 	baseURL := url.URL{
 		Scheme: "https",

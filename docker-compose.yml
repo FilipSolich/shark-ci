@@ -10,11 +10,21 @@ services:
   #postgres:
   #  image: postgres
 
-  rabbitmq:
-    image: rabbitmq:3.10-management
+  mongo:
+    image: mongo:6
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=user
-      - RABBITMQ_DEFAULT_PASS=pass
+      - "27017:17017"
+    volumes:
+      - mongodata:/data/db
+
+  #rabbitmq:
+  #  image: rabbitmq:3.10-management
+  #  ports:
+  #    - "5672:5672"
+  #    - "15672:15672"
+  #  environment:
+  #    - RABBITMQ_DEFAULT_USER=user
+  #    - RABBITMQ_DEFAULT_PASS=pass
+
+volumes:
+  mongodata:
