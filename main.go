@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
@@ -62,7 +63,16 @@ func main() {
 	}
 
 	initTemplates()
-	initDatabase()
+
+	initDatabase() // TODO: Delete
+	disconnect, err := db.InitDatabase(
+		configs.MongoURI,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer disconnect(context.Background())
+
 	initGitServices()
 	//messageQueue, err := mq.NewMQ(
 	//	configs.RabbitMQHost,

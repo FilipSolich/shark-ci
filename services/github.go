@@ -19,7 +19,7 @@ import (
 const GitHubName = "GitHub"                                          // Service name.
 const EventHandlerPath = configs.EventHandlerPath + "/" + GitHubName // URL path for events webhook.
 
-var GitHub GitHubManager // Global instance of GitHubManager
+var GitHub GitHubManager // Global instance of GitHubManager.
 
 // Manager struct for service config.
 type GitHubManager struct {
@@ -77,6 +77,12 @@ func (*GitHubManager) GetUsersRepos(ctx context.Context, user *models.User) ([]*
 	var repos []*models.Repository
 	for _, repo := range ghRepos {
 		if !repo.GetArchived() {
+			//r := &db.Repo{
+			//	RepoID:      repo.GetID(),
+			//	ServiceName: GitHubName,
+			//	Name:        repo.GetName(),
+			//	FullName:    repo.GetFullName(),
+			//}
 			r := &models.Repository{
 				UserID:        user.ID,
 				ServiceName:   GitHubName,

@@ -22,6 +22,8 @@ var (
 	CSRFSecret    string
 	WebhookSecret string
 
+	MongoURI string
+
 	RabbitMQHost     string
 	RabbitMQPort     string
 	RabbitMQUsername string
@@ -42,6 +44,8 @@ func LoadEnv() error {
 	SessionSecret = getEnv("SESSION_SECRET", "insecure-secret")
 	CSRFSecret = getEnv("CSRF_SECRET", "insecure-secret")
 	WebhookSecret = getEnv("WEBHOOK_SECRET", "insecure-secret")
+
+	MongoURI = getEnv("MONGO_URI", "mongodb://localhos:27017")
 
 	RabbitMQHost = getEnv("RABBITMQ_HOST", "localhost")
 	RabbitMQPort = getEnv("RABBITMQ_PORT", "5672")

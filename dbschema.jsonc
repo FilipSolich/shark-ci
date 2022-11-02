@@ -1,0 +1,47 @@
+// User
+{
+  "_id": "098asd",
+  "identities": [
+    {
+        "service_name": "github",
+        "username": "filip",
+        "OAuth2Token": {
+            "access_token": "token",
+            "token_type": "barear",
+            "refresh_token": "token",
+            "expiry": "2022-10-8"
+        },
+        "repositories": [
+            "repoid",
+        ]
+    }
+    // ...
+  ]
+}
+
+// Repository
+{
+    "service_repo_id": "id",
+    "name": "githubtest",
+    "fullname": "FilipSolich/githubtest",
+    "webhook": {
+        "service_webhook_id": "id",
+        "active": true
+    }
+}
+
+// Job
+{
+    "commit_sha": "sha",
+    "clone_url": "url",
+    "report_status_url": "url",
+    "publish_logs_url": "url",
+    "repoId": "repoId",
+    "userId": "userid"
+}
+
+// OAuth2States
+{
+    "state": "state",
+    "expiry": "date"
+}

@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/models"
 	"github.com/FilipSolich/ci-server/services"
 	"github.com/FilipSolich/ci-server/sessions"
 )
@@ -22,16 +21,24 @@ func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check for valid state in HTTP request.
-	var oauth2State models.OAuth2State
-	result := db.DB.First(&oauth2State, models.OAuth2State{State: state})
-	if result.Error != nil || !oauth2State.IsValid() {
+	//var oauth2State models.OAuth2State
+	//result := db.DB.First(&oauth2State, models.OAuth2State{State: state})
+	//if result.Error != nil || !oauth2State.IsValid() {
+	//	http.Error(w, "incorrect state", http.StatusBadRequest)
+	//	return
+	//}
+	//db.DB.Delete(&oauth2State)
+
+	ctx := context.Background()
+	var oauth2State db.OAuth2State
+	err := db.OAuth2States.FindOne(ctx, db.OAuth2State{State: state}).Decode(&oauth2State)
+	if err != nil || !oauth2State.IsValid() {
 		http.Error(w, "incorrect state", http.StatusBadRequest)
 		return
 	}
-	db.DB.Delete(&oauth2State)
+	db.OAuth2States.DeleteOne(ctx, oauth2State) // TODO: What to do if delete fails?
 
 	// Get Oauth2 token from auth service.
-	ctx := context.Background()
 	config := service.GetOAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {

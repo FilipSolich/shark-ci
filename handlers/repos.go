@@ -6,14 +6,15 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/csrf"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/middlewares"
 	"github.com/FilipSolich/ci-server/models"
 	"github.com/FilipSolich/ci-server/services"
-	"github.com/gorilla/csrf"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func ReposHandler(w http.ResponseWriter, r *http.Request) {
