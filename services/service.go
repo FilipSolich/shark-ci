@@ -3,8 +3,9 @@ package services
 import (
 	"context"
 
-	"github.com/FilipSolich/ci-server/db"
 	"golang.org/x/oauth2"
+
+	"github.com/FilipSolich/ci-server/db"
 )
 
 const (
@@ -46,10 +47,9 @@ type ServiceManager interface {
 	// Return user's repos on from service.
 	GetUsersRepos(ctx context.Context, identity *db.Identity) ([]*db.Repo, error)
 
-	//CreateWebhook(ctx context.Context, user *models.User, repo *models.Repository) (*models.Webhook, error)
-	//DeleteWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) error
-	//ActivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
-	//DeactivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
+	CreateWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo) (*db.Webhook, error)
+	DeleteWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook) error
+	ChangeWebhookState(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook, active bool) (*db.Webhook, error)
 
 	// Create new job from HTTP request.
 	//CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)

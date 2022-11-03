@@ -18,8 +18,8 @@ type Repo struct {
 }
 
 type Webhook struct {
-	WebhookID int64  `bson:"webhookID,omitempty"`
-	Active    string `bson:"active,omitempty"`
+	WebhookID int64 `bson:"webhookID,omitempty"`
+	Active    bool  `bson:"active,omitempty"`
 }
 
 func GetOrCreateRepo(ctx context.Context, repo *Repo) (*Repo, error) {
@@ -34,4 +34,26 @@ func GetOrCreateRepo(ctx context.Context, repo *Repo) (*Repo, error) {
 	}
 
 	return repo, nil
+}
+
+func GetRepoFromID(ctx context.Context, id primitive.ObjectID) (*Repo, error) {
+	var repo *Repo
+	filter := bson.D{{Key: "_id", Value: id}}
+	err := Repos.FindOne(ctx, filter).Decode(repo)
+	return repo, err
+}
+
+func (r *Repo) Delete(ctx context.Context) error {
+	_, err := Repos.DeleteOne(ctx, r)
+	return err
+}
+
+func (r *Repo) UpdateWebhook(ctx context.Context, webhook *Webhook) error {
+	data := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "webhook", Value: webhook},
+		}},
+	}
+	_, err := Repos.UpdateByID(ctx, r.ID, data)
+	return err
 }

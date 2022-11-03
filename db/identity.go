@@ -19,6 +19,7 @@ type Identity struct {
 }
 
 type OAuth2Token struct {
+	// TODO: Is this composition necessary?
 	oauth2.Token `bson:"-"`
 	AccessToken  string    `json:"access_token" bson:"accessToken"`
 	TokenType    string    `json:"token_type,omitempty" bson:"tokenType,omitempty"`
@@ -55,11 +56,11 @@ func GetOrCreateIdentity(ctx context.Context, identity *Identity, user *User) (*
 }
 
 func GetIdentityByService(ctx context.Context, user *User, service string) (*Identity, error) {
-	var identity Identity
+	var identity *Identity
 	filter := bson.D{
 		{Key: "_id", Value: user.Identities},
 		{Key: "serviceName", Value: service},
 	}
-	err := Identities.FindOne(ctx, filter).Decode(&identity)
-	return &identity, err
+	err := Identities.FindOne(ctx, filter).Decode(identity)
+	return identity, err
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -19,6 +20,18 @@ func NewOAuth2State(state *OAuth2State) (*OAuth2State, error) {
 	result, err := OAuth2States.InsertOne(context.Background(), state)
 	state.ID = result.InsertedID.(primitive.ObjectID)
 	return state, err
+}
+
+func GetOAuth2StateByState(ctx context.Context, state string) (*OAuth2State, error) {
+	var oauth2State *OAuth2State
+	filter := bson.D{{Key: "state", Value: state}}
+	err := OAuth2States.FindOne(ctx, filter).Decode(oauth2State)
+	return oauth2State, err
+}
+
+func (state *OAuth2State) Delete(ctx context.Context) error {
+	_, err := OAuth2States.DeleteOne(ctx, state)
+	return err
 }
 
 func (state *OAuth2State) IsValid() bool {
