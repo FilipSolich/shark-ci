@@ -19,7 +19,7 @@ type Identity struct {
 }
 
 type OAuth2Token struct {
-	oauth2.Token
+	oauth2.Token `bson:"-"`
 	AccessToken  string    `json:"access_token" bson:"accessToken"`
 	TokenType    string    `json:"token_type,omitempty" bson:"tokenType,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty" bson:"refreshToken,omitempty"`

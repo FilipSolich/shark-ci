@@ -54,7 +54,12 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *db.
 	identity := db.Identity{
 		ServiceName: GitHubName,
 		Username:    ghUser.GetLogin(),
-		Token:       db.OAuth2Token{Token: *token},
+		Token: db.OAuth2Token{
+			AccessToken:  token.AccessToken,
+			TokenType:    token.TokenType,
+			RefreshToken: token.RefreshToken,
+			Expiry:       token.Expiry,
+		},
 	}
 
 	return db.GetOrCreateIdentity(ctx, &identity, user)

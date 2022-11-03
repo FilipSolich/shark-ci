@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -24,6 +25,7 @@ type disconnect func(context.Context) error
 
 func InitDatabase(mongoURI string) (disconnect, error) {
 	ctx := context.Background()
+	log.Println("Connection to database: " + mongoURI)
 	Client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return nil, err
@@ -33,6 +35,8 @@ func InitDatabase(mongoURI string) (disconnect, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("Database connected")
 
 	Users = Client.Database("CIServerDB").Collection("users")
 	Identities = Client.Database("CIServerDB").Collection("identities")
