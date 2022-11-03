@@ -23,14 +23,14 @@
           <td>
             <form method="POST" action="/repositories/{{ if .Webhook.Active }}deactivate{{ else }}activate{{ end }}">
               {{ $.csrfField }}
-              <input type="hidden" name="repo_id" value="{{ .ID }}" />
+              <input type="hidden" name="repo_id" value="{{ .ID.Hex }}" />
               <input type="submit" value="{{ if .Webhook.Active }}Deactivate{{ else }}Activate{{ end }}" />
             </form>
           </td>
           <td>
             <form method="POST" action="/repositories/unregister">
               {{ $.csrfField }}
-              <input type="hidden" name="repo_id" value="{{ .ID }}" />
+              <input type="hidden" name="repo_id" value="{{ .ID.Hex }}" />
               <input type="submit" value="Unregister" />
             </form>
           </td>
@@ -50,7 +50,7 @@
           <td>
             <form method="POST" action="/repositories/register">
               {{ $.csrfField }}
-              <input type="hidden" name="repo_id" value="{{ .ID }}" />
+              <input type="hidden" name="repo_id" value="{{ .ID.Hex }}" />
               <input type="submit" value="Register" />
             </form>
           </td>

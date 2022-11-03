@@ -24,15 +24,23 @@ func CreateUser(ctx context.Context) (*User, error) {
 }
 
 func GetUserByID(ctx context.Context, id primitive.ObjectID) (*User, error) {
-	var user *User
+	var user User
 	filter := bson.D{{Key: "_id", Value: id}}
-	err := Users.FindOne(ctx, filter).Decode(user)
-	return user, err
+	err := Users.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func GetUserByIdentity(ctx context.Context, identity *Identity) (*User, error) {
-	var user *User
+	var user User
 	filter := bson.D{{Key: "identities", Value: identity.ID}}
-	err := Users.FindOne(ctx, filter).Decode(user)
-	return user, err
+	err := Users.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }

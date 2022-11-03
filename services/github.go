@@ -201,5 +201,11 @@ func getGitHubClient(ctx context.Context, token *oauth2.Token) *github.Client {
 }
 
 func getClientByIdentity(ctx context.Context, identity *db.Identity) *github.Client {
-	return getGitHubClient(ctx, &identity.Token.Token)
+	token := oauth2.Token{
+		AccessToken:  identity.Token.AccessToken,
+		TokenType:    identity.Token.TokenType,
+		RefreshToken: identity.Token.RefreshToken,
+		Expiry:       identity.Token.Expiry,
+	}
+	return getGitHubClient(ctx, &token)
 }

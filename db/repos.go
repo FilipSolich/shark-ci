@@ -28,7 +28,7 @@ func GetOrCreateRepo(ctx context.Context, repo *Repo) (*Repo, error) {
 		{Key: "serviceName", Value: repo.ServiceName},
 	}
 	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
-	err := Identities.FindOneAndUpdate(ctx, filter, bson.D{{Key: "$set", Value: repo}}, opts).Decode(repo)
+	err := Repos.FindOneAndUpdate(ctx, filter, bson.D{{Key: "$set", Value: repo}}, opts).Decode(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +37,14 @@ func GetOrCreateRepo(ctx context.Context, repo *Repo) (*Repo, error) {
 }
 
 func GetRepoFromID(ctx context.Context, id primitive.ObjectID) (*Repo, error) {
-	var repo *Repo
+	var repo Repo
 	filter := bson.D{{Key: "_id", Value: id}}
-	err := Repos.FindOne(ctx, filter).Decode(repo)
-	return repo, err
+	err := Repos.FindOne(ctx, filter).Decode(&repo)
+	if err != nil {
+		return nil, err
+	}
+
+	return &repo, nil
 }
 
 func (r *Repo) Delete(ctx context.Context) error {

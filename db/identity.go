@@ -48,7 +48,9 @@ func GetOrCreateIdentity(ctx context.Context, identity *Identity, user *User) (*
 
 	filter = bson.D{
 		{Key: "_id", Value: user.ID},
-		{Key: "identities", Value: bson.D{{Key: "$ne", Value: identity.ID}}},
+		{Key: "identities", Value: bson.D{
+			{Key: "$ne", Value: identity.ID},
+		}},
 	}
 	update := bson.D{{Key: "$push", Value: bson.D{{Key: "identities", Value: identity.ID}}}}
 	_, err = Users.UpdateOne(ctx, filter, update)
@@ -56,11 +58,17 @@ func GetOrCreateIdentity(ctx context.Context, identity *Identity, user *User) (*
 }
 
 func GetIdentityByService(ctx context.Context, user *User, service string) (*Identity, error) {
-	var identity *Identity
+	var identity Identity
 	filter := bson.D{
-		{Key: "_id", Value: user.Identities},
+		{Key: "_id", Value: bson.D{
+			{Key: "$in", Value: user.Identities},
+		}},
 		{Key: "serviceName", Value: service},
 	}
-	err := Identities.FindOne(ctx, filter).Decode(identity)
-	return identity, err
+	err := Identities.FindOne(ctx, filter).Decode(&identity)
+	if err != nil {
+		return nil, err
+	}
+
+	return &identity, nil
 }

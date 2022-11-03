@@ -23,10 +23,14 @@ func NewOAuth2State(state *OAuth2State) (*OAuth2State, error) {
 }
 
 func GetOAuth2StateByState(ctx context.Context, state string) (*OAuth2State, error) {
-	var oauth2State *OAuth2State
+	var oauth2State OAuth2State
 	filter := bson.D{{Key: "state", Value: state}}
-	err := OAuth2States.FindOne(ctx, filter).Decode(oauth2State)
-	return oauth2State, err
+	err := OAuth2States.FindOne(ctx, filter).Decode(&oauth2State)
+	if err != nil {
+		return nil, err
+	}
+
+	return &oauth2State, nil
 }
 
 func (state *OAuth2State) Delete(ctx context.Context) error {
