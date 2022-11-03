@@ -102,10 +102,10 @@ func main() {
 	sRepos.Use(CSRF)
 	sRepos.Use(middlewares.AuthMiddleware)
 	sRepos.HandleFunc("", handlers.ReposHandler)
-	sRepos.HandleFunc("/register", handlers.ReposRegisterHandler).Methods(http.MethodPost)
-	sRepos.HandleFunc("/unregister", handlers.ReposUnregisterHandler).Methods(http.MethodPost)
-	sRepos.HandleFunc("/activate", handlers.ReposActivateHandler).Methods(http.MethodPost)
-	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivateHandler).Methods(http.MethodPost)
+	//sRepos.HandleFunc("/register", handlers.ReposRegisterHandler).Methods(http.MethodPost)
+	//sRepos.HandleFunc("/unregister", handlers.ReposUnregisterHandler).Methods(http.MethodPost)
+	//sRepos.HandleFunc("/activate", handlers.ReposActivateHandler).Methods(http.MethodPost)
+	//sRepos.HandleFunc("/deactivate", handlers.ReposDeactivateHandler).Methods(http.MethodPost)
 
 	server := &http.Server{
 		Addr:         ":" + configs.Port,

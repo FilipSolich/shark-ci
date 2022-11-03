@@ -30,7 +30,7 @@
           <td>
             <form method="POST" action="/repositories/unregister">
               {{ $.csrfField }}
-              <input type="hidden" name="repo_name" value="{{ .ID }}" />
+              <input type="hidden" name="repo_id" value="{{ .ID }}" />
               <input type="submit" value="Unregister" />
             </form>
           </td>

@@ -14,6 +14,7 @@ var DB *gorm.DB
 var (
 	Client       *mongo.Client
 	Users        *mongo.Collection
+	Identities   *mongo.Collection
 	Repos        *mongo.Collection
 	Jobs         *mongo.Collection
 	OAuth2States *mongo.Collection
@@ -34,6 +35,7 @@ func InitDatabase(mongoURI string) (disconnect, error) {
 	}
 
 	Users = Client.Database("CIServerDB").Collection("users")
+	Identities = Client.Database("CIServerDB").Collection("identities")
 	Repos = Client.Database("CIServerDB").Collection("repos")
 	Jobs = Client.Database("CIServerDB").Collection("jobs")
 	OAuth2States = Client.Database("CIServerDB").Collection("oauth2States")

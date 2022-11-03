@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -21,8 +22,16 @@ type Webhook struct {
 	Active    string `bson:"active,omitempty"`
 }
 
-func CreateRepo(repo *Repo) (*Repo, error) {
-	result, err := OAuth2States.UpdateOne(context.Background(), repo, repo, options.Update().SetUpsert(true))
-	repo.ID = result.UpsertedID.(primitive.ObjectID)
-	return repo, err
+func GetOrCreateRepo(ctx context.Context, repo *Repo) (*Repo, error) {
+	filter := bson.D{
+		{Key: "repoID", Value: repo.RepoID},
+		{Key: "serviceName", Value: repo.ServiceName},
+	}
+	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
+	err := Identities.FindOneAndUpdate(ctx, filter, bson.D{{Key: "$set", Value: repo}}, opts).Decode(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
 }
