@@ -55,7 +55,9 @@ func GetRepoFromID(ctx context.Context, id primitive.ObjectID) (*Repo, error) {
 
 func (r *Repo) DeleteWebhook(ctx context.Context) error {
 	data := bson.D{
-		{Key: "$unset", Value: "webhook"},
+		{Key: "$unset", Value: bson.D{
+			{Key: "webhook", Value: ""},
+		}},
 	}
 	_, err := Repos.UpdateByID(ctx, r.ID, data)
 	return err
@@ -64,7 +66,10 @@ func (r *Repo) DeleteWebhook(ctx context.Context) error {
 func (r *Repo) UpdateWebhook(ctx context.Context, webhook *Webhook) error {
 	data := bson.D{
 		{Key: "$set", Value: bson.D{
-			{Key: "webhook", Value: webhook},
+			{Key: "webhook", Value: bson.D{
+				{Key: "webhookID", Value: webhook.WebhookID},
+				{Key: "active", Value: webhook.Active},
+			}},
 		}},
 	}
 	_, err := Repos.UpdateByID(ctx, r.ID, data)

@@ -17,7 +17,7 @@ type Identity struct {
 	Repos       []primitive.ObjectID `bson:"repos,omitempty"`
 }
 
-// This structure must be compatible with golang.org/x/oauth2/Token
+// This structure must be compatible with https://pkg.go.dev/golang.org/x/oauth2#Token
 type OAuth2Token struct {
 	AccessToken  string    `json:"access_token" bson:"accessToken"`
 	TokenType    string    `json:"token_type,omitempty" bson:"tokenType,omitempty"`

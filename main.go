@@ -65,9 +65,7 @@ func main() {
 	initTemplates()
 
 	initDatabase() // TODO: Delete
-	disconnect, err := db.InitDatabase(
-		configs.MongoURI,
-	)
+	disconnect, err := db.InitDatabase(configs.MongoURI)
 	if err != nil {
 		log.Fatal(err)
 	}
