@@ -86,7 +86,7 @@ func ReposUnregisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = repo.Delete(ctx)
+	err = repo.DeleteWebhook(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

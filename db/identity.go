@@ -52,7 +52,11 @@ func GetOrCreateIdentity(ctx context.Context, identity *Identity, user *User) (*
 			{Key: "$ne", Value: identity.ID},
 		}},
 	}
-	update := bson.D{{Key: "$push", Value: bson.D{{Key: "identities", Value: identity.ID}}}}
+	update := bson.D{
+		{Key: "$push", Value: bson.D{
+			{Key: "identities", Value: identity.ID},
+		}},
+	}
 	_, err = Users.UpdateOne(ctx, filter, update)
 	return identity, err
 }

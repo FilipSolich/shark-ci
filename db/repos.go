@@ -27,8 +27,14 @@ func GetOrCreateRepo(ctx context.Context, repo *Repo) (*Repo, error) {
 		{Key: "repoID", Value: repo.RepoID},
 		{Key: "serviceName", Value: repo.ServiceName},
 	}
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "name", Value: repo.Name},
+			{Key: "fullName", Value: repo.FullName},
+		}},
+	}
 	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
-	err := Repos.FindOneAndUpdate(ctx, filter, bson.D{{Key: "$set", Value: repo}}, opts).Decode(repo)
+	err := Repos.FindOneAndUpdate(ctx, filter, update, opts).Decode(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +53,30 @@ func GetRepoFromID(ctx context.Context, id primitive.ObjectID) (*Repo, error) {
 	return &repo, nil
 }
 
-func (r *Repo) Delete(ctx context.Context) error {
-	_, err := Repos.DeleteOne(ctx, r)
+// TODO: Delete if unused
+//func (r *Repo) Delete(ctx context.Context) error {
+//	// Delete repo reference from identity
+//	filter := bson.D{{Key: "repos", Value: r.ID}}
+//	update := bson.D{
+//		{Key: "$pull", Value: bson.D{
+//			{Key: "repos", Value: r.ID},
+//		}},
+//	}
+//	_, err := Identities.UpdateOne(ctx, filter, update)
+//	if err != nil {
+//		return err
+//	}
+//
+//	// Delete repo
+//	_, err = Repos.DeleteOne(ctx, r)
+//	return err
+//}
+
+func (r *Repo) DeleteWebhook(ctx context.Context) error {
+	data := bson.D{
+		{Key: "$unset", Value: "webhook"},
+	}
+	_, err := Repos.UpdateByID(ctx, r.ID, data)
 	return err
 }
 
