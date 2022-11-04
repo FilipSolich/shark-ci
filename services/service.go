@@ -55,9 +55,6 @@ type ServiceManager interface {
 	// Create new job from HTTP request.
 	CreateJob(ctx context.Context, r *http.Request) (*db.Job, error)
 
-	// Updates commit status.
-	//UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error
-
 	//GetStatusName(status StatusState) string
-	//CreateStatus(ctx context.Context, user *models.User, repo RepoInfo, commit CommitInfo, status Status) error
+	CreateStatus(ctx context.Context, identity *db.Identity, repo *db.Repo, job *db.Job, status Status) error
 }

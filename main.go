@@ -49,6 +49,7 @@ func main() {
 
 	initTemplates()
 	initGitServices()
+
 	//messageQueue, err := mq.NewMQ(
 	//	configs.RabbitMQHost,
 	//	configs.RabbitMQPort,
@@ -70,17 +71,23 @@ func main() {
 	r.HandleFunc("/logout", handlers.LogoutHandler)
 	r.HandleFunc(configs.EventHandlerPath+"/{service}", handlers.EventHandler).Methods(http.MethodPost)
 
-	sOAuth2 := r.PathPrefix("/oauth2").Subrouter()
-	sOAuth2.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
+	// OAuth2 subrouter.
+	OAuth2 := r.PathPrefix("/oauth2").Subrouter()
+	OAuth2.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
 
-	sRepos := r.PathPrefix("/repositories").Subrouter()
-	sRepos.Use(CSRF)
-	sRepos.Use(middlewares.AuthMiddleware)
-	sRepos.HandleFunc("", handlers.ReposHandler)
-	sRepos.HandleFunc("/register", handlers.ReposRegisterHandler).Methods(http.MethodPost)
-	sRepos.HandleFunc("/unregister", handlers.ReposUnregisterHandler).Methods(http.MethodPost)
-	sRepos.HandleFunc("/activate", handlers.ReposActivateHandler).Methods(http.MethodPost)
-	sRepos.HandleFunc("/deactivate", handlers.ReposDeactivateHandler).Methods(http.MethodPost)
+	// Repositories subrouter.
+	repos := r.PathPrefix("/repositories").Subrouter()
+	repos.Use(CSRF)
+	repos.Use(middlewares.AuthMiddleware)
+	repos.HandleFunc("", handlers.ReposHandler)
+	repos.HandleFunc("/register", handlers.ReposRegisterHandler).Methods(http.MethodPost)
+	repos.HandleFunc("/unregister", handlers.ReposUnregisterHandler).Methods(http.MethodPost)
+	repos.HandleFunc("/activate", handlers.ReposActivateHandler).Methods(http.MethodPost)
+	repos.HandleFunc("/deactivate", handlers.ReposDeactivateHandler).Methods(http.MethodPost)
+
+	// Jobs subrouter.
+	// jobs := r.PathPrefix("/jobs").Subrouter()
+	// jobs.Use(CSRF)
 
 	server := &http.Server{
 		Addr:         ":" + configs.Port,

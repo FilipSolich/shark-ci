@@ -3,9 +3,10 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/services"
-	"github.com/gorilla/mux"
 )
 
 func EventHandler(w http.ResponseWriter, r *http.Request) {

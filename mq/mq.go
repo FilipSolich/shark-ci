@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/FilipSolich/ci-server/db"
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	"github.com/FilipSolich/ci-server/db"
 )
 
 const queueName = "job"

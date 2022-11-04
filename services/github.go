@@ -172,22 +172,19 @@ func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, 
 	return nil, nil
 }
 
-//func (*GitHubManager) UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error {
-//	//identity, client, err := getIdentityClientByUser(ctx, user)
-//	//if err != nil {
-//	//	return err
-//	//}
-//
-//	//client.Repositories.CreateStatus(ctx, identity.Username, job.CommitSHA)
-//
-//	return nil
-//}
+func (*GitHubManager) CreateStatus(ctx context.Context, identity *db.Identity, repo *db.Repo, job *db.Job, status Status) error {
+	client := getClientByIdentity(ctx, identity)
 
-//func UpdateStatus(ctx context.Context, user *models.User, repo string, ref string) {
-//	//client := GetGitHubClientByUser(ctx, user)
-//	//status := github.RepoStatus{}
-//	//client.Repositories.CreateStatus(ctx, user.Username, repo, ref)
-//}
+	s := &github.RepoStatus{
+		State:       github.String("success"),
+		TargetURL:   github.String(status.TargetURL),
+		Context:     github.String(status.Context),
+		Description: github.String(status.Description),
+	}
+	_, _, err := client.Repositories.CreateStatus(ctx, identity.Username, repo.Name, job.CommitSHA, s)
+
+	return err
+}
 
 func defaultWebhook() *github.Hook {
 	return &github.Hook{

@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/google/uuid"
+	"golang.org/x/oauth2"
+
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/services"
-	"github.com/google/uuid"
-	"golang.org/x/oauth2"
 )
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {

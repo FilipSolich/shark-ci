@@ -6,8 +6,9 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/FilipSolich/ci-server/configs"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/FilipSolich/ci-server/configs"
 )
 
 type Job struct {

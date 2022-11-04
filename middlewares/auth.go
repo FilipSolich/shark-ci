@@ -3,9 +3,10 @@ package middlewares
 import (
 	"net/http"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/sessions"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func AuthMiddleware(h http.Handler) http.Handler {
