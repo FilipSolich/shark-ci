@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/FilipSolich/ci-server/models"
+	"github.com/FilipSolich/ci-server/db"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -46,7 +46,7 @@ func (mq *MessageQueue) Close() {
 	mq.conn.Close()
 }
 
-func (mq *MessageQueue) PublishJob(job *models.Job) error {
+func (mq *MessageQueue) PublishJob(job *db.Job) error {
 	data, err := json.Marshal(job)
 	if err != nil {
 		return err

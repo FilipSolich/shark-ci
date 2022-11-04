@@ -4,8 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/FilipSolich/ci-server/models"
 	"golang.org/x/oauth2"
+
+	"github.com/FilipSolich/ci-server/db"
 )
 
 const (
@@ -42,21 +43,20 @@ type ServiceManager interface {
 
 	// Get or create user with OAuth2 token.
 	// Also creates new user profile if user does not exist.
-	GetOrCreateUserIdentity(ctx context.Context, token *oauth2.Token) (*models.UserIdentity, error)
+	GetOrCreateUserIdentity(ctx context.Context, user *db.User, token *oauth2.Token) (*db.Identity, error)
 
 	// Return user's repos on from service.
-	GetUsersRepos(ctx context.Context, user *models.User) ([]*models.Repository, error)
+	GetUsersRepos(ctx context.Context, identity *db.Identity) ([]*db.Repo, error)
 
-	CreateWebhook(ctx context.Context, user *models.User, repo *models.Repository) (*models.Webhook, error)
-	DeleteWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) error
-	ActivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
-	DeactivateWebhook(ctx context.Context, user *models.User, repo *models.Repository, hook *models.Webhook) (*models.Webhook, error)
+	CreateWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo) (*db.Webhook, error)
+	DeleteWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook) error
+	ChangeWebhookState(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook, active bool) (*db.Webhook, error)
 
 	// Create new job from HTTP request.
-	CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
+	CreateJob(ctx context.Context, r *http.Request) (*db.Job, error)
 
 	// Updates commit status.
-	UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error
+	//UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error
 
 	//GetStatusName(status StatusState) string
 	//CreateStatus(ctx context.Context, user *models.User, repo RepoInfo, commit CommitInfo, status Status) error

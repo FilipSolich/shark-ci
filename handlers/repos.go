@@ -1,37 +1,44 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/gorilla/csrf"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/middlewares"
-	"github.com/FilipSolich/ci-server/models"
 	"github.com/FilipSolich/ci-server/services"
-	"github.com/gorilla/csrf"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func ReposHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := middlewares.UserFromContext(r.Context(), w)
+	ctx := r.Context()
+	user, ok := middlewares.UserFromContext(ctx, w)
 	if !ok {
 		return
 	}
 
-	serviceRepos := map[string]map[string][]*models.Repository{}
+	serviceRepos := map[string]map[string][]*db.Repo{}
 	for serviceName, service := range services.Services {
-		repos, err := service.GetUsersRepos(r.Context(), user)
+		identity, err := db.GetIdentityByUser(ctx, user, serviceName)
+		if err != nil {
+			log.Print(err)
+			continue
+		}
+
+		repos, err := service.GetUsersRepos(r.Context(), identity)
 		if err != nil {
 			log.Print(err)
 			continue
 		}
 
 		registered, notRegistered := splitRepos(repos)
-		serviceRepos[serviceName] = map[string][]*models.Repository{}
+		serviceRepos[serviceName] = map[string][]*db.Repo{}
 		serviceRepos[serviceName]["registered"] = registered
 		serviceRepos[serviceName]["not_registered"] = notRegistered
 	}
@@ -43,18 +50,20 @@ func ReposHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReposRegisterHandler(w http.ResponseWriter, r *http.Request) {
-	user, repo, service, err := getUserRepoService(w, r)
+	ctx := r.Context()
+	identity, repo, service, err := getInfoFromRequest(ctx, w, r)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	webhook, err := service.CreateWebhook(r.Context(), user, repo)
+	webhook, err := service.CreateWebhook(ctx, identity, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = db.DB.Save(webhook).Error
+	err = repo.UpdateWebhook(ctx, webhook)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -64,18 +73,20 @@ func ReposRegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReposUnregisterHandler(w http.ResponseWriter, r *http.Request) {
-	user, repo, service, err := getUserRepoService(w, r)
+	ctx := r.Context()
+	identity, repo, service, err := getInfoFromRequest(ctx, w, r)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = service.DeleteWebhook(r.Context(), user, repo, &repo.Webhook)
+	err = service.DeleteWebhook(ctx, identity, repo, &repo.Webhook)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = db.DB.Delete(&repo.Webhook).Error
+	err = repo.DeleteWebhook(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -85,39 +96,28 @@ func ReposUnregisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReposActivateHandler(w http.ResponseWriter, r *http.Request) {
-	user, repo, service, err := getUserRepoService(w, r)
-	if err != nil {
-		return
-	}
-
-	hook, err := service.ActivateWebhook(r.Context(), user, repo, &repo.Webhook)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	err = db.DB.Save(hook).Error
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/repositories", http.StatusFound)
+	changeRepoState(w, r, true)
 }
 
 func ReposDeactivateHandler(w http.ResponseWriter, r *http.Request) {
-	user, repo, service, err := getUserRepoService(w, r)
+	changeRepoState(w, r, false)
+}
+
+func changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
+	ctx := r.Context()
+	identity, repo, service, err := getInfoFromRequest(ctx, w, r)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	hook, err := service.DeactivateWebhook(r.Context(), user, repo, &repo.Webhook)
+	hook, err := service.ChangeWebhookState(ctx, identity, repo, &repo.Webhook, active)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = db.DB.Save(hook).Error
+	err = repo.UpdateWebhook(ctx, hook)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -126,11 +126,11 @@ func ReposDeactivateHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func splitRepos(repos []*models.Repository) ([]*models.Repository, []*models.Repository) {
-	registered := []*models.Repository{}
-	notRegistered := []*models.Repository{}
+func splitRepos(repos []*db.Repo) ([]*db.Repo, []*db.Repo) {
+	registered := []*db.Repo{}
+	notRegistered := []*db.Repo{}
 	for _, repo := range repos {
-		if repo.Webhook.ID == 0 {
+		if repo.Webhook.WebhookID == 0 {
 			notRegistered = append(notRegistered, repo)
 		} else {
 			registered = append(registered, repo)
@@ -139,39 +139,32 @@ func splitRepos(repos []*models.Repository) ([]*models.Repository, []*models.Rep
 	return registered, notRegistered
 }
 
-func getUserRepoService(w http.ResponseWriter, r *http.Request) (*models.User, *models.Repository, services.ServiceManager, error) {
-	user, ok := middlewares.UserFromContext(r.Context(), w)
+func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*db.Identity, *db.Repo, services.ServiceManager, error) {
+	user, ok := middlewares.UserFromContext(ctx, w)
 	if !ok {
 		return nil, nil, nil, errors.New("unauthorized user")
 	}
 
-	repo, err := getRepoFromRequest(w, r)
+	r.ParseForm()
+	repoID, err := primitive.ObjectIDFromHex(r.Form.Get("repo_id"))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	repo, err := db.GetRepoFromID(ctx, repoID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	service, ok := services.Services[repo.ServiceName]
 	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
 		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
 	}
 
-	return user, repo, service, nil
-}
-
-func getRepoFromRequest(w http.ResponseWriter, r *http.Request) (*models.Repository, error) {
-	r.ParseForm()
-	repoID := r.Form.Get("repo_id")
-
-	var repo models.Repository
-	err := db.DB.Preload(clause.Associations).First(&repo, repoID).Error
+	identity, err := db.GetIdentityByUser(ctx, user, repo.ServiceName)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			w.WriteHeader(http.StatusBadRequest)
-			return nil, fmt.Errorf("incorrect repository ID: %s", repoID)
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, nil, nil, err
 	}
 
-	return &repo, nil
+	return identity, repo, service, nil
 }
