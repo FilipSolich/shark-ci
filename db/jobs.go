@@ -11,13 +11,13 @@ import (
 )
 
 type Job struct {
-	ID              primitive.ObjectID `bson:"_id,omitempty"`
-	Identity        primitive.ObjectID `bson:"identity"`
-	CommitSHA       string             `bson:"commmitSHA,omitempty"`
-	CloneURL        string             `bson:"cloneURL,omitempty"`
-	TargetURL       string             `bson:"targetURL,omitempty"`
-	ReportStatusURL string             `bson:"reportStatusURL,omitempty"`
-	PublishLogsURL  string             `bson:"publishLogsURL,omitempty"`
+	ID              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Token           OAuth2Token        `json:"token,omitempty" bson:"token,omitempty"`
+	CommitSHA       string             `json:"commmitSHA,omitempty" bson:"commmitSHA,omitempty"`
+	CloneURL        string             `json:"cloneURL,omitempty" bson:"cloneURL,omitempty"`
+	TargetURL       string             `json:"targetURL,omitempty" bson:"targetURL,omitempty"`
+	ReportStatusURL string             `json:"reportStatusURL,omitempty" bson:"reportStatusURL,omitempty"`
+	PublishLogsURL  string             `json:"publishLogsURL,omitempty" bson:"publishLogsURL,omitempty"`
 }
 
 func CreateJob(ctx context.Context, job *Job) (*Job, error) {

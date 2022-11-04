@@ -157,9 +157,14 @@ func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, 
 		}
 
 		job := &db.Job{
-			Identity:  identity.ID,
 			CommitSHA: commit.GetID(),
 			CloneURL:  event.Repo.GetCloneURL(),
+			Token: db.OAuth2Token{
+				AccessToken:  identity.Token.AccessToken,
+				TokenType:    identity.Token.TokenType,
+				RefreshToken: identity.Token.RefreshToken,
+				Expiry:       identity.Token.Expiry,
+			},
 		}
 
 		return job, nil

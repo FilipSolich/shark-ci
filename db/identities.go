@@ -7,7 +7,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"golang.org/x/oauth2"
 )
 
 type Identity struct {
@@ -18,9 +17,8 @@ type Identity struct {
 	Repos       []primitive.ObjectID `bson:"repos,omitempty"`
 }
 
+// This structure must be compatible with golang.org/x/oauth2/Token
 type OAuth2Token struct {
-	// TODO: Is this composition necessary?
-	oauth2.Token `bson:"-"`
 	AccessToken  string    `json:"access_token" bson:"accessToken"`
 	TokenType    string    `json:"token_type,omitempty" bson:"tokenType,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty" bson:"refreshToken,omitempty"`
