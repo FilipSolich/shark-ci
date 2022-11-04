@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"net/http"
 
 	"golang.org/x/oauth2"
 
@@ -52,7 +53,7 @@ type ServiceManager interface {
 	ChangeWebhookState(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook, active bool) (*db.Webhook, error)
 
 	// Create new job from HTTP request.
-	//CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
+	CreateJob(ctx context.Context, r *http.Request) (*db.Job, error)
 
 	// Updates commit status.
 	//UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error

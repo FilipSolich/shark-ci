@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/google/go-github/v47/github"
 	"golang.org/x/oauth2"
@@ -133,39 +134,39 @@ func (*GitHubManager) ChangeWebhookState(ctx context.Context, identity *db.Ident
 	return hook, nil
 }
 
-//func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*models.Job, error) {
-//	payload, err := github.ValidatePayload(r, []byte(configs.WebhookSecret))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	event, err := github.ParseWebHook(github.WebHookType(r), payload)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	switch event := event.(type) {
-//	case *github.PushEvent:
-//		commit := event.Commits[len(event.Commits)-1]
-//
-//		username := event.Repo.Owner.GetLogin()
-//		var identity models.UserIdentity
-//		err = db.DB.Preload(clause.Associations).Where("username = ?", username).First(&identity).Error
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		job := &models.Job{
-//			OAuth2TokenID: identity.Token.ID,
-//			CommitSHA:     commit.GetID(),
-//			CloneURL:      event.Repo.GetCloneURL(),
-//		}
-//
-//		return job, nil
-//	}
-//	return nil, nil
-//}
-//
+func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, error) {
+	payload, err := github.ValidatePayload(r, []byte(configs.WebhookSecret))
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := github.ParseWebHook(github.WebHookType(r), payload)
+	if err != nil {
+		return nil, err
+	}
+
+	switch event := event.(type) {
+	case *github.PushEvent:
+		// TODO: Should this be commit which triggred webhook or last commit in repo?
+		commit := event.Commits[len(event.Commits)-1]
+
+		username := event.Repo.Owner.GetLogin()
+		identity, err := db.GetIdentityByUsername(ctx, username, GitHubName)
+		if err != nil {
+			return nil, err
+		}
+
+		job := &db.Job{
+			Identity:  identity.ID,
+			CommitSHA: commit.GetID(),
+			CloneURL:  event.Repo.GetCloneURL(),
+		}
+
+		return job, nil
+	}
+	return nil, nil
+}
+
 //func (*GitHubManager) UpdateStatus(ctx context.Context, user *models.User, status Status, job *models.Job) error {
 //	//identity, client, err := getIdentityClientByUser(ctx, user)
 //	//if err != nil {

@@ -61,12 +61,26 @@ func GetOrCreateIdentity(ctx context.Context, identity *Identity, user *User) (*
 	return identity, err
 }
 
-func GetIdentityByService(ctx context.Context, user *User, service string) (*Identity, error) {
+func GetIdentityByUser(ctx context.Context, user *User, service string) (*Identity, error) {
 	var identity Identity
 	filter := bson.D{
 		{Key: "_id", Value: bson.D{
 			{Key: "$in", Value: user.Identities},
 		}},
+		{Key: "serviceName", Value: service},
+	}
+	err := Identities.FindOne(ctx, filter).Decode(&identity)
+	if err != nil {
+		return nil, err
+	}
+
+	return &identity, nil
+}
+
+func GetIdentityByUsername(ctx context.Context, username string, service string) (*Identity, error) {
+	var identity Identity
+	filter := bson.D{
+		{Key: "username", Value: username},
 		{Key: "serviceName", Value: service},
 	}
 	err := Identities.FindOne(ctx, filter).Decode(&identity)

@@ -53,25 +53,6 @@ func GetRepoFromID(ctx context.Context, id primitive.ObjectID) (*Repo, error) {
 	return &repo, nil
 }
 
-// TODO: Delete if unused
-//func (r *Repo) Delete(ctx context.Context) error {
-//	// Delete repo reference from identity
-//	filter := bson.D{{Key: "repos", Value: r.ID}}
-//	update := bson.D{
-//		{Key: "$pull", Value: bson.D{
-//			{Key: "repos", Value: r.ID},
-//		}},
-//	}
-//	_, err := Identities.UpdateOne(ctx, filter, update)
-//	if err != nil {
-//		return err
-//	}
-//
-//	// Delete repo
-//	_, err = Repos.DeleteOne(ctx, r)
-//	return err
-//}
-
 func (r *Repo) DeleteWebhook(ctx context.Context) error {
 	data := bson.D{
 		{Key: "$unset", Value: "webhook"},

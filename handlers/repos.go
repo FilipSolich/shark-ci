@@ -25,7 +25,7 @@ func ReposHandler(w http.ResponseWriter, r *http.Request) {
 
 	serviceRepos := map[string]map[string][]*db.Repo{}
 	for serviceName, service := range services.Services {
-		identity, err := db.GetIdentityByService(ctx, user, serviceName)
+		identity, err := db.GetIdentityByUser(ctx, user, serviceName)
 		if err != nil {
 			log.Print(err)
 			continue
@@ -161,7 +161,7 @@ func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
 	}
 
-	identity, err := db.GetIdentityByService(ctx, user, repo.ServiceName)
+	identity, err := db.GetIdentityByUser(ctx, user, repo.ServiceName)
 	if err != nil {
 		return nil, nil, nil, err
 	}
