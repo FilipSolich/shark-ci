@@ -151,7 +151,7 @@ func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return nil, nil, nil, err
 	}
 
-	repo, err := db.GetRepoFromID(ctx, repoID)
+	repo, err := db.GetRepoByID(ctx, repoID)
 	if err != nil {
 		return nil, nil, nil, err
 	}

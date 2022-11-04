@@ -16,9 +16,9 @@ const (
 	StatusError                      // GitHub -> Error, GitLab -> Failed
 )
 
-var Services = map[string]ServiceManager{}
-
 type StatusState int
+
+var Services = map[string]ServiceManager{}
 
 //	type RepoInfo struct {
 //		ID       int64
@@ -55,6 +55,6 @@ type ServiceManager interface {
 	// Create new job from HTTP request.
 	CreateJob(ctx context.Context, r *http.Request) (*db.Job, error)
 
-	//GetStatusName(status StatusState) string
-	CreateStatus(ctx context.Context, identity *db.Identity, repo *db.Repo, job *db.Job, status Status) error
+	GetStatusName(status StatusState) (string, bool)
+	CreateStatus(ctx context.Context, identity *db.Identity, job *db.Job, status Status) error
 }

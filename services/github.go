@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -38,6 +39,21 @@ func NewGitHubManager(clientID string, clientSecret string) {
 // Return service name.
 func (*GitHubManager) GetServiceName() string {
 	return GitHubName
+}
+
+func (*GitHubManager) GetStatusName(status StatusState) (string, bool) {
+	switch status {
+	case StatusSuccess:
+		return "success", true
+	case StatusPending:
+		return "pending", true
+	case StatusRunning:
+		return "pending", true
+	case StatusError:
+		return "error", true
+	}
+
+	return "", false
 }
 
 func (ghm *GitHubManager) GetOAuth2Config() *oauth2.Config {
@@ -83,7 +99,7 @@ func (*GitHubManager) GetUsersRepos(ctx context.Context, identity *db.Identity) 
 				Name:        repo.GetName(),
 				FullName:    repo.GetFullName(),
 			}
-			r, err := db.GetOrCreateRepo(ctx, r)
+			r, err := db.GetOrCreateRepo(ctx, r, identity)
 			if err != nil {
 				log.Print(err)
 				continue
@@ -156,7 +172,13 @@ func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, 
 			return nil, err
 		}
 
+		repo, err := db.GetRepoByFullName(ctx, event.Repo.GetFullName(), GitHubName)
+		if err != nil {
+			return nil, err
+		}
+
 		job := &db.Job{
+			Repo:      repo.ID,
 			CommitSHA: commit.GetID(),
 			CloneURL:  event.Repo.GetCloneURL(),
 			Token: db.OAuth2Token{
@@ -172,16 +194,25 @@ func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, 
 	return nil, nil
 }
 
-func (*GitHubManager) CreateStatus(ctx context.Context, identity *db.Identity, repo *db.Repo, job *db.Job, status Status) error {
+func (*GitHubManager) CreateStatus(ctx context.Context, identity *db.Identity, job *db.Job, status Status) error {
 	client := getClientByIdentity(ctx, identity)
+	repo, err := db.GetRepoByID(ctx, job.Repo)
+	if err != nil {
+		return err
+	}
+
+	statusName, ok := GitHub.GetStatusName(status.State)
+	if !ok {
+		return errors.New("incorrect status state")
+	}
 
 	s := &github.RepoStatus{
-		State:       github.String("success"),
+		State:       github.String(statusName),
 		TargetURL:   github.String(status.TargetURL),
 		Context:     github.String(status.Context),
 		Description: github.String(status.Description),
 	}
-	_, _, err := client.Repositories.CreateStatus(ctx, identity.Username, repo.Name, job.CommitSHA, s)
+	_, _, err = client.Repositories.CreateStatus(ctx, identity.Username, repo.Name, job.CommitSHA, s)
 
 	return err
 }

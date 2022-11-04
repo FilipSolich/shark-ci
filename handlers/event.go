@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gorilla/mux"
 
+	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/services"
 )
 
 func EventHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	//ctx := r.Context()
+	ctx := context.Background()
 	params := mux.Vars(r)
 	serviceName, ok := params["service"]
 	if !ok {
@@ -46,16 +49,23 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	//		fmt.Println(err)
 	//	}
 
-	//status := services.Status{
-	//	State:       services.StatusPending,
-	//	TargetURL:   job.TargetURL,
-	//	Context:     configs.CIServer,
-	//	Description: "Job in progress",
-	//}
-	// TODO: Change blank user on actual user
-	//err = service.UpdateStatus(r.Context(), &models.User{}, status, job)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
+	repo, err := db.GetRepoByID(ctx, job.Repo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	identity, err := repo.GetOwner(ctx)
+
+	status := services.Status{
+		State:       services.StatusPending,
+		TargetURL:   job.TargetURL,
+		Context:     configs.CIServer,
+		Description: "Job in progress",
+	}
+	err = service.CreateStatus(ctx, identity, job, status)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

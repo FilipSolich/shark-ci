@@ -13,6 +13,7 @@ import (
 
 type Job struct {
 	ID              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Repo            primitive.ObjectID `json:"-" bson:"repo,omitempty"`
 	Token           OAuth2Token        `json:"token,omitempty" bson:"token,omitempty"`
 	CommitSHA       string             `json:"commmitSHA,omitempty" bson:"commmitSHA,omitempty"`
 	CloneURL        string             `json:"cloneURL,omitempty" bson:"cloneURL,omitempty"`
@@ -44,17 +45,17 @@ func (j *Job) createJobURLs() error {
 
 	var err error
 	targetURL := baseURL
-	targetURL.Path, err = url.JoinPath(configs.JobsPath, fmt.Sprint(j.ID))
+	targetURL.Path, err = url.JoinPath(configs.JobsPath, fmt.Sprint(j.ID.Hex()))
 	if err != nil {
 		return err
 	}
 	reportStatusURL := baseURL
-	reportStatusURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsReportStatusHandlerPath, fmt.Sprint(j.ID))
+	reportStatusURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsReportStatusHandlerPath, fmt.Sprint(j.ID.Hex()))
 	if err != nil {
 		return err
 	}
 	publishLogsURL := baseURL
-	publishLogsURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsPublishLogsHandlerPath, fmt.Sprint(j.ID))
+	publishLogsURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsPublishLogsHandlerPath, fmt.Sprint(j.ID.Hex()))
 	if err != nil {
 		return err
 	}
