@@ -13,8 +13,6 @@ require (
 	github.com/rabbitmq/amqp091-go v1.5.0
 	go.mongodb.org/mongo-driver v1.10.3
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
-	gorm.io/driver/sqlite v1.4.3
-	gorm.io/gorm v1.24.0
 )
 
 require (
@@ -23,10 +21,7 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
-	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

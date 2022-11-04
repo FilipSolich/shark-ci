@@ -7,9 +7,6 @@ services:
   #    - postgres
   #    - rabbitmq
 
-  #postgres:
-  #  image: postgres
-
   mongo:
     image: mongo:6
     ports:

@@ -9,34 +9,13 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/handlers"
 	"github.com/FilipSolich/ci-server/middlewares"
-	"github.com/FilipSolich/ci-server/models"
 	"github.com/FilipSolich/ci-server/services"
 )
-
-func initDatabase() {
-	var err error
-	db.DB, err = gorm.Open(sqlite.Open("db.sqlite3"), &gorm.Config{})
-	if err != nil {
-		log.Fatal("failed to connect to database", err)
-	}
-
-	db.DB.AutoMigrate(
-		&models.User{},
-		&models.UserIdentity{},
-		&models.OAuth2Token{},
-		&models.OAuth2State{},
-		&models.Repository{},
-		&models.Webhook{},
-		&models.Job{},
-	)
-}
 
 func initGitServices() {
 	if configs.GitHubEnabled {
@@ -62,15 +41,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	initTemplates()
-
-	initDatabase() // TODO: Delete
 	disconnect, err := db.InitDatabase(configs.MongoURI)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer disconnect(context.Background())
 
+	initTemplates()
 	initGitServices()
 	//messageQueue, err := mq.NewMQ(
 	//	configs.RabbitMQHost,
