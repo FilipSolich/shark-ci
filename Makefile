@@ -1,25 +1,28 @@
-APP_NAME=ci-server
+CI_SERVER="ci-server"
+CI_SERVER_PATH="cmd/ci-server/ci-server.go"
 TARGET=main
 
 DOCKER_USERNAME=filipsolich
 
-.PHONY: build run test clean build-docker tag
+.PHONY: all build run-ci-server test clean build-docker tag
+
+all: build
 
 build:
 	go fmt ./...
-	go build
+	go build $(CI_SERVER_PATH)
 
-run:
-	go run $(TARGET).go
+run-ci-server: build
+	./$(CI_SERVER)
 
 test:
 	go test ./...
 
 clean:
-	rm $(APP_NAME)
+	rm $(CI_SERVER)
 
-build-docker:
-	docker build -t $(DOCKER_USERNAME)/$(APP_NAME):latest .
-
-tag:
-	git tag $(VERSION)
+#build-docker:
+#	docker build -t $(DOCKER_USERNAME)/$(APP_NAME):latest .
+#
+#tag:
+#	git tag $(VERSION)

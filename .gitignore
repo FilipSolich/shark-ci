@@ -16,6 +16,3 @@
 
 # Environment variables
 .env
-
-# Database
-db.sqlite3

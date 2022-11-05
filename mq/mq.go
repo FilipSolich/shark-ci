@@ -9,7 +9,7 @@ import (
 	"github.com/FilipSolich/ci-server/db"
 )
 
-const queueName = "job"
+const queueName = "jobs"
 
 var MQ *MessageQueue
 
@@ -19,7 +19,9 @@ type MessageQueue struct {
 	queue amqp.Queue
 }
 
-func NewMQ(host string, port string, username string, password string) (*MessageQueue, error) {
+type close func()
+
+func InitMQ(host string, port string, username string, password string) (close, error) {
 	var mq MessageQueue
 	var err error
 	mq.conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port))
@@ -39,12 +41,13 @@ func NewMQ(host string, port string, username string, password string) (*Message
 		mq.conn.Close()
 		return nil, err
 	}
-	return &mq, nil
-}
 
-func (mq *MessageQueue) Close() {
-	mq.ch.Close()
-	mq.conn.Close()
+	close := func() {
+		MQ.ch.Close()
+		MQ.conn.Close()
+	}
+
+	return close, nil
 }
 
 func (mq *MessageQueue) PublishJob(job *db.Job) error {

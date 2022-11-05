@@ -13,6 +13,7 @@ import (
 	"github.com/FilipSolich/ci-server/db"
 	"github.com/FilipSolich/ci-server/handlers"
 	"github.com/FilipSolich/ci-server/middlewares"
+	"github.com/FilipSolich/ci-server/mq"
 	"github.com/FilipSolich/ci-server/services"
 )
 
@@ -40,26 +41,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	disconnect, err := db.InitDatabase(configs.MongoURI)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer disconnect(context.Background())
-
 	initTemplates()
 	initGitServices()
 
-	//messageQueue, err := mq.NewMQ(
-	//	configs.RabbitMQHost,
-	//	configs.RabbitMQPort,
-	//	configs.RabbitMQUsername,
-	//	configs.RabbitMQPassword,
-	//)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//mq.MQ = messageQueue
-	//defer messageQueue.Close()
+	disconnectDB, err := db.InitDatabase(configs.MongoURI)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer disconnectDB(context.Background())
+
+	closeMQ, err := mq.InitMQ(configs.RabbitMQHost, configs.RabbitMQPort, configs.RabbitMQUsername, configs.RabbitMQPassword)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer closeMQ()
 
 	CSRF := csrf.Protect([]byte(configs.CSRFSecret))
 

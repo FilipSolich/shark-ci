@@ -1,19 +1,18 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gorilla/mux"
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
+	"github.com/FilipSolich/ci-server/mq"
 	"github.com/FilipSolich/ci-server/services"
 )
 
 func EventHandler(w http.ResponseWriter, r *http.Request) {
-	//ctx := r.Context()
-	ctx := context.Background()
+	ctx := r.Context()
 	params := mux.Vars(r)
 	serviceName, ok := params["service"]
 	if !ok {
@@ -43,11 +42,11 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Puiblish to message queue and update state
-	//	err = mq.MQ.PublishJob(job)
-	//	if err != nil {
-	//		fmt.Println(err)
-	//	}
+	err = mq.MQ.PublishJob(job)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	repo, err := db.GetRepoByID(ctx, job.Repo)
 	if err != nil {
