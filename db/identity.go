@@ -19,10 +19,10 @@ type Identity struct {
 
 // This structure must be compatible with https://pkg.go.dev/golang.org/x/oauth2#Token
 type OAuth2Token struct {
-	AccessToken  string    `json:"access_token" bson:"accessToken"`
-	TokenType    string    `json:"token_type,omitempty" bson:"tokenType,omitempty"`
-	RefreshToken string    `json:"refresh_token,omitempty" bson:"refreshToken,omitempty"`
-	Expiry       time.Time `json:"expiry,omitempty" bson:"expiry,omitempty"`
+	AccessToken  string     `json:"access_token" bson:"accessToken"`
+	TokenType    string     `json:"token_type,omitempty" bson:"tokenType,omitempty"`
+	RefreshToken string     `json:"refresh_token,omitempty" bson:"refreshToken,omitempty"`
+	Expiry       *time.Time `json:"expiry,omitempty" bson:"expiry,omitempty"`
 }
 
 func GetOrCreateIdentity(ctx context.Context, identity *Identity, user *User) (*Identity, error) {

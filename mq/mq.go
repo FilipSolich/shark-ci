@@ -22,32 +22,31 @@ type MessageQueue struct {
 type close func()
 
 func InitMQ(host string, port string, username string, password string) (close, error) {
-	var mq MessageQueue
+	MQ = &MessageQueue{}
 	var err error
-	mq.conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port))
+	MQ.conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port))
 	if err != nil {
 		return nil, err
 	}
 
-	mq.ch, err = mq.conn.Channel()
+	MQ.ch, err = MQ.conn.Channel()
 	if err != nil {
-		mq.conn.Close()
+		MQ.conn.Close()
 		return nil, err
 	}
 
-	mq.queue, err = mq.ch.QueueDeclare(queueName, false, false, false, false, nil)
-	if err != nil {
-		mq.ch.Close()
-		mq.conn.Close()
-		return nil, err
-	}
-
-	close := func() {
+	closeFn := func() {
 		MQ.ch.Close()
 		MQ.conn.Close()
 	}
 
-	return close, nil
+	MQ.queue, err = MQ.ch.QueueDeclare(queueName, false, false, false, false, nil)
+	if err != nil {
+		closeFn()
+		return nil, err
+	}
+
+	return closeFn, nil
 }
 
 func (mq *MessageQueue) PublishJob(job *db.Job) error {

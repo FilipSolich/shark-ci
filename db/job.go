@@ -23,17 +23,17 @@ type Job struct {
 }
 
 func CreateJob(ctx context.Context, job *Job) (*Job, error) {
+	job.ID = primitive.NewObjectID()
 	err := job.createJobURLs()
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := Jobs.InsertOne(ctx, job)
+	_, err = Jobs.InsertOne(ctx, job)
 	if err != nil {
 		return nil, err
 	}
 
-	job.ID = result.InsertedID.(primitive.ObjectID)
 	return job, nil
 }
 

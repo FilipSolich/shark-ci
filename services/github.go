@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/google/go-github/v47/github"
 	"golang.org/x/oauth2"
@@ -75,7 +76,7 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *db.
 			AccessToken:  token.AccessToken,
 			TokenType:    token.TokenType,
 			RefreshToken: token.RefreshToken,
-			Expiry:       token.Expiry,
+			Expiry:       &token.Expiry,
 		},
 	}
 
@@ -235,11 +236,17 @@ func getGitHubClient(ctx context.Context, token *oauth2.Token) *github.Client {
 }
 
 func getClientByIdentity(ctx context.Context, identity *db.Identity) *github.Client {
+	var t time.Time
+	if identity.Token.Expiry != nil {
+		t = *identity.Token.Expiry
+	}
+
 	token := oauth2.Token{
 		AccessToken:  identity.Token.AccessToken,
 		TokenType:    identity.Token.TokenType,
 		RefreshToken: identity.Token.RefreshToken,
-		Expiry:       identity.Token.Expiry,
+		Expiry:       t,
 	}
+
 	return getGitHubClient(ctx, &token)
 }

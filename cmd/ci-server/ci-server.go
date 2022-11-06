@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
@@ -84,11 +85,11 @@ func main() {
 	// jobs.Use(CSRF)
 
 	server := &http.Server{
-		Addr:    ":" + configs.Port,
-		Handler: r,
-		//ReadTimeout:  15 * time.Second,
-		//WriteTimeout: 15 * time.Second,
-		//IdleTimeout:  60 * time.Second,
+		Addr:         ":" + configs.Port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 	log.Println("Server running on " + server.Addr)
 	log.Fatal(server.ListenAndServe())
