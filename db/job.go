@@ -50,12 +50,12 @@ func (j *Job) createJobURLs() error {
 		return err
 	}
 	reportStatusURL := baseURL
-	reportStatusURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsReportStatusHandlerPath, fmt.Sprint(j.ID.Hex()))
+	reportStatusURL.Path, err = url.JoinPath(configs.JobsReportStatusHandlerPath, fmt.Sprint(j.ID.Hex()))
 	if err != nil {
 		return err
 	}
 	publishLogsURL := baseURL
-	publishLogsURL.Path, err = url.JoinPath(configs.JobsPath, configs.JobsPublishLogsHandlerPath, fmt.Sprint(j.ID.Hex()))
+	publishLogsURL.Path, err = url.JoinPath(configs.JobsPublishLogsHandlerPath, fmt.Sprint(j.ID.Hex()))
 	if err != nil {
 		return err
 	}

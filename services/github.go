@@ -16,10 +16,14 @@ import (
 	"github.com/FilipSolich/ci-server/db"
 )
 
-const GitHubName = "GitHub"                                          // Service name.
-const EventHandlerPath = configs.EventHandlerPath + "/" + GitHubName // URL path for events webhook.
+// Service name.
+const GitHubName = "GitHub"
 
-var GitHub GitHubManager // Global instance of GitHubManager.
+// URL path for events webhook.
+const EventHandlerPath = configs.EventHandlerPath + "/" + GitHubName
+
+// Global instance of GitHubManager.
+var GitHub GitHubManager
 
 // Manager struct for service config.
 type GitHubManager struct {
@@ -43,18 +47,15 @@ func (*GitHubManager) GetServiceName() string {
 }
 
 func (*GitHubManager) GetStatusName(status StatusState) (string, bool) {
-	switch status {
-	case StatusSuccess:
-		return "success", true
-	case StatusPending:
-		return "pending", true
-	case StatusRunning:
-		return "pending", true
-	case StatusError:
-		return "error", true
+	statusMap := map[StatusState]string{
+		StatusSuccess: "success",
+		StatusPending: "pending",
+		StatusRunning: "pending",
+		StatusError:   "error",
 	}
 
-	return "", false
+	s, ok := statusMap[status]
+	return s, ok
 }
 
 func (ghm *GitHubManager) GetOAuth2Config() *oauth2.Config {
@@ -84,7 +85,7 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *db.
 }
 
 // Get repositories which aren't archived and are owned by user `identity`.
-func (*GitHubManager) GetUsersRepos(ctx context.Context, identity *db.Identity) ([]*db.Repo, error) {
+func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *db.Identity) ([]*db.Repo, error) {
 	client := getClientByIdentity(ctx, identity)
 
 	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{
@@ -96,7 +97,7 @@ func (*GitHubManager) GetUsersRepos(ctx context.Context, identity *db.Identity) 
 		if !repo.GetArchived() {
 			r := &db.Repo{
 				RepoID:      repo.GetID(),
-				ServiceName: GitHubName,
+				ServiceName: ghm.GetServiceName(),
 				Name:        repo.GetName(),
 				FullName:    repo.GetFullName(),
 			}
@@ -151,7 +152,7 @@ func (*GitHubManager) ChangeWebhookState(ctx context.Context, identity *db.Ident
 	return hook, nil
 }
 
-func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, error) {
+func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, error) {
 	payload, err := github.ValidatePayload(r, []byte(configs.WebhookSecret))
 	if err != nil {
 		return nil, err
@@ -168,12 +169,12 @@ func (*GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, 
 		commit := event.Commits[len(event.Commits)-1]
 
 		username := event.Repo.Owner.GetLogin()
-		identity, err := db.GetIdentityByUsername(ctx, username, GitHubName)
+		identity, err := db.GetIdentityByUsername(ctx, username, ghm.GetServiceName())
 		if err != nil {
 			return nil, err
 		}
 
-		repo, err := db.GetRepoByFullName(ctx, event.Repo.GetFullName(), GitHubName)
+		repo, err := db.GetRepoByFullName(ctx, event.Repo.GetFullName(), ghm.GetServiceName())
 		if err != nil {
 			return nil, err
 		}

@@ -11,16 +11,18 @@ const (
 	EventHandlerPath = "/event_handler"
 
 	JobsPath                    = "/jobs"
-	JobsReportStatusHandlerPath = "/status"
-	JobsPublishLogsHandlerPath  = "/logs"
+	JobsReportStatusHandlerPath = JobsPath + "/status"
+	JobsPublishLogsHandlerPath  = JobsPath + "/logs"
 )
 
+// Environmental variables
 var (
 	Host          string
 	Port          string
 	SessionSecret string
 	CSRFSecret    string
 	WebhookSecret string
+	RunnersSecret string
 
 	MongoURI string
 
@@ -44,6 +46,7 @@ func LoadEnv() error {
 	SessionSecret = getEnv("SESSION_SECRET", "insecure-secret")
 	CSRFSecret = getEnv("CSRF_SECRET", "insecure-secret")
 	WebhookSecret = getEnv("WEBHOOK_SECRET", "insecure-secret")
+	RunnersSecret = getEnv("RUNNERS_SECRET", "insecure-secret")
 
 	MongoURI = getEnv("MONGO_URI", "mongodb://localhos:27017")
 

@@ -81,8 +81,14 @@ func main() {
 	repos.HandleFunc("/deactivate", handlers.ReposDeactivateHandler).Methods(http.MethodPost)
 
 	// Jobs subrouter.
-	// jobs := r.PathPrefix("/jobs").Subrouter()
-	// jobs.Use(CSRF)
+	jobs := r.PathPrefix(configs.JobsPath).Subrouter()
+	jobs.Handle("/{id}", middlewares.AuthMiddleware(http.HandlerFunc(handlers.JobsTargetHandler)))
+	jobs.HandleFunc(configs.JobsReportStatusHandlerPath+"/{id}", handlers.JobsReportStatusHandler).Methods(http.MethodPost)
+	jobs.HandleFunc(configs.JobsPublishLogsHandlerPath+"/{id}", handlers.JobsPublishLogsHandler).Methods(http.MethodPost)
+
+	// Runners subrouter.
+	runners := r.PathPrefix("/runners").Subrouter()
+	runners.HandleFunc("/register", handlers.RunnersRegisterHandler).Methods(http.MethodPost)
 
 	server := &http.Server{
 		Addr:         ":" + configs.Port,
