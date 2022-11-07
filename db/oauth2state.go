@@ -16,9 +16,9 @@ type OAuth2State struct {
 }
 
 func NewOAuth2State(state *OAuth2State) (*OAuth2State, error) {
+	state.ID = primitive.NewObjectID()
 	state.Expiry = time.Now().Add(30 * time.Minute)
-	result, err := OAuth2States.InsertOne(context.Background(), state)
-	state.ID = result.InsertedID.(primitive.ObjectID)
+	_, err := OAuth2States.InsertOne(context.Background(), state)
 	return state, err
 }
 

@@ -28,7 +28,6 @@ func JobsReportStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	print(ctx, jobID)
-
 }
 
 // TODO
@@ -41,5 +40,4 @@ func JobsPublishLogsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	print(ctx, jobID)
-
 }
