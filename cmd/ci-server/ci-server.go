@@ -86,10 +86,6 @@ func main() {
 	jobs.HandleFunc(configs.JobsReportStatusHandlerPath+"/{id}", handlers.JobsReportStatusHandler).Methods(http.MethodPost)
 	jobs.HandleFunc(configs.JobsPublishLogsHandlerPath+"/{id}", handlers.JobsPublishLogsHandler).Methods(http.MethodPost)
 
-	// Runners subrouter.
-	runners := r.PathPrefix("/runners").Subrouter()
-	runners.HandleFunc("/register", handlers.RunnersRegisterHandler).Methods(http.MethodPost)
-
 	server := &http.Server{
 		Addr:         ":" + configs.Port,
 		Handler:      r,

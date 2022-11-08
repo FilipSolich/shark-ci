@@ -9,6 +9,8 @@ import (
 	"github.com/FilipSolich/ci-server/db"
 )
 
+// TODO: Change name to VCS
+
 const (
 	StatusSuccess StatusState = iota // GitHub -> Success, GitLab -> Success
 	StatusPending                    // GitHub -> Pendign, GitLab -> Pending
@@ -18,17 +20,14 @@ const (
 
 type StatusState int
 
-var Services = map[string]ServiceManager{}
+var StatusStateMap = map[string]StatusState{
+	"success": StatusSuccess,
+	"pending": StatusPending,
+	"running": StatusRunning,
+	"error":   StatusError,
+}
 
-//	type RepoInfo struct {
-//		ID       int64
-//		Name     string
-//		FullName string
-//	}
-//
-//	type CommitInfo struct {
-//		SHA string
-//	}
+var Services = map[string]ServiceManager{}
 
 type Status struct {
 	State       StatusState

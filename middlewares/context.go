@@ -9,14 +9,14 @@ import (
 
 type contextKey int
 
-const key contextKey = 1
+const userKey contextKey = 1
 
 func ContextWithUser(ctx context.Context, user *db.User) context.Context {
-	return context.WithValue(ctx, key, user)
+	return context.WithValue(ctx, userKey, user)
 }
 
 func UserFromContext(ctx context.Context, w http.ResponseWriter) (*db.User, bool) {
-	user, ok := ctx.Value(key).(*db.User)
+	user, ok := ctx.Value(userKey).(*db.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 	}

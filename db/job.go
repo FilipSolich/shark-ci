@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/FilipSolich/ci-server/configs"
@@ -35,6 +36,17 @@ func CreateJob(ctx context.Context, job *Job) (*Job, error) {
 	}
 
 	return job, nil
+}
+
+func GetJobByID(ctx context.Context, id primitive.ObjectID) (*Job, error) {
+	var job Job
+	filter := bson.D{{Key: "_id", Value: id}}
+	err := Jobs.FindOne(ctx, filter).Decode(&job)
+	if err != nil {
+		return nil, err
+	}
+
+	return &job, nil
 }
 
 func (j *Job) createJobURLs() error {

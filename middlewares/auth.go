@@ -31,10 +31,3 @@ func AuthMiddleware(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 	})
 }
-
-func AuthRunnerMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		h.ServeHTTP(w, r)
-	})
-}

@@ -10,13 +10,15 @@ import (
 )
 
 type OAuth2State struct {
-	ID     primitive.ObjectID `bson:"_id,omitempty"`
-	State  string             `bson:"state,omitempty"`
-	Expiry time.Time          `bson:"expiry,omitempty"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	State     string             `bson:"state,omitempty"`
+	Expiry    time.Time          `bson:"expiry,omitempty"`
+	CreatedAt time.Time          `bson:"createdAt,omitempty"`
 }
 
 func NewOAuth2State(state *OAuth2State) (*OAuth2State, error) {
 	state.ID = primitive.NewObjectID()
+	state.CreatedAt = time.Now()
 	state.Expiry = time.Now().Add(30 * time.Minute)
 	_, err := OAuth2States.InsertOne(context.Background(), state)
 	return state, err
