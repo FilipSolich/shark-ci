@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
@@ -10,28 +14,28 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// TODO
-func JobsTargetHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	params := mux.Vars(r)
-	jobID, ok := params["id"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	print(ctx, jobID)
-}
+const logsFolder = "joblogs"
 
-func JobsReportStatusHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	params := mux.Vars(r)
-	jobID, err := primitive.ObjectIDFromHex(params["id"])
+func JobsTargetHandler(w http.ResponseWriter, r *http.Request) {
+	job, err := getJobFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	job, err := db.GetJobByID(ctx, jobID)
+	logName := job.ID.Hex() + ".log"
+	w.Header().Set("Content-Disposition", "attachment; filename="+logName)
+	file, err := ioutil.ReadFile(filepath.Join(logsFolder, logName))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(file)
+}
+
+func JobsReportStatusHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	job, err := getJobFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -77,14 +81,45 @@ func JobsReportStatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO
 func JobsPublishLogsHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	params := mux.Vars(r)
-	jobID, ok := params["id"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
+	job, err := getJobFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	print(ctx, jobID)
+
+	file, _, err := r.FormFile("log")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	err = os.Mkdir(logsFolder, os.ModePerm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newLogFilename := filepath.Join(logsFolder, job.ID.Hex()+".log")
+	newLog, err := os.OpenFile(newLogFilename, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer newLog.Close()
+
+	io.Copy(newLog, file)
+}
+
+func getJobFromRequest(r *http.Request) (*db.Job, error) {
+	ctx := r.Context()
+	params := mux.Vars(r)
+	jobID, err := primitive.ObjectIDFromHex(params["id"])
+	if err != nil {
+		return nil, err
+	}
+
+	job, err := db.GetJobByID(ctx, jobID)
+	return job, err
 }
