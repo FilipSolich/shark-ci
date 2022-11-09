@@ -44,3 +44,16 @@ func GetUserByIdentity(ctx context.Context, identity *Identity) (*User, error) {
 
 	return &user, nil
 }
+
+func (u *User) IsUserIdentity(ctx context.Context, identity *Identity) bool {
+	filter := bson.D{
+		{Key: "_id", Value: u.ID},
+		{Key: "identities", Value: identity.ID},
+	}
+	err := Users.FindOne(ctx, filter)
+	if err != nil {
+		return false
+	}
+
+	return true
+}

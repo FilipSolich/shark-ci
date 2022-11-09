@@ -9,6 +9,7 @@ import (
 
 	"github.com/FilipSolich/ci-server/configs"
 	"github.com/FilipSolich/ci-server/db"
+	"github.com/FilipSolich/ci-server/middlewares"
 	"github.com/FilipSolich/ci-server/services"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,9 +18,33 @@ import (
 const logsFolder = "joblogs"
 
 func JobsTargetHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, ok := middlewares.UserFromContext(ctx, w)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	job, err := getJobFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	repo, err := db.GetRepoByID(ctx, job.Repo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	identity, err := repo.GetOwner(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !user.IsUserIdentity(ctx, identity) {
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
