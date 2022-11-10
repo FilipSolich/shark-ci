@@ -63,3 +63,8 @@ func (mq *MessageQueue) PublishJob(job *db.Job) error {
 	err = mq.ch.Publish("", queueName, false, false, pub)
 	return err
 }
+
+func (mq *MessageQueue) GetJobsChanel() (<-chan amqp.Delivery, error) {
+	msg, err := mq.ch.Consume(queueName, "", true, false, false, false, nil)
+	return msg, err
+}

@@ -10,6 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/ci-server/ci-server.go",
+            //"program": "${workspaceFolder}/cmd/runner/runner.go",
             "cwd": "${workspaceRoot}"
         }
     ]
