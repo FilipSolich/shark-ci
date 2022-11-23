@@ -32,5 +32,11 @@ func Run() error {
 }
 
 func processJob(job *db.Job) {
+	// TODO: Clone or fetch repo
+	// TODO: Parse YAML
+	// TODO: Create container
+	// TODO: Start container with mounted repo and run commands
+	// TODO: Report result
+	// TODO: Delete container
 	fmt.Print(job.ID, job.Repo, job.CloneURL)
 }
