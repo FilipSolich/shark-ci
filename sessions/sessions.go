@@ -3,7 +3,7 @@ package sessions
 import (
 	"github.com/gorilla/sessions"
 
-	"github.com/FilipSolich/ci-server/configs"
+	"github.com/shark-ci/shark-ci/configs"
 )
 
 const SessionKey = "id"

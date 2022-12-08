@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/services"
-	"github.com/FilipSolich/ci-server/sessions"
+	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/services"
+	"github.com/shark-ci/shark-ci/sessions"
 )
 
 func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/mq"
+	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/mq"
 )
 
 func Run() error {

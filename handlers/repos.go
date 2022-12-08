@@ -10,10 +10,10 @@ import (
 	"github.com/gorilla/csrf"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/FilipSolich/ci-server/configs"
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/middlewares"
-	"github.com/FilipSolich/ci-server/services"
+	"github.com/shark-ci/shark-ci/configs"
+	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/middlewares"
+	"github.com/shark-ci/shark-ci/services"
 )
 
 func ReposHandler(w http.ResponseWriter, r *http.Request) {

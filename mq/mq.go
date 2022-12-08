@@ -6,7 +6,7 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
-	"github.com/FilipSolich/ci-server/db"
+	"github.com/shark-ci/shark-ci/db"
 )
 
 const queueName = "jobs"

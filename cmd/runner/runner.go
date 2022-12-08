@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/FilipSolich/ci-server/mq"
-	"github.com/FilipSolich/ci-server/runner"
+	"github.com/shark-ci/shark-ci/mq"
+	"github.com/shark-ci/shark-ci/runner"
 )
 
 func main() {

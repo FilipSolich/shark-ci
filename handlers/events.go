@@ -5,10 +5,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/FilipSolich/ci-server/configs"
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/mq"
-	"github.com/FilipSolich/ci-server/services"
+	"github.com/shark-ci/shark-ci/configs"
+	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/mq"
+	"github.com/shark-ci/shark-ci/services"
 )
 
 func EventHandler(w http.ResponseWriter, r *http.Request) {

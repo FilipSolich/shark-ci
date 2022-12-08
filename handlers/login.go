@@ -6,9 +6,9 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
-	"github.com/FilipSolich/ci-server/configs"
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/services"
+	"github.com/shark-ci/shark-ci/configs"
+	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/services"
 )
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {

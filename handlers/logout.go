@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/FilipSolich/ci-server/sessions"
+	"github.com/shark-ci/shark-ci/sessions"
 )
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {

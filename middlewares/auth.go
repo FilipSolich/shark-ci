@@ -5,8 +5,8 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/sessions"
+	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/sessions"
 )
 
 func AuthMiddleware(h http.Handler) http.Handler {

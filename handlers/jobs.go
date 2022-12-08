@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/FilipSolich/ci-server/configs"
-	"github.com/FilipSolich/ci-server/db"
-	"github.com/FilipSolich/ci-server/middlewares"
-	"github.com/FilipSolich/ci-server/services"
 	"github.com/gorilla/mux"
+	"github.com/shark-ci/shark-ci/configs"
+	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/middlewares"
+	"github.com/shark-ci/shark-ci/services"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
