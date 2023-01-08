@@ -1,0 +1,31 @@
+direction: right
+
+VSC: VSC Services {
+  GitHub: {
+    shape: rectangle
+    icon: https://icons.terrastruct.com/dev/github.svg
+  }
+  GitLab: GitLab\nNot supported yet {
+    shape: rectangle
+    icon: https://icons.terrastruct.com/dev/gitlab.svg
+  }
+}
+
+DB: {
+  shape: image
+  icon: https://icons.terrastruct.com/dev/mongodb.svg
+}
+
+MQ: RabbitMQ {
+  shape: queue
+}
+
+CI: CI Server
+
+CI -> VSC.GitHub: Register webhook (HTTPS)
+VSC.GitHub -> CI: Webhook is triggered (HTTPS)
+CI -> MQ: Create job (AMQP)
+Runner -> MQ: Take job (AMQP)
+Runner -> CI: Report job status (gRPC)
+CI -> VSC.GitHub: Set commit status (HTTPS)
+CI -> DB
