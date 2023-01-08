@@ -4,19 +4,7 @@ CI server written in Go
 
 ## Architecture
 
-```mermaid
-graph LR
-  subgraph VCS Services
-    GitHub
-    GitLab["GitLab not supported yet"]
-  end
-  CI[CI Server] -- "Register webhooks (HTTPS)" --> GitHub
-  GitHub -- "Webhook is triggered (HTTPS)" --> CI[CI Server]
-  CI[CI Server] -- "Create job (AMQP)" --> MQ
-  Runner -- "Take job (AMQP)" --> MQ
-  Runner -- "Report job progress (gRPC)" --> CI[CI Server]
-  CI[CI Server] -- "Set commit status (HTTPS)" --> GitHub
-```
+![architecture](https://github.com/shark-ci/shark-ci/blob/main/docs/architecture.svg?raw=true)
 
 ## Env variables
 
