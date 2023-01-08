@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
+	"github.com/go-git/go-git/v5"
+	git_http "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/shark-ci/shark-ci/db"
 	"github.com/shark-ci/shark-ci/mq"
 )
@@ -14,7 +17,7 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("HERE")
+
 	for msg := range msgs {
 		// TODO: Send info to CI server
 		var job db.Job
@@ -25,7 +28,7 @@ func Run() error {
 			continue
 		}
 
-		processJob(&job)
+		go processJob(&job)
 	}
 
 	return nil
@@ -33,10 +36,26 @@ func Run() error {
 
 func processJob(job *db.Job) {
 	// TODO: Clone or fetch repo
+
+	err := os.Mkdir("testdir", 0750)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err)
+	}
+
+	// Clones the repository into the given dir, just as a normal git clone does
+	_, err = git.PlainClone("testdir", false, &git.CloneOptions{
+		URL: job.CloneURL,
+		Auth: &git_http.BasicAuth{
+			Username: "abc123", // anything except an empty string
+			Password: job.Token.AccessToken,
+		},
+	})
+	fmt.Println(err)
+
 	// TODO: Parse YAML
 	// TODO: Create container
 	// TODO: Start container with mounted repo and run commands
 	// TODO: Report result
 	// TODO: Delete container
-	fmt.Print(job.ID, job.Repo, job.CloneURL)
+	fmt.Println(job.ID.String(), job.CloneURL)
 }

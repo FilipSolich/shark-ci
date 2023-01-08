@@ -39,14 +39,11 @@ func CreateJob(ctx context.Context, job *Job) (*Job, error) {
 }
 
 func GetJobByID(ctx context.Context, id primitive.ObjectID) (*Job, error) {
-	var job Job
-	filter := bson.D{{Key: "_id", Value: id}}
-	err := Jobs.FindOne(ctx, filter).Decode(&job)
-	if err != nil {
-		return nil, err
-	}
+	job := &Job{}
+	filter := bson.M{"_id": id}
+	err := Jobs.FindOne(ctx, filter).Decode(job)
 
-	return &job, nil
+	return job, err
 }
 
 func (j *Job) createJobURLs() error {

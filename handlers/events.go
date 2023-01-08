@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -36,7 +37,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err = db.CreateJob(ctx, job)
+	job, err = db.CreateJob(context.TODO(), job)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

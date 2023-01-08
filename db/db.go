@@ -47,7 +47,7 @@ func InitDatabase(mongoURI string) (disconnect, error) {
 	// Add TTL 30m to OAuth2States collection.
 	opts := options.Index().SetExpireAfterSeconds(30 * 60)
 	model := mongo.IndexModel{
-		Keys:    bson.D{{Key: "createdAt", Value: 1}},
+		Keys:    bson.M{"createdAt": 1},
 		Options: opts,
 	}
 	_, err = OAuth2States.Indexes().CreateOne(ctx, model)
