@@ -12,8 +12,8 @@ import (
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
-	"github.com/shark-ci/shark-ci/configs"
-	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/ci-server/configs"
+	"github.com/shark-ci/shark-ci/ci-server/db"
 )
 
 // Service name.

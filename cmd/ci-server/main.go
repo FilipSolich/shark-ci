@@ -9,12 +9,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
-	"github.com/shark-ci/shark-ci/configs"
-	"github.com/shark-ci/shark-ci/db"
-	"github.com/shark-ci/shark-ci/handlers"
-	"github.com/shark-ci/shark-ci/middlewares"
+	"github.com/shark-ci/shark-ci/ci-server/configs"
+	"github.com/shark-ci/shark-ci/ci-server/db"
+	"github.com/shark-ci/shark-ci/ci-server/handlers"
+	"github.com/shark-ci/shark-ci/ci-server/middlewares"
+	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/mq"
-	"github.com/shark-ci/shark-ci/services"
 )
 
 func initGitServices() {
@@ -22,8 +22,6 @@ func initGitServices() {
 		services.NewGitHubManager(configs.GitHubClientID, configs.GitHubClientSecret)
 		services.Services[services.GitHub.GetServiceName()] = &services.GitHub
 	}
-
-	// TODO: Add GitLab service.
 }
 
 func initTemplates() {

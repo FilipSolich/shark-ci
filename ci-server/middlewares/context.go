@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/ci-server/db"
 )
 
 type contextKey int

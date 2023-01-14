@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/shark-ci/shark-ci/configs"
+	"github.com/shark-ci/shark-ci/ci-server/configs"
 )
 
 type Job struct {

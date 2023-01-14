@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	git_http "github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/mq"
 )
 

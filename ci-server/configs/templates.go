@@ -9,7 +9,7 @@ import (
 var (
 	Templates = make(map[string]*template.Template)
 
-	prefix         = "templates"
+	prefix         = "ci-server/templates"
 	base           = path.Join(prefix, "_base.html")
 	layout         = path.Join(prefix, "_layout.html")
 	templatesFiles = map[string][]string{

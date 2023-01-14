@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/shark-ci/shark-ci/db"
+	"github.com/shark-ci/shark-ci/ci-server/db"
 )
 
 // TODO: Change name to VCS
