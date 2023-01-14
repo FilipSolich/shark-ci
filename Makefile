@@ -1,28 +1,24 @@
-CI_SERVER="ci-server"
-CI_SERVER_PATH="cmd/ci-server/ci-server.go"
-TARGET=main
+MODULE=github.com/shark-ci/shark-ci
 
-DOCKER_USERNAME=filipsolich
+CI_SERVER=ci-server
+CI_SERVER_PATH=$(MODULE)/cmd/ci-server
+RUNNER=runner
+RUNNER_PATH=$(MODULE)/cmd/runner
 
-.PHONY: all build run-ci-server test clean build-docker tag
+BIN=bin
+
+.PHONY: all build build-ci-server build-runner clean
 
 all: build
 
-build:
-	go fmt ./...
-	go build $(CI_SERVER_PATH)
+build: build-ci-server build-runner
 
-run-ci-server: build
-	./$(CI_SERVER)
+build-ci-server:
+	go build -o $(BIN)/$(CI_SERVER) $(CI_SERVER_PATH)
 
-test:
-	go test ./...
+build-runner:
+	go build -o $(BIN)/$(RUNNER) $(RUNNER_PATH)
 
 clean:
-	rm $(CI_SERVER)
-
-#build-docker:
-#	docker build -t $(DOCKER_USERNAME)/$(APP_NAME):latest .
-#
-#tag:
-#	git tag $(VERSION)
+	go clean
+	rm -rf $(BIN)

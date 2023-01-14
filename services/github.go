@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/go-github/v48/github"
+	"github.com/google/go-github/v49/github"
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
