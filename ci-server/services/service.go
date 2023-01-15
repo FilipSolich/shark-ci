@@ -4,9 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/shark-ci/shark-ci/models"
 	"golang.org/x/oauth2"
-
-	"github.com/shark-ci/shark-ci/ci-server/db"
 )
 
 // TODO: Change name to VCS
@@ -42,18 +41,18 @@ type ServiceManager interface {
 
 	// Get or create user with OAuth2 token.
 	// Also creates new user profile if user does not exist.
-	GetOrCreateUserIdentity(ctx context.Context, user *db.User, token *oauth2.Token) (*db.Identity, error)
+	GetOrCreateUserIdentity(ctx context.Context, user *models.User, token *oauth2.Token) (*models.Identity, error)
 
 	// Return user's repos on from service.
-	GetUsersRepos(ctx context.Context, identity *db.Identity) ([]*db.Repo, error)
+	GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error)
 
-	CreateWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo) (*db.Webhook, error)
-	DeleteWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook) error
-	ChangeWebhookState(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook, active bool) (*db.Webhook, error)
+	CreateWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) (*models.Webhook, error)
+	DeleteWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo, hook *models.Webhook) error
+	ChangeWebhookState(ctx context.Context, identity *models.Identity, repo *models.Repo, hook *models.Webhook, active bool) (*models.Webhook, error)
 
 	// Create new job from HTTP request.
-	CreateJob(ctx context.Context, r *http.Request) (*db.Job, error)
+	CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
 
 	GetStatusName(status StatusState) (string, bool)
-	CreateStatus(ctx context.Context, identity *db.Identity, job *db.Job, status Status) error
+	CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error
 }

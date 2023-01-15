@@ -14,6 +14,7 @@ import (
 	"github.com/shark-ci/shark-ci/ci-server/handlers"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
 	"github.com/shark-ci/shark-ci/ci-server/services"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 	"github.com/shark-ci/shark-ci/mq"
 )
 
@@ -42,6 +43,12 @@ func main() {
 	initTemplates()
 	initGitServices()
 
+	mongoStore, err := store.NewMongoStore(configs.MongoURI)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer mongoStore.Close(context.TODO())
+
 	disconnectDB, err := db.InitDatabase(configs.MongoURI)
 	if err != nil {
 		log.Fatal(err)
@@ -56,10 +63,12 @@ func main() {
 
 	CSRF := csrf.Protect([]byte(configs.CSRFSecret))
 
+	loginHandler := handlers.NewLoginHandler(mongoStore)
+
 	r := mux.NewRouter()
 	r.Use(middlewares.LoggingMiddleware)
 	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.IndexHandler)))
-	r.HandleFunc("/login", handlers.LoginHandler)
+	r.HandleFunc("/login", loginHandler.Login)
 	r.HandleFunc("/logout", handlers.LogoutHandler)
 	r.HandleFunc(configs.EventHandlerPath+"/{service}", handlers.EventHandler).Methods(http.MethodPost)
 

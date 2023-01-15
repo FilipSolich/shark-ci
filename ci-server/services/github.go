@@ -14,6 +14,7 @@ import (
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
 	"github.com/shark-ci/shark-ci/ci-server/db"
+	"github.com/shark-ci/shark-ci/models"
 )
 
 // Service name.
@@ -62,7 +63,7 @@ func (ghm *GitHubManager) GetOAuth2Config() *oauth2.Config {
 	return ghm.oauth2Config
 }
 
-func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *db.User, token *oauth2.Token) (*db.Identity, error) {
+func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *models.User, token *oauth2.Token) (*models.Identity, error) {
 	ghClient := getGitHubClient(ctx, token)
 
 	ghUser, _, err := ghClient.Users.Get(ctx, "")
@@ -70,10 +71,10 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *db.
 		return nil, err
 	}
 
-	identity := db.Identity{
+	identity := models.Identity{
 		ServiceName: GitHubName,
 		Username:    ghUser.GetLogin(),
-		Token: db.OAuth2Token{
+		Token: models.OAuth2Token{
 			AccessToken:  token.AccessToken,
 			TokenType:    token.TokenType,
 			RefreshToken: token.RefreshToken,
@@ -85,17 +86,17 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *db.
 }
 
 // Get repositories which aren't archived and are owned by user `identity`.
-func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *db.Identity) ([]*db.Repo, error) {
+func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error) {
 	client := getClientByIdentity(ctx, identity)
 
 	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{
 		Type: "owner",
 	})
 
-	var repos []*db.Repo
+	var repos []*models.Repo
 	for _, repo := range ghRepos {
 		if !repo.GetArchived() {
-			r := &db.Repo{
+			r := &models.Repo{
 				RepoID:      repo.GetID(),
 				ServiceName: ghm.GetServiceName(),
 				Name:        repo.GetName(),
@@ -114,7 +115,7 @@ func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *db.Identi
 	return repos, err
 }
 
-func (*GitHubManager) CreateWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo) (*db.Webhook, error) {
+func (*GitHubManager) CreateWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) (*models.Webhook, error) {
 	client := getClientByIdentity(ctx, identity)
 
 	hook := defaultWebhook()
@@ -123,7 +124,7 @@ func (*GitHubManager) CreateWebhook(ctx context.Context, identity *db.Identity, 
 		return nil, err
 	}
 
-	dbHook := db.Webhook{
+	dbHook := models.Webhook{
 		WebhookID: hook.GetID(),
 		Active:    true,
 	}
@@ -131,14 +132,14 @@ func (*GitHubManager) CreateWebhook(ctx context.Context, identity *db.Identity, 
 	return &dbHook, nil
 }
 
-func (*GitHubManager) DeleteWebhook(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook) error {
+func (*GitHubManager) DeleteWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo, hook *models.Webhook) error {
 	client := getClientByIdentity(ctx, identity)
 
 	_, err := client.Repositories.DeleteHook(ctx, identity.Username, repo.Name, hook.WebhookID)
 	return err
 }
 
-func (*GitHubManager) ChangeWebhookState(ctx context.Context, identity *db.Identity, repo *db.Repo, hook *db.Webhook, active bool) (*db.Webhook, error) {
+func (*GitHubManager) ChangeWebhookState(ctx context.Context, identity *models.Identity, repo *models.Repo, hook *models.Webhook, active bool) (*models.Webhook, error) {
 	client := getClientByIdentity(ctx, identity)
 
 	ghHook := defaultWebhook()
@@ -152,7 +153,7 @@ func (*GitHubManager) ChangeWebhookState(ctx context.Context, identity *db.Ident
 	return hook, nil
 }
 
-func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.Job, error) {
+func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*models.Job, error) {
 	payload, err := github.ValidatePayload(r, []byte(configs.WebhookSecret))
 	if err != nil {
 		return nil, err
@@ -179,11 +180,11 @@ func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.J
 			return nil, err
 		}
 
-		job := &db.Job{
+		job := &models.Job{
 			Repo:      repo.ID,
 			CommitSHA: commit.GetID(),
 			CloneURL:  event.Repo.GetCloneURL(),
-			Token: db.OAuth2Token{
+			Token: models.OAuth2Token{
 				AccessToken:  identity.Token.AccessToken,
 				TokenType:    identity.Token.TokenType,
 				RefreshToken: identity.Token.RefreshToken,
@@ -196,7 +197,7 @@ func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*db.J
 	return nil, nil
 }
 
-func (*GitHubManager) CreateStatus(ctx context.Context, identity *db.Identity, job *db.Job, status Status) error {
+func (*GitHubManager) CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error {
 	client := getClientByIdentity(ctx, identity)
 	repo, err := db.GetRepoByID(ctx, job.Repo)
 	if err != nil {
@@ -236,7 +237,7 @@ func getGitHubClient(ctx context.Context, token *oauth2.Token) *github.Client {
 	return github.NewClient(client)
 }
 
-func getClientByIdentity(ctx context.Context, identity *db.Identity) *github.Client {
+func getClientByIdentity(ctx context.Context, identity *models.Identity) *github.Client {
 	var t time.Time
 	if identity.Token.Expiry != nil {
 		t = *identity.Token.Expiry

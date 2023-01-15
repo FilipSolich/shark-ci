@@ -9,13 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type OAuth2State struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	State     string             `bson:"state,omitempty"`
-	Expiry    time.Time          `bson:"expiry,omitempty"`
-	CreatedAt time.Time          `bson:"createdAt,omitempty"`
-}
-
 func NewOAuth2State(state *OAuth2State) (*OAuth2State, error) {
 	state.ID = primitive.NewObjectID()
 	state.CreatedAt = time.Now()

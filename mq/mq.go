@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-
-	"github.com/shark-ci/shark-ci/ci-server/db"
+	"github.com/shark-ci/shark-ci/models"
 )
 
 const queueName = "jobs"
@@ -49,7 +48,7 @@ func InitMQ(host string, port string, username string, password string) (close, 
 	return closeFn, nil
 }
 
-func (mq *MessageQueue) PublishJob(job *db.Job) error {
+func (mq *MessageQueue) PublishJob(job *models.Job) error {
 	data, err := json.Marshal(job)
 	if err != nil {
 		return err

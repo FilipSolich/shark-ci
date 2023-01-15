@@ -4,19 +4,19 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shark-ci/shark-ci/ci-server/db"
+	"github.com/shark-ci/shark-ci/models"
 )
 
 type contextKey int
 
 const userKey contextKey = 1
 
-func ContextWithUser(ctx context.Context, user *db.User) context.Context {
+func ContextWithUser(ctx context.Context, user *models.User) context.Context {
 	return context.WithValue(ctx, userKey, user)
 }
 
-func UserFromContext(ctx context.Context, w http.ResponseWriter) (*db.User, bool) {
-	user, ok := ctx.Value(userKey).(*db.User)
+func UserFromContext(ctx context.Context, w http.ResponseWriter) (*models.User, bool) {
+	user, ok := ctx.Value(userKey).(*models.User)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 	}

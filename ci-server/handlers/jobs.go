@@ -12,6 +12,7 @@ import (
 	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
 	"github.com/shark-ci/shark-ci/ci-server/services"
+	"github.com/shark-ci/shark-ci/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -137,7 +138,7 @@ func JobsPublishLogsHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(newLog, file)
 }
 
-func getJobFromRequest(r *http.Request) (*db.Job, error) {
+func getJobFromRequest(r *http.Request) (*models.Job, error) {
 	ctx := r.Context()
 	params := mux.Vars(r)
 	jobID, err := primitive.ObjectIDFromHex(params["id"])

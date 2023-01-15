@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	git_http "github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/shark-ci/shark-ci/ci-server/db"
+	"github.com/shark-ci/shark-ci/models"
 	"github.com/shark-ci/shark-ci/mq"
 )
 
@@ -20,7 +20,7 @@ func Run() error {
 
 	for msg := range msgs {
 		// TODO: Send info to CI server
-		var job db.Job
+		var job models.Job
 		err := json.Unmarshal(msg.Body, &job)
 		if err != nil {
 			// TODO: Send info to CI server
@@ -34,7 +34,7 @@ func Run() error {
 	return nil
 }
 
-func processJob(job *db.Job) {
+func processJob(job *models.Job) {
 	// TODO: Clone or fetch repo
 
 	err := os.Mkdir("testdir", 0750)

@@ -3,26 +3,13 @@ package db
 import (
 	"context"
 
+	"github.com/shark-ci/shark-ci/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Repo struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty"`
-	RepoID      int64              `bson:"repoID,omitempty"`
-	ServiceName string             `bson:"serviceName"`
-	Name        string             `bson:"name,omitempty"`
-	FullName    string             `bson:"fullName,omitempty"`
-	Webhook     Webhook            `bson:"webhook,omitempty"`
-}
-
-type Webhook struct {
-	WebhookID int64 `bson:"webhookID,omitempty"`
-	Active    bool  `bson:"active,omitempty"`
-}
-
-func GetOrCreateRepo(ctx context.Context, repo *Repo, identity *Identity) (*Repo, error) {
+func GetOrCreateRepo(ctx context.Context, repo *models.Repo, identity *models.Identity) (*models.Repo, error) {
 	filter := bson.D{
 		{Key: "repoID", Value: repo.RepoID},
 		{Key: "serviceName", Value: repo.ServiceName},
@@ -54,8 +41,8 @@ func GetOrCreateRepo(ctx context.Context, repo *Repo, identity *Identity) (*Repo
 	return repo, nil
 }
 
-func GetRepoByID(ctx context.Context, id primitive.ObjectID) (*Repo, error) {
-	var repo Repo
+func GetRepoByID(ctx context.Context, id primitive.ObjectID) (*models.Repo, error) {
+	var repo models.Repo
 	filter := bson.D{{Key: "_id", Value: id}}
 	err := Repos.FindOne(ctx, filter).Decode(&repo)
 	if err != nil {
@@ -65,8 +52,8 @@ func GetRepoByID(ctx context.Context, id primitive.ObjectID) (*Repo, error) {
 	return &repo, nil
 }
 
-func GetRepoByFullName(ctx context.Context, fullName string, service string) (*Repo, error) {
-	var repo Repo
+func GetRepoByFullName(ctx context.Context, fullName string, service string) (*models.Repo, error) {
+	var repo models.Repo
 	filter := bson.D{
 		{Key: "serviceName", Value: service},
 		{Key: "fullName", Value: fullName},
@@ -102,8 +89,8 @@ func (r *Repo) UpdateWebhook(ctx context.Context, webhook *Webhook) error {
 	return err
 }
 
-func (r *Repo) GetOwner(ctx context.Context) (*Identity, error) {
-	var identity Identity
+func (r *Repo) GetOwner(ctx context.Context) (*models.Identity, error) {
+	var identity models.Identity
 	filter := bson.D{
 		{Key: "repos", Value: r.ID},
 	}

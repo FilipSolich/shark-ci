@@ -8,11 +8,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/csrf"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongomodels.org/mongo-driver/bson/primitive"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
+	"github.com/shark-ci/shark-ci/ci-server/models"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 )
 
@@ -23,9 +23,9 @@ func ReposHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serviceRepos := map[string]map[string][]*db.Repo{}
+	serviceRepos := map[string]map[string][]*models.Repo{}
 	for serviceName, service := range services.Services {
-		identity, err := db.GetIdentityByUser(ctx, user, serviceName)
+		identity, err := models.GetIdentityByUser(ctx, user, serviceName)
 		if err != nil {
 			log.Print(err)
 			continue
@@ -38,7 +38,7 @@ func ReposHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		registered, notRegistered := splitRepos(repos)
-		serviceRepos[serviceName] = map[string][]*db.Repo{}
+		serviceRepos[serviceName] = map[string][]*models.Repo{}
 		serviceRepos[serviceName]["registered"] = registered
 		serviceRepos[serviceName]["not_registered"] = notRegistered
 	}
@@ -126,9 +126,9 @@ func changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func splitRepos(repos []*db.Repo) ([]*db.Repo, []*db.Repo) {
-	registered := []*db.Repo{}
-	notRegistered := []*db.Repo{}
+func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
+	registered := []*models.Repo{}
+	notRegistered := []*models.Repo{}
 	for _, repo := range repos {
 		if repo.Webhook.WebhookID == 0 {
 			notRegistered = append(notRegistered, repo)
@@ -139,7 +139,7 @@ func splitRepos(repos []*db.Repo) ([]*db.Repo, []*db.Repo) {
 	return registered, notRegistered
 }
 
-func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*db.Identity, *db.Repo, services.ServiceManager, error) {
+func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Identity, *models.Repo, services.ServiceManager, error) {
 	user, ok := middlewares.UserFromContext(ctx, w)
 	if !ok {
 		return nil, nil, nil, errors.New("unauthorized user")
@@ -151,7 +151,7 @@ func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return nil, nil, nil, err
 	}
 
-	repo, err := db.GetRepoByID(ctx, repoID)
+	repo, err := models.GetRepoByID(ctx, repoID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -161,7 +161,7 @@ func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
 	}
 
-	identity, err := db.GetIdentityByUser(ctx, user, repo.ServiceName)
+	identity, err := models.GetIdentityByUser(ctx, user, repo.ServiceName)
 	if err != nil {
 		return nil, nil, nil, err
 	}
