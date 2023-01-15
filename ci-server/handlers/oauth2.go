@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/sessions"
 	"github.com/shark-ci/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/models"
 )
 
 type OAuth2Handler struct {
@@ -56,16 +56,33 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Get or create new UserIdentity and new User if needed.
 	// TODO: Get user from request and pass it into function call.
-	identity, err := service.GetOrCreateUserIdentity(ctx, nil, token)
+	serviceIdentity, err := service.GetUserIdentity(ctx, token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	user, err := db.GetUserByIdentity(ctx, identity)
+	// Check if identity exists
+	identity, err := h.store.GetIdentityByUniqueName(ctx, serviceIdentity.UniqueName)
+	if err != nil {
+		identity = serviceIdentity
+		err = h.store.CreateIdentity(ctx, identity)
+	} else {
+		err = h.store.UpdateIdentityToken(ctx, identity, serviceIdentity.Token)
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	user, err := h.store.GetUserByIdentity(ctx, identity)
+	if err != nil {
+		user := models.NewUser([]string{identity.ID})
+		err = h.store.CreateUser(ctx, user)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Store session.

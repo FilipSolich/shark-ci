@@ -45,23 +45,25 @@ func (ghm *GitHubManager) ServiceName() string {
 	return ghm.name
 }
 
-func (*GitHubManager) StatusName(status StatusState) (string, bool) {
-	statusMap := map[StatusState]string{
-		StatusSuccess: "success",
-		StatusPending: "pending",
-		StatusRunning: "pending",
-		StatusError:   "error",
+func (*GitHubManager) StatusName(status StatusState) (string, error) {
+	switch status {
+	case StatusSuccess:
+		return "success", nil
+	case StatusPending:
+		return "pending", nil
+	case StatusRunning:
+		return "pending", nil
+	case StatusError:
+		return "error", nil
 	}
-
-	s, ok := statusMap[status]
-	return s, ok
+	return "", errors.New("invalid state")
 }
 
 func (ghm *GitHubManager) OAuth2Config() *oauth2.Config {
 	return ghm.oauth2Config
 }
 
-func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *models.User, token *oauth2.Token) (*models.Identity, error) {
+func (ghm *GitHubManager) GetUserIdentity(ctx context.Context, token *oauth2.Token) (*models.Identity, error) {
 	ghClient := getGitHubClient(ctx, token)
 
 	ghUser, _, err := ghClient.Users.Get(ctx, "")
@@ -69,18 +71,8 @@ func (ghm *GitHubManager) GetOrCreateUserIdentity(ctx context.Context, user *mod
 		return nil, err
 	}
 
-	identity := models.Identity{
-		ServiceName: ghm.name,
-		Username:    ghUser.GetLogin(),
-		Token: models.OAuth2Token{
-			AccessToken:  token.AccessToken,
-			TokenType:    token.TokenType,
-			RefreshToken: token.RefreshToken,
-			Expiry:       &token.Expiry,
-		},
-	}
-
-	return db.GetOrCreateIdentity(ctx, &identity, user)
+	identity := models.NewIdentity(ghUser.GetLogin(), ghm.name, token)
+	return identity, nil
 }
 
 // Get repositories which aren't archived and are owned by user `identity`.
@@ -200,9 +192,9 @@ func (ghm *GitHubManager) CreateStatus(ctx context.Context, identity *models.Ide
 		return err
 	}
 
-	statusName, ok := ghm.StatusName(status.State)
-	if !ok {
-		return errors.New("incorrect status state")
+	statusName, err := ghm.StatusName(status.State)
+	if err != nil {
+		return err
 	}
 
 	s := &github.RepoStatus{

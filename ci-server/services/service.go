@@ -41,7 +41,7 @@ type ServiceManager interface {
 
 	// Get or create user with OAuth2 token.
 	// Also creates new user profile if user does not exist.
-	GetOrCreateUserIdentity(ctx context.Context, user *models.User, token *oauth2.Token) (*models.Identity, error)
+	GetUserIdentity(ctx context.Context, token *oauth2.Token) (*models.Identity, error)
 
 	// Return user's repos on from service.
 	GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error)
@@ -53,6 +53,6 @@ type ServiceManager interface {
 	// Create new job from HTTP request.
 	CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
 
-	StatusName(status StatusState) (string, bool)
+	StatusName(status StatusState) (string, error)
 	CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error
 }

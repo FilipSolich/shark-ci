@@ -5,8 +5,8 @@ type User struct {
 	Identities []string `bson:"identities,omitempty"`
 }
 
-func NewUser() *User {
+func NewUser(identities []string) *User {
 	return &User{
-		Identities: []string{},
+		Identities: identities,
 	}
 }

@@ -72,13 +72,21 @@ func (ms *MongoStore) Migrate(ctx context.Context) error {
 func (ms *MongoStore) GetUser(ctx context.Context, id string) (*models.User, error) {
 	user := &models.User{}
 	err := ms.users.FindOne(ctx, bson.M{"_id": id}).Decode(user)
-	return user, err
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (ms *MongoStore) GetUserByIdentity(ctx context.Context, i *models.Identity) (*models.User, error) {
 	user := &models.User{}
 	err := ms.users.FindOne(ctx, bson.M{"identities": i.ID}).Decode(&user)
-	return user, err
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (ms *MongoStore) CreateUser(ctx context.Context, u *models.User) error {
@@ -101,16 +109,55 @@ func (ms *MongoStore) DeleteUser(ctx context.Context, u *models.User) error {
 	return err
 }
 
+func (ms *MongoStore) GetIdentity(ctx context.Context, id string) (*models.Identity, error) {
+	identity := &models.Identity{}
+	err := ms.identities.FindOne(ctx, bson.M{"_id": id}).Decode(identity)
+	if err != nil {
+		return nil, err
+	}
+
+	return identity, nil
+}
+
+func (ms *MongoStore) GetIdentityByUniqueName(ctx context.Context, uniqueName string) (*models.Identity, error) {
+	identity := &models.Identity{}
+	err := ms.identities.FindOne(ctx, bson.M{"uniqueName": uniqueName}).Decode(identity)
+	if err != nil {
+		return nil, err
+	}
+
+	return identity, nil
+}
+
+func (ms *MongoStore) CreateIdentity(ctx context.Context, i *models.Identity) error {
+	i.ID = primitive.NewObjectID().Hex()
+	_, err := ms.identities.InsertOne(ctx, i)
+	return err
+}
+
+func (ms *MongoStore) DeleteIdentity(ctx context.Context, i *models.Identity) error {
+	_, err := ms.identities.DeleteOne(ctx, bson.M{"_id": i.ID})
+	return err
+}
+
 func (ms *MongoStore) GetRepo(ctx context.Context, id string) (*models.Repo, error) {
 	repo := &models.Repo{}
 	err := ms.repos.FindOne(ctx, bson.M{"_id": id}).Decode(&repo)
-	return repo, err
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
 }
 
 func (ms *MongoStore) GetRepoByUniqueName(ctx context.Context, uniqueName string) (*models.Repo, error) {
 	repo := &models.Repo{}
 	err := ms.repos.FindOne(ctx, bson.M{"uniqueName": uniqueName}).Decode(&repo)
-	return repo, err
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
 }
 
 func (ms *MongoStore) CreateRepo(ctx context.Context, r *models.Repo) error {
@@ -127,7 +174,11 @@ func (ms *MongoStore) DeleteRepo(ctx context.Context, r *models.Repo) error {
 func (ms *MongoStore) GetOAuth2StateByState(ctx context.Context, state string) (*models.OAuth2State, error) {
 	oauth2State := &models.OAuth2State{}
 	err := ms.oauth2States.FindOne(ctx, bson.M{"state": state}).Decode(&oauth2State)
-	return oauth2State, err
+	if err != nil {
+		return nil, err
+	}
+
+	return oauth2State, nil
 }
 
 func (ms *MongoStore) CreateOAuth2State(ctx context.Context, s *models.OAuth2State) error {
@@ -144,7 +195,11 @@ func (ms *MongoStore) DeleteOAuth2State(ctx context.Context, s *models.OAuth2Sta
 func (ms *MongoStore) GetJob(ctx context.Context, id string) (*models.Job, error) {
 	job := &models.Job{}
 	err := ms.jobs.FindOne(ctx, bson.M{"_id": id}).Decode(&job)
-	return job, err
+	if err != nil {
+		return nil, err
+	}
+
+	return job, nil
 }
 
 func (ms *MongoStore) CreateJob(ctx context.Context, j *models.Job) error {

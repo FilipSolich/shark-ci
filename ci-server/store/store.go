@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/shark-ci/shark-ci/models"
+	"golang.org/x/oauth2"
 )
 
 // TODO: Split on multiple storers
+// All Create... methods should set ID to created item
 type Storer interface {
 	Ping(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -17,6 +19,12 @@ type Storer interface {
 	CreateUser(ctx context.Context, u *models.User) error
 	//UpdateUser(ctx context.Context, u *models.User) error // TODO: Delete if unused
 	DeleteUser(ctx context.Context, u *models.User) error
+
+	GetIdentity(ctx context.Context, id string) (*models.Identity, error)
+	GetIdentityByUniqueName(ctx context.Context, uniqueName string) (*models.Identity, error)
+	CreateIdentity(ctx context.Context, i *models.Identity) error
+	UpdateIdentityToken(ctx context.Context, i *models.Identity, token oauth2.Token) error
+	DeleteIdentity(ctx context.Context, i *models.Identity) error
 
 	GetRepo(ctx context.Context, id string) (*models.Repo, error)
 	GetRepoByUniqueName(ctx context.Context, uniqueName string) (*models.Repo, error)
