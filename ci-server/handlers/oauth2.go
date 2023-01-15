@@ -7,9 +7,20 @@ import (
 	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/sessions"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 )
 
-func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
+type OAuth2Handler struct {
+	store store.Storer
+}
+
+func NewOAuth2Handler(s store.Storer) *OAuth2Handler {
+	return &OAuth2Handler{
+		store: s,
+	}
+}
+
+func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 	serviceName := r.URL.Query().Get("service")
@@ -20,13 +31,18 @@ func OAuth2CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.Background()
-	oauth2State, err := db.GetOAuth2StateByState(ctx, state)
-	if err != nil || !oauth2State.IsValid() {
+	ctx := context.TODO()
+	oauth2State, err := h.store.GetOAuth2StateByState(ctx, state)
+	if err != nil {
 		http.Error(w, "incorrect state", http.StatusBadRequest)
 		return
 	}
-	oauth2State.Delete(ctx) // TODO: What to do if delete fails?
+
+	h.store.DeleteOAuth2State(ctx, oauth2State) // TODO: What to do if delete fails
+	if !oauth2State.IsValid() {
+		http.Error(w, "oauth2 state expired", http.StatusBadRequest)
+		return
+	}
 
 	// Get Oauth2 token from auth service.
 	config := service.GetOAuth2Config()

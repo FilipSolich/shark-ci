@@ -64,33 +64,38 @@ func main() {
 	CSRF := csrf.Protect([]byte(configs.CSRFSecret))
 
 	loginHandler := handlers.NewLoginHandler(mongoStore)
+	logoutHandler := handlers.NewLogoutHandler()
+	eventHandler := handlers.NewEventHandler(mongoStore)
+	oauth2Handler := handlers.NewOAuth2Handler(mongoStore)
+	repoHandler := handlers.NewRepoHandler(mongoStore)
+	jobHandler := handlers.NewJobHandler(mongoStore)
 
 	r := mux.NewRouter()
 	r.Use(middlewares.LoggingMiddleware)
 	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.IndexHandler)))
-	r.HandleFunc("/login", loginHandler.Login)
-	r.HandleFunc("/logout", handlers.LogoutHandler)
-	r.HandleFunc(configs.EventHandlerPath+"/{service}", handlers.EventHandler).Methods(http.MethodPost)
+	r.HandleFunc("/login", loginHandler.HandleLogin)
+	r.HandleFunc("/logout", logoutHandler.HandleLogout)
+	r.HandleFunc(configs.EventHandlerPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
 
 	// OAuth2 subrouter.
 	OAuth2 := r.PathPrefix("/oauth2").Subrouter()
-	OAuth2.HandleFunc("/callback", handlers.OAuth2CallbackHandler)
+	OAuth2.HandleFunc("/callback", oauth2Handler.HandleCallback)
 
 	// Repositories subrouter.
 	repos := r.PathPrefix("/repositories").Subrouter()
 	repos.Use(CSRF)
 	repos.Use(middlewares.AuthMiddleware)
-	repos.HandleFunc("", handlers.ReposHandler)
-	repos.HandleFunc("/register", handlers.ReposRegisterHandler).Methods(http.MethodPost)
-	repos.HandleFunc("/unregister", handlers.ReposUnregisterHandler).Methods(http.MethodPost)
-	repos.HandleFunc("/activate", handlers.ReposActivateHandler).Methods(http.MethodPost)
-	repos.HandleFunc("/deactivate", handlers.ReposDeactivateHandler).Methods(http.MethodPost)
+	repos.HandleFunc("", repoHandler.HandleRepos)
+	repos.HandleFunc("/register", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
+	repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
+	repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
+	repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
 
 	// Jobs subrouter.
 	jobs := r.PathPrefix(configs.JobsPath).Subrouter()
-	jobs.Handle("/{id}", middlewares.AuthMiddleware(http.HandlerFunc(handlers.JobsTargetHandler)))
-	jobs.HandleFunc(configs.JobsReportStatusHandlerPath+"/{id}", handlers.JobsReportStatusHandler).Methods(http.MethodPost)
-	jobs.HandleFunc(configs.JobsPublishLogsHandlerPath+"/{id}", handlers.JobsPublishLogsHandler).Methods(http.MethodPost)
+	jobs.Handle("/{id}", middlewares.AuthMiddleware(http.HandlerFunc(jobHandler.HandleJob)))
+	jobs.HandleFunc(configs.JobsReportStatusHandlerPath+"/{id}", jobHandler.HandleStatusReport).Methods(http.MethodPost)
+	jobs.HandleFunc(configs.JobsPublishLogsHandlerPath+"/{id}", jobHandler.HandleLogReport).Methods(http.MethodPost)
 
 	server := &http.Server{
 		Addr:    ":" + configs.Port,

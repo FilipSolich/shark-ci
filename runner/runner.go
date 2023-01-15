@@ -57,5 +57,5 @@ func processJob(job *models.Job) {
 	// TODO: Start container with mounted repo and run commands
 	// TODO: Report result
 	// TODO: Delete container
-	fmt.Println(job.ID.String(), job.CloneURL)
+	// fmt.Println(job.ID.String(), job.CloneURL)
 }

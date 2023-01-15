@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// TODO: Where to move this masterpies
 func GetOrCreateRepo(ctx context.Context, repo *models.Repo, identity *models.Identity) (*models.Repo, error) {
 	filter := bson.D{
 		{Key: "repoID", Value: repo.RepoID},
@@ -89,6 +90,7 @@ func (r *Repo) UpdateWebhook(ctx context.Context, webhook *Webhook) error {
 	return err
 }
 
+// TODO: Find substitution
 func (r *Repo) GetOwner(ctx context.Context) (*models.Identity, error) {
 	var identity models.Identity
 	filter := bson.D{

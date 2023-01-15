@@ -22,7 +22,7 @@ func NewLoginHandler(s store.Storer) *LoginHandler {
 	}
 }
 
-func (h *LoginHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	state, err := uuid.NewRandom()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

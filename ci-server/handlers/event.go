@@ -7,12 +7,22 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/services"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 	"github.com/shark-ci/shark-ci/mq"
 )
 
-func EventHandler(w http.ResponseWriter, r *http.Request) {
+type EventHandler struct {
+	store store.Storer
+}
+
+func NewEventHandler(store store.Storer) *EventHandler {
+	return &EventHandler{
+		store: store,
+	}
+}
+
+func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	params := mux.Vars(r)
 	serviceName, ok := params["service"]
@@ -37,7 +47,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err = db.CreateJob(context.TODO(), job)
+	err = h.store.CreateJob(context.TODO(), job)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -49,7 +59,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo, err := db.GetRepoByID(ctx, job.Repo)
+	repo, err := h.store.GetRepo(ctx, job.RepoID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

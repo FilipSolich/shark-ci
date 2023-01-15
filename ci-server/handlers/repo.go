@@ -8,15 +8,24 @@ import (
 	"net/http"
 
 	"github.com/gorilla/csrf"
-	"go.mongomodels.org/mongo-driver/bson/primitive"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
-	"github.com/shark-ci/shark-ci/ci-server/models"
 	"github.com/shark-ci/shark-ci/ci-server/services"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 )
 
-func ReposHandler(w http.ResponseWriter, r *http.Request) {
+type RepoHandler struct {
+	store store.Storer
+}
+
+func NewRepoHandler(store store.Storer) *RepoHandler {
+	return &RepoHandler{
+		store: store,
+	}
+}
+
+func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user, ok := middlewares.UserFromContext(ctx, w)
 	if !ok {
@@ -49,9 +58,9 @@ func ReposHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func ReposRegisterHandler(w http.ResponseWriter, r *http.Request) {
+func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	identity, repo, service, err := getInfoFromRequest(ctx, w, r)
+	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -72,9 +81,9 @@ func ReposRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposUnregisterHandler(w http.ResponseWriter, r *http.Request) {
+func (h *RepoHandler) HandleUnregisterRepo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	identity, repo, service, err := getInfoFromRequest(ctx, w, r)
+	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -95,17 +104,17 @@ func ReposUnregisterHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func ReposActivateHandler(w http.ResponseWriter, r *http.Request) {
-	changeRepoState(w, r, true)
+func (h *RepoHandler) HandleActivateRepo(w http.ResponseWriter, r *http.Request) {
+	h.changeRepoState(w, r, true)
 }
 
-func ReposDeactivateHandler(w http.ResponseWriter, r *http.Request) {
-	changeRepoState(w, r, false)
+func (h *RepoHandler) HandleDeactivateRepo(w http.ResponseWriter, r *http.Request) {
+	h.changeRepoState(w, r, false)
 }
 
-func changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
+func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
 	ctx := r.Context()
-	identity, repo, service, err := getInfoFromRequest(ctx, w, r)
+	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -126,32 +135,14 @@ func changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
-	registered := []*models.Repo{}
-	notRegistered := []*models.Repo{}
-	for _, repo := range repos {
-		if repo.Webhook.WebhookID == 0 {
-			notRegistered = append(notRegistered, repo)
-		} else {
-			registered = append(registered, repo)
-		}
-	}
-	return registered, notRegistered
-}
-
-func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Identity, *models.Repo, services.ServiceManager, error) {
+func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Identity, *models.Repo, services.ServiceManager, error) {
 	user, ok := middlewares.UserFromContext(ctx, w)
 	if !ok {
 		return nil, nil, nil, errors.New("unauthorized user")
 	}
 
 	r.ParseForm()
-	repoID, err := primitive.ObjectIDFromHex(r.Form.Get("repo_id"))
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	repo, err := models.GetRepoByID(ctx, repoID)
+	repo, err := h.store.GetRepo(ctx, r.Form.Get("repo_id"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -167,4 +158,17 @@ func getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	return identity, repo, service, nil
+}
+
+func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
+	registered := []*models.Repo{}
+	notRegistered := []*models.Repo{}
+	for _, repo := range repos {
+		if repo.Webhook.WebhookID == 0 {
+			notRegistered = append(notRegistered, repo)
+		} else {
+			registered = append(registered, repo)
+		}
+	}
+	return registered, notRegistered
 }

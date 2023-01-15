@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -9,16 +10,25 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
 	"github.com/shark-ci/shark-ci/ci-server/services"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 	"github.com/shark-ci/shark-ci/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const logsFolder = "joblogs"
 
-func JobsTargetHandler(w http.ResponseWriter, r *http.Request) {
+type JobHandler struct {
+	store store.Storer
+}
+
+func NewJobHandler(store store.Storer) *JobHandler {
+	return &JobHandler{
+		store: store,
+	}
+}
+
+func (h *JobHandler) HandleJob(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user, ok := middlewares.UserFromContext(ctx, w)
 	if !ok {
@@ -26,13 +36,13 @@ func JobsTargetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := getJobFromRequest(r)
+	job, err := h.getJobFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	repo, err := db.GetRepoByID(ctx, job.Repo)
+	repo, err := h.store.GetRepo(ctx, job.RepoID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -49,7 +59,7 @@ func JobsTargetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logName := job.ID.Hex() + ".log"
+	logName := job.ID + ".log"
 	w.Header().Set("Content-Disposition", "attachment; filename="+logName)
 	file, err := ioutil.ReadFile(filepath.Join(logsFolder, logName))
 	if err != nil {
@@ -59,15 +69,15 @@ func JobsTargetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(file)
 }
 
-func JobsReportStatusHandler(w http.ResponseWriter, r *http.Request) {
+func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	job, err := getJobFromRequest(r)
+	job, err := h.getJobFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	repo, err := db.GetRepoByID(ctx, job.Repo)
+	repo, err := h.store.GetRepo(ctx, job.RepoID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -107,8 +117,8 @@ func JobsReportStatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func JobsPublishLogsHandler(w http.ResponseWriter, r *http.Request) {
-	job, err := getJobFromRequest(r)
+func (h *JobHandler) HandleLogReport(w http.ResponseWriter, r *http.Request) {
+	job, err := h.getJobFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -126,9 +136,8 @@ func JobsPublishLogsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	newLogFilename := filepath.Join(logsFolder, job.ID.Hex()+".log")
-	newLog, err := os.OpenFile(newLogFilename, os.O_WRONLY|os.O_CREATE, 0666)
+	newLogFilename := filepath.Join(logsFolder, job.ID+".log")
+	newLog, err := os.OpenFile(newLogFilename, os.O_WRONLY|os.O_CREATE, 0o666)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -138,14 +147,14 @@ func JobsPublishLogsHandler(w http.ResponseWriter, r *http.Request) {
 	io.Copy(newLog, file)
 }
 
-func getJobFromRequest(r *http.Request) (*models.Job, error) {
+func (h *JobHandler) getJobFromRequest(r *http.Request) (*models.Job, error) {
 	ctx := r.Context()
 	params := mux.Vars(r)
-	jobID, err := primitive.ObjectIDFromHex(params["id"])
-	if err != nil {
-		return nil, err
+	jobID, ok := params["id"]
+	if !ok {
+		return nil, errors.New("invalid job ID")
 	}
 
-	job, err := db.GetJobByID(ctx, jobID)
+	job, err := h.store.GetJob(ctx, jobID)
 	return job, err
 }

@@ -21,6 +21,7 @@ type MongoStore struct {
 	oauth2States *mongo.Collection
 }
 
+// TODO: Move db connection somewhere else after create more xStorer interfaces.
 func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	ms := &MongoStore{}
 	var err error
@@ -86,20 +87,73 @@ func (ms *MongoStore) CreateUser(ctx context.Context, u *models.User) error {
 	return err
 }
 
-func (ms *MongoStore) UpdateUser(ctx context.Context, u *models.User) error {
-	update := bson.D{{
-		Key:   "$set",
-		Value: u,
-	}}
-	_, err := ms.users.UpdateByID(ctx, u.ID, update)
-	return err
-}
+//func (ms *MongoStore) UpdateUser(ctx context.Context, u *models.User) error {
+//	update := bson.D{{
+//		Key:   "$set",
+//		Value: u,
+//	}}
+//	_, err := ms.users.UpdateByID(ctx, u.ID, update)
+//	return err
+//}
 
 func (ms *MongoStore) DeleteUser(ctx context.Context, u *models.User) error {
 	_, err := ms.users.DeleteOne(ctx, bson.M{"_id": u.ID})
 	return err
 }
 
+func (ms *MongoStore) GetRepo(ctx context.Context, id string) (*models.Repo, error) {
+	repo := &models.Repo{}
+	err := ms.repos.FindOne(ctx, bson.M{"_id": id}).Decode(&repo)
+	return repo, err
+}
+
+func (ms *MongoStore) GetRepoByUniqueName(ctx context.Context, uniqueName string) (*models.Repo, error) {
+	repo := &models.Repo{}
+	err := ms.repos.FindOne(ctx, bson.M{"uniqueName": uniqueName}).Decode(&repo)
+	return repo, err
+}
+
+func (ms *MongoStore) CreateRepo(ctx context.Context, r *models.Repo) error {
+	r.ID = primitive.NewObjectID().Hex()
+	_, err := ms.repos.InsertOne(ctx, r)
+	return err
+}
+
+func (ms *MongoStore) DeleteRepo(ctx context.Context, r *models.Repo) error {
+	_, err := ms.repos.DeleteOne(ctx, bson.M{"_id": r.ID})
+	return err
+}
+
+func (ms *MongoStore) GetOAuth2StateByState(ctx context.Context, state string) (*models.OAuth2State, error) {
+	oauth2State := &models.OAuth2State{}
+	err := ms.oauth2States.FindOne(ctx, bson.M{"state": state}).Decode(&oauth2State)
+	return oauth2State, err
+}
+
 func (ms *MongoStore) CreateOAuth2State(ctx context.Context, s *models.OAuth2State) error {
-	return nil
+	s.ID = primitive.NewObjectID().Hex()
+	_, err := ms.oauth2States.InsertOne(ctx, s)
+	return err
+}
+
+func (ms *MongoStore) DeleteOAuth2State(ctx context.Context, s *models.OAuth2State) error {
+	_, err := ms.oauth2States.DeleteOne(ctx, bson.M{"_id": s.ID})
+	return err
+}
+
+func (ms *MongoStore) GetJob(ctx context.Context, id string) (*models.Job, error) {
+	job := &models.Job{}
+	err := ms.jobs.FindOne(ctx, bson.M{"_id": id}).Decode(&job)
+	return job, err
+}
+
+func (ms *MongoStore) CreateJob(ctx context.Context, j *models.Job) error {
+	j.ID = primitive.NewObjectID().Hex()
+	_, err := ms.jobs.InsertOne(ctx, j)
+	return err
+}
+
+func (ms *MongoStore) DeleteJob(ctx context.Context, j *models.Job) error {
+	_, err := ms.jobs.DeleteOne(ctx, bson.M{"_id": j.ID})
+	return err
 }
