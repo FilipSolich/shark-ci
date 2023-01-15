@@ -44,19 +44,26 @@ func (h *JobHandler) HandleJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: All this err.Error() may leak sensitive information to unauthorized user CHANGE IT!!!
 	repo, err := h.store.GetRepo(ctx, job.RepoID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	identity, err := repo.GetOwner(ctx)
+	identity, err := h.store.GetIdentityByRepo(ctx, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if !user.IsUserIdentity(ctx, identity) {
+	repoOwner, err := h.store.GetUserByIdentity(ctx, identity)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if user.ID != repoOwner.ID {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -85,7 +92,7 @@ func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	identity, err := repo.GetOwner(ctx)
+	identity, err := h.store.GetIdentityByRepo(ctx, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -107,12 +114,7 @@ func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	status := services.Status{
-		State:       statusState,
-		TargetURL:   job.TargetURL,
-		Context:     configs.CIServer,
-		Description: description,
-	}
+	status := services.NewStatus(statusState, job.TargetURL, configs.CIServer, description)
 	err = service.CreateStatus(ctx, identity, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
