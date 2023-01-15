@@ -10,14 +10,14 @@ import (
 
 // TODO: Change name to VCS
 
+type StatusState int
+
 const (
 	StatusSuccess StatusState = iota // GitHub -> Success, GitLab -> Success
 	StatusPending                    // GitHub -> Pendign, GitLab -> Pending
 	StatusRunning                    // GitHub -> Pending, GitLab -> Running
 	StatusError                      // GitHub -> Error, GitLab -> Failed
 )
-
-type StatusState int
 
 var StatusStateMap = map[string]StatusState{
 	"success": StatusSuccess,
@@ -26,7 +26,7 @@ var StatusStateMap = map[string]StatusState{
 	"error":   StatusError,
 }
 
-var Services = map[string]ServiceManager{}
+type ServiceMap map[string]ServiceManager
 
 type Status struct {
 	State       StatusState
@@ -36,8 +36,8 @@ type Status struct {
 }
 
 type ServiceManager interface {
-	GetServiceName() string          // Return service name.
-	GetOAuth2Config() *oauth2.Config // Return OAuth2 config.
+	ServiceName() string          // Return service name.
+	OAuth2Config() *oauth2.Config // Return OAuth2 config.
 
 	// Get or create user with OAuth2 token.
 	// Also creates new user profile if user does not exist.
@@ -46,13 +46,13 @@ type ServiceManager interface {
 	// Return user's repos on from service.
 	GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error)
 
-	CreateWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) (*models.Webhook, error)
-	DeleteWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo, hook *models.Webhook) error
-	ChangeWebhookState(ctx context.Context, identity *models.Identity, repo *models.Repo, hook *models.Webhook, active bool) (*models.Webhook, error)
+	CreateWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) (*models.Repo, error)
+	DeleteWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) error
+	ChangeWebhookState(ctx context.Context, identity *models.Identity, repo *models.Repo, active bool) (*models.Repo, error)
 
 	// Create new job from HTTP request.
 	CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
 
-	GetStatusName(status StatusState) (string, bool)
+	StatusName(status StatusState) (string, bool)
 	CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error
 }

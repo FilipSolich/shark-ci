@@ -13,12 +13,14 @@ import (
 )
 
 type LoginHandler struct {
-	store store.Storer
+	store      store.Storer
+	serviceMap services.ServiceMap
 }
 
-func NewLoginHandler(s store.Storer) *LoginHandler {
+func NewLoginHandler(s store.Storer, serviceMap services.ServiceMap) *LoginHandler {
 	return &LoginHandler{
-		store: s,
+		store:      s,
+		serviceMap: serviceMap,
 	}
 }
 
@@ -36,10 +38,10 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]string{}
-	for _, service := range services.Services {
-		config := service.GetOAuth2Config()
+	for _, service := range h.serviceMap {
+		config := service.OAuth2Config()
 		url := config.AuthCodeURL(oauth2State.State, oauth2.AccessTypeOffline)
-		data[service.GetServiceName()+"URL"] = url
+		data[service.ServiceName()+"URL"] = url
 	}
 
 	configs.RenderTemplate(w, "login.html", map[string]any{

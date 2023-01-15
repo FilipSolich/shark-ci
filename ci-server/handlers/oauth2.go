@@ -11,12 +11,14 @@ import (
 )
 
 type OAuth2Handler struct {
-	store store.Storer
+	store      store.Storer
+	serviceMap services.ServiceMap
 }
 
-func NewOAuth2Handler(s store.Storer) *OAuth2Handler {
+func NewOAuth2Handler(s store.Storer, serviceMap services.ServiceMap) *OAuth2Handler {
 	return &OAuth2Handler{
-		store: s,
+		store:      s,
+		serviceMap: serviceMap,
 	}
 }
 
@@ -25,7 +27,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	serviceName := r.URL.Query().Get("service")
 
-	service, ok := services.Services[serviceName]
+	service, ok := h.serviceMap[serviceName]
 	if !ok {
 		http.Error(w, "unknown OAuth2 provider: "+serviceName, http.StatusBadRequest)
 		return
@@ -45,7 +47,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get Oauth2 token from auth service.
-	config := service.GetOAuth2Config()
+	config := service.OAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -68,7 +70,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Store session.
 	session, _ := sessions.Store.Get(r, "session")
-	session.Values[sessions.SessionKey] = user.ID.Hex()
+	session.Values[sessions.SessionKey] = user.ID
 	err = session.Save(r, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

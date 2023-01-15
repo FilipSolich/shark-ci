@@ -19,12 +19,14 @@ import (
 const logsFolder = "joblogs"
 
 type JobHandler struct {
-	store store.Storer
+	store      store.Storer
+	serviceMap services.ServiceMap
 }
 
-func NewJobHandler(store store.Storer) *JobHandler {
+func NewJobHandler(store store.Storer, serviceMap services.ServiceMap) *JobHandler {
 	return &JobHandler{
-		store: store,
+		store:      store,
+		serviceMap: serviceMap,
 	}
 }
 
@@ -99,7 +101,7 @@ func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	service, ok := services.Services[repo.ServiceName]
+	service, ok := h.serviceMap[repo.ServiceName]
 	if !ok {
 		http.Error(w, "unknow service for repo: "+repo.FullName, http.StatusInternalServerError)
 		return

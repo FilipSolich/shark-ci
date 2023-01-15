@@ -11,17 +11,20 @@ import (
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
+	"github.com/shark-ci/shark-ci/ci-server/models"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
 )
 
 type RepoHandler struct {
-	store store.Storer
+	store      store.Storer
+	serviceMap services.ServiceMap
 }
 
-func NewRepoHandler(store store.Storer) *RepoHandler {
+func NewRepoHandler(store store.Storer, serviceMap services.ServiceMap) *RepoHandler {
 	return &RepoHandler{
-		store: store,
+		store:      store,
+		serviceMap: serviceMap,
 	}
 }
 
@@ -33,7 +36,7 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serviceRepos := map[string]map[string][]*models.Repo{}
-	for serviceName, service := range services.Services {
+	for serviceName, service := range h.serviceMap {
 		identity, err := models.GetIdentityByUser(ctx, user, serviceName)
 		if err != nil {
 			log.Print(err)
@@ -147,7 +150,7 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 		return nil, nil, nil, err
 	}
 
-	service, ok := services.Services[repo.ServiceName]
+	service, ok := h.serviceMap[repo.ServiceName]
 	if !ok {
 		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
 	}

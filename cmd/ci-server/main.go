@@ -10,7 +10,6 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/handlers"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
 	"github.com/shark-ci/shark-ci/ci-server/services"
@@ -18,15 +17,13 @@ import (
 	"github.com/shark-ci/shark-ci/mq"
 )
 
-func initGitServices() {
+func initGitServices(store store.Storer) services.ServiceMap {
+	serviceMap := services.ServiceMap{}
 	if configs.GitHubEnabled {
-		services.NewGitHubManager(configs.GitHubClientID, configs.GitHubClientSecret)
-		services.Services[services.GitHub.GetServiceName()] = &services.GitHub
+		ghm := services.NewGitHubManager(configs.GitHubClientID, configs.GitHubClientSecret, store)
+		serviceMap[ghm.ServiceName()] = ghm
 	}
-}
-
-func initTemplates() {
-	configs.LoadTemplates()
+	return serviceMap
 }
 
 func main() {
@@ -40,8 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	initTemplates()
-	initGitServices()
+	configs.LoadTemplates()
 
 	mongoStore, err := store.NewMongoStore(configs.MongoURI)
 	if err != nil {
@@ -49,11 +45,7 @@ func main() {
 	}
 	defer mongoStore.Close(context.TODO())
 
-	disconnectDB, err := db.InitDatabase(configs.MongoURI)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer disconnectDB(context.Background())
+	serviceMap := initGitServices(mongoStore)
 
 	closeMQ, err := mq.InitMQ(configs.RabbitMQHost, configs.RabbitMQPort, configs.RabbitMQUsername, configs.RabbitMQPassword)
 	if err != nil {
@@ -63,12 +55,12 @@ func main() {
 
 	CSRF := csrf.Protect([]byte(configs.CSRFSecret))
 
-	loginHandler := handlers.NewLoginHandler(mongoStore)
+	loginHandler := handlers.NewLoginHandler(mongoStore, serviceMap)
 	logoutHandler := handlers.NewLogoutHandler()
-	eventHandler := handlers.NewEventHandler(mongoStore)
-	oauth2Handler := handlers.NewOAuth2Handler(mongoStore)
-	repoHandler := handlers.NewRepoHandler(mongoStore)
-	jobHandler := handlers.NewJobHandler(mongoStore)
+	eventHandler := handlers.NewEventHandler(mongoStore, serviceMap)
+	oauth2Handler := handlers.NewOAuth2Handler(mongoStore, serviceMap)
+	repoHandler := handlers.NewRepoHandler(mongoStore, serviceMap)
+	jobHandler := handlers.NewJobHandler(mongoStore, serviceMap)
 
 	r := mux.NewRouter()
 	r.Use(middlewares.LoggingMiddleware)

@@ -13,12 +13,14 @@ import (
 )
 
 type EventHandler struct {
-	store store.Storer
+	store      store.Storer
+	serviceMap services.ServiceMap
 }
 
-func NewEventHandler(store store.Storer) *EventHandler {
+func NewEventHandler(store store.Storer, serviceMap services.ServiceMap) *EventHandler {
 	return &EventHandler{
-		store: store,
+		store:      store,
+		serviceMap: serviceMap,
 	}
 }
 
@@ -31,7 +33,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, ok := services.Services[serviceName]
+	service, ok := h.serviceMap[serviceName]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return
