@@ -5,20 +5,21 @@ import (
 	"net/url"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
+	"golang.org/x/oauth2"
 )
 
 type Job struct {
-	ID              string      `json:"_id,omitempty" bson:"_id,omitempty"`
-	RepoID          string      `json:"-" bson:"repo,omitempty"`
-	CommitSHA       string      `json:"commmitSHA,omitempty" bson:"commmitSHA,omitempty"`
-	CloneURL        string      `json:"cloneURL,omitempty" bson:"cloneURL,omitempty"`
-	Token           OAuth2Token `json:"token,omitempty" bson:"token,omitempty"`
-	TargetURL       string      `json:"targetURL,omitempty" bson:"targetURL,omitempty"`
-	ReportStatusURL string      `json:"reportStatusURL,omitempty" bson:"reportStatusURL,omitempty"`
-	PublishLogsURL  string      `json:"publishLogsURL,omitempty" bson:"publishLogsURL,omitempty"`
+	ID              string       `json:"_id,omitempty" bson:"_id,omitempty"`
+	RepoID          string       `json:"-" bson:"repo,omitempty"`
+	CommitSHA       string       `json:"commmitSHA,omitempty" bson:"commmitSHA,omitempty"`
+	CloneURL        string       `json:"cloneURL,omitempty" bson:"cloneURL,omitempty"`
+	Token           oauth2.Token `json:"token,omitempty" bson:"token,omitempty"`
+	TargetURL       string       `json:"targetURL,omitempty" bson:"targetURL,omitempty"`
+	ReportStatusURL string       `json:"reportStatusURL,omitempty" bson:"reportStatusURL,omitempty"`
+	PublishLogsURL  string       `json:"publishLogsURL,omitempty" bson:"publishLogsURL,omitempty"`
 }
 
-func NewJob(repoID string, commitSHA string, cloneURL string, token OAuth2Token) *Job {
+func NewJob(repoID string, commitSHA string, cloneURL string, token oauth2.Token) *Job {
 	return &Job{
 		RepoID:    repoID,
 		CommitSHA: commitSHA,

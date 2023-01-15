@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -41,11 +42,11 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	job, err := service.CreateJob(ctx, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if job == nil && err == nil {
-		http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
+		if errors.Is(err, services.ErrEventNotSupported) {
+			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -67,14 +68,9 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identity, err := repo.GetOwner(ctx)
+	identity, err := h.store.GetIdentityByRepo(ctx, repo)
 
-	status := services.Status{
-		State:       services.StatusPending,
-		TargetURL:   job.TargetURL,
-		Context:     configs.CIServer,
-		Description: "Job in progress",
-	}
+	status := services.NewStatus(services.StatusPending, job.TargetURL, configs.CIServer, "Job in progress")
 	err = service.CreateStatus(ctx, identity, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

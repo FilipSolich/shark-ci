@@ -22,6 +22,7 @@ type Storer interface {
 
 	GetIdentity(ctx context.Context, id string) (*models.Identity, error)
 	GetIdentityByUniqueName(ctx context.Context, uniqueName string) (*models.Identity, error)
+	GetIdentityByRepo(ctx context.Context, r *models.Repo) (*models.Identity, error)
 	CreateIdentity(ctx context.Context, i *models.Identity) error
 	UpdateIdentityToken(ctx context.Context, i *models.Identity, token oauth2.Token) error
 	DeleteIdentity(ctx context.Context, i *models.Identity) error

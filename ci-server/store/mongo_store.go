@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/oauth2"
 )
 
 type MongoStore struct {
@@ -129,9 +130,29 @@ func (ms *MongoStore) GetIdentityByUniqueName(ctx context.Context, uniqueName st
 	return identity, nil
 }
 
+func (ms *MongoStore) GetIdentityByRepo(ctx context.Context, r *models.Repo) (*models.Identity, error) {
+	identity := &models.Identity{}
+	err := ms.identities.FindOne(ctx, bson.M{"repos": r.ID}).Decode(identity)
+	if err != nil {
+		return nil, err
+	}
+
+	return identity, nil
+}
+
 func (ms *MongoStore) CreateIdentity(ctx context.Context, i *models.Identity) error {
 	i.ID = primitive.NewObjectID().Hex()
 	_, err := ms.identities.InsertOne(ctx, i)
+	return err
+}
+
+func (ms *MongoStore) UpdateIdentityToken(ctx context.Context, i *models.Identity, token oauth2.Token) error {
+	update := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "token", Value: token},
+		}},
+	}
+	_, err := ms.identities.UpdateByID(ctx, i.ID, update)
 	return err
 }
 

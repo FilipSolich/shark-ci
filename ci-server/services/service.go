@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/shark-ci/shark-ci/models"
@@ -9,6 +10,8 @@ import (
 )
 
 // TODO: Change name to VCS
+
+var ErrEventNotSupported = errors.New("event is not supported")
 
 type StatusState int
 
@@ -26,14 +29,23 @@ var StatusStateMap = map[string]StatusState{
 	"error":   StatusError,
 }
 
-type ServiceMap map[string]ServiceManager
-
 type Status struct {
 	State       StatusState
 	TargetURL   string
 	Context     string
 	Description string
 }
+
+func NewStatus(state StatusState, targetURL string, ctx string, description string) Status {
+	return Status{
+		State:       state,
+		TargetURL:   targetURL,
+		Context:     ctx,
+		Description: description,
+	}
+}
+
+type ServiceMap map[string]ServiceManager
 
 type ServiceManager interface {
 	ServiceName() string          // Return service name.
