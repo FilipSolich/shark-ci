@@ -11,9 +11,9 @@ import (
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
-	"github.com/shark-ci/shark-ci/ci-server/models"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/models"
 )
 
 type RepoHandler struct {
@@ -37,7 +37,7 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 
 	serviceRepos := map[string]map[string][]*models.Repo{}
 	for serviceName, service := range h.serviceMap {
-		identity, err := models.GetIdentityByUser(ctx, user, serviceName)
+		identity, err := h.store.GetIdentityByUser(ctx, user, serviceName)
 		if err != nil {
 			log.Print(err)
 			continue
@@ -48,6 +48,8 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 			log.Print(err)
 			continue
 		}
+
+		// TODO IMPORTANT: Add repos into db
 
 		registered, notRegistered := splitRepos(repos)
 		serviceRepos[serviceName] = map[string][]*models.Repo{}
@@ -69,13 +71,13 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	webhook, err := service.CreateWebhook(ctx, identity, repo)
+	repo, err = service.CreateWebhook(ctx, identity, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = repo.UpdateWebhook(ctx, webhook)
+	err = h.store.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -92,13 +94,13 @@ func (h *RepoHandler) HandleUnregisterRepo(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = service.DeleteWebhook(ctx, identity, repo, &repo.Webhook)
+	err = service.DeleteWebhook(ctx, identity, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = repo.DeleteWebhook(ctx)
+	err = h.store.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -123,13 +125,13 @@ func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, ac
 		return
 	}
 
-	hook, err := service.ChangeWebhookState(ctx, identity, repo, &repo.Webhook, active)
+	repo, err = service.ChangeWebhookState(ctx, identity, repo, active)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = repo.UpdateWebhook(ctx, hook)
+	err = h.store.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -155,7 +157,7 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
 	}
 
-	identity, err := models.GetIdentityByUser(ctx, user, repo.ServiceName)
+	identity, err := h.store.GetIdentityByUser(ctx, user, repo.ServiceName)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -167,7 +169,7 @@ func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
 	registered := []*models.Repo{}
 	notRegistered := []*models.Repo{}
 	for _, repo := range repos {
-		if repo.Webhook.WebhookID == 0 {
+		if repo.WebhookID == 0 {
 			notRegistered = append(notRegistered, repo)
 		} else {
 			registered = append(registered, repo)

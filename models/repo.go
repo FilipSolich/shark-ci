@@ -8,5 +8,20 @@ type Repo struct {
 	FullName      string `bson:"fullName,omitempty"`
 	UniqueName    string `bson:"uniqueName"`
 	WebhookID     int64  `bson:"webhookID,omitempty"`
-	WebhookActive bool   `bson:"active,omitempty"`
+	WebhookActive bool   `bson:"webhookActive,omitempty"`
+}
+
+func NewRepo(repoID int64, serviceName string, name string, fullName string) *Repo {
+	return &Repo{
+		RepoServiceID: repoID,
+		ServiceName:   serviceName,
+		Name:          name,
+		FullName:      fullName,
+		UniqueName:    serviceName + "/" + fullName,
+	}
+}
+
+func (r *Repo) DeleteWebhook() {
+	r.WebhookID = 0
+	r.WebhookActive = false
 }

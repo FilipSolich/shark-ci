@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/google/go-github/v49/github"
@@ -12,7 +11,6 @@ import (
 	oauth2_github "golang.org/x/oauth2/github"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/db"
 	"github.com/shark-ci/shark-ci/ci-server/store"
 	"github.com/shark-ci/shark-ci/models"
 )
@@ -84,21 +82,11 @@ func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *models.Id
 
 	var repos []*models.Repo
 	for _, repo := range ghRepos {
-		if !repo.GetArchived() {
-			r := &models.Repo{
-				RepoServiceID: repo.GetID(),
-				ServiceName:   ghm.ServiceName(),
-				Name:          repo.GetName(),
-				FullName:      repo.GetFullName(),
-			}
-			r, err := db.GetOrCreateRepo(ctx, r, identity)
-			if err != nil {
-				log.Print(err)
-				continue
-			}
-
-			repos = append(repos, r)
+		if repo.GetArchived() {
+			continue
 		}
+		r := models.NewRepo(repo.GetID(), ghm.ServiceName(), repo.GetName(), repo.GetFullName())
+		repos = append(repos, r)
 	}
 
 	return repos, err
@@ -123,6 +111,7 @@ func (ghm *GitHubManager) DeleteWebhook(ctx context.Context, identity *models.Id
 	client := ghm.getClientByIdentity(ctx, identity)
 
 	_, err := client.Repositories.DeleteHook(ctx, identity.Username, repo.Name, repo.WebhookID)
+	repo.DeleteWebhook()
 	return err
 }
 

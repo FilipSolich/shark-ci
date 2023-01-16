@@ -64,7 +64,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Use(middlewares.LoggingMiddleware)
-	r.Handle("/", middlewares.AuthMiddleware(http.HandlerFunc(handlers.IndexHandler)))
+	r.Handle("/", middlewares.AuthMiddleware(mongoStore)(http.HandlerFunc(handlers.IndexHandler)))
 	r.HandleFunc("/login", loginHandler.HandleLogin)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
 	r.HandleFunc(configs.EventHandlerPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
@@ -76,7 +76,7 @@ func main() {
 	// Repositories subrouter.
 	repos := r.PathPrefix("/repositories").Subrouter()
 	repos.Use(CSRF)
-	repos.Use(middlewares.AuthMiddleware)
+	repos.Use(middlewares.AuthMiddleware(mongoStore))
 	repos.HandleFunc("", repoHandler.HandleRepos)
 	repos.HandleFunc("/register", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
@@ -85,7 +85,7 @@ func main() {
 
 	// Jobs subrouter.
 	jobs := r.PathPrefix(configs.JobsPath).Subrouter()
-	jobs.Handle("/{id}", middlewares.AuthMiddleware(http.HandlerFunc(jobHandler.HandleJob)))
+	jobs.Handle("/{id}", middlewares.AuthMiddleware(mongoStore)(http.HandlerFunc(jobHandler.HandleJob)))
 	jobs.HandleFunc(configs.JobsReportStatusHandlerPath+"/{id}", jobHandler.HandleStatusReport).Methods(http.MethodPost)
 	jobs.HandleFunc(configs.JobsPublishLogsHandlerPath+"/{id}", jobHandler.HandleLogReport).Methods(http.MethodPost)
 

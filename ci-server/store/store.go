@@ -23,6 +23,7 @@ type Storer interface {
 	GetIdentity(ctx context.Context, id string) (*models.Identity, error)
 	GetIdentityByUniqueName(ctx context.Context, uniqueName string) (*models.Identity, error)
 	GetIdentityByRepo(ctx context.Context, r *models.Repo) (*models.Identity, error)
+	GetIdentityByUser(ctx context.Context, user *models.User, serviceName string) (*models.Identity, error)
 	CreateIdentity(ctx context.Context, i *models.Identity) error
 	UpdateIdentityToken(ctx context.Context, i *models.Identity, token oauth2.Token) error
 	DeleteIdentity(ctx context.Context, i *models.Identity) error
@@ -32,8 +33,8 @@ type Storer interface {
 	CreateRepo(ctx context.Context, r *models.Repo) error
 	//CreateRepoWebhook(ctx context.Context, r *models.Repo) error
 	//UpdateRepo(ctx context.Context, r *models.Repo) error
+	UpdateRepoWebhook(ctx context.Context, r *models.Repo) error
 	DeleteRepo(ctx context.Context, r *models.Repo) error
-	//DeleteRepoWebhook(ctx context.Context, r *models.Repo) error
 
 	//GetOAuth2State(ctx context.Context, id string) (*models.OAuth2State, error) // TODO: Delete if unused
 	GetOAuth2StateByState(ctx context.Context, state string) (*models.OAuth2State, error)

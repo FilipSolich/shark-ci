@@ -140,6 +140,22 @@ func (ms *MongoStore) GetIdentityByRepo(ctx context.Context, r *models.Repo) (*m
 	return identity, nil
 }
 
+func (ms *MongoStore) GetIdentityByUser(ctx context.Context, user *models.User, serviceName string) (*models.Identity, error) {
+	identity := &models.Identity{}
+	filter := bson.D{
+		{Key: "_id", Value: bson.D{
+			{Key: "$in", Value: user.Identities},
+		}},
+		{Key: "serviceName", Value: serviceName},
+	}
+	err := ms.identities.FindOne(ctx, filter).Decode(&identity)
+	if err != nil {
+		return nil, err
+	}
+
+	return identity, nil
+}
+
 func (ms *MongoStore) CreateIdentity(ctx context.Context, i *models.Identity) error {
 	i.ID = primitive.NewObjectID().Hex()
 	_, err := ms.identities.InsertOne(ctx, i)
@@ -184,6 +200,17 @@ func (ms *MongoStore) GetRepoByUniqueName(ctx context.Context, uniqueName string
 func (ms *MongoStore) CreateRepo(ctx context.Context, r *models.Repo) error {
 	r.ID = primitive.NewObjectID().Hex()
 	_, err := ms.repos.InsertOne(ctx, r)
+	return err
+}
+
+func (ms *MongoStore) UpdateRepoWebhook(ctx context.Context, r *models.Repo) error {
+	data := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "webhookID", Value: r.WebhookID},
+			{Key: "webhookActive", Value: r.WebhookActive},
+		}},
+	}
+	_, err := ms.repos.UpdateByID(ctx, r.ID, data)
 	return err
 }
 
