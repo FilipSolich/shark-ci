@@ -4,7 +4,7 @@ CI server written in Go
 
 ## Architecture
 
-![architecture](./docs/architecture.svg)
+![architecture](./docs/architecture.png)
 
 ## Env variables
 
