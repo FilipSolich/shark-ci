@@ -4,7 +4,7 @@ CI server written in Go
 
 ## Architecture
 
-![architecture](https://github.com/shark-ci/shark-ci/blob/main/docs/architecture.svg?raw=true)
+![architecture](./docs/architecture.svg)
 
 ## Env variables
 
