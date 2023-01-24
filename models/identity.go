@@ -8,7 +8,6 @@ type Identity struct {
 	ServiceName string       `bson:"serviceName,omitempty"`
 	UniqueName  string       `bson:"uniqueName,omitempty"`
 	Token       oauth2.Token `bson:"token,omitempty"`
-	Repos       []string     `bson:"repos,omitempty"`
 }
 
 func NewIdentity(username string, serviceName string, token *oauth2.Token) *Identity {
@@ -17,6 +16,5 @@ func NewIdentity(username string, serviceName string, token *oauth2.Token) *Iden
 		ServiceName: serviceName,
 		UniqueName:  serviceName + "/" + username,
 		Token:       *token,
-		Repos:       []string{},
 	}
 }

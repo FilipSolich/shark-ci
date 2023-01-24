@@ -31,7 +31,6 @@ type Storer interface {
 	GetRepo(ctx context.Context, id string) (*models.Repo, error)
 	GetRepoByUniqueName(ctx context.Context, uniqueName string) (*models.Repo, error)
 	CreateRepo(ctx context.Context, r *models.Repo) error
-	//CreateRepoWebhook(ctx context.Context, r *models.Repo) error
 	//UpdateRepo(ctx context.Context, r *models.Repo) error
 	UpdateRepoWebhook(ctx context.Context, r *models.Repo) error
 	DeleteRepo(ctx context.Context, r *models.Repo) error

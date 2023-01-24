@@ -76,16 +76,14 @@ func (ghm *GitHubManager) GetUserIdentity(ctx context.Context, token *oauth2.Tok
 func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error) {
 	client := ghm.getClientByIdentity(ctx, identity)
 
-	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{
-		Type: "owner",
-	})
+	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{Type: "owner"})
 
-	var repos []*models.Repo
+	repos := make([]*models.Repo, 0, len(ghRepos))
 	for _, repo := range ghRepos {
 		if repo.GetArchived() {
 			continue
 		}
-		r := models.NewRepo(repo.GetID(), ghm.ServiceName(), repo.GetName(), repo.GetFullName())
+		r := models.NewRepo(identity, repo.GetID(), ghm.ServiceName(), repo.GetName(), repo.GetFullName())
 		repos = append(repos, r)
 	}
 
