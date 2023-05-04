@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
@@ -31,7 +32,13 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauth2State := models.OAuth2State{State: state.String()}
+	oauth2State := models.NewOAuth2Satate(state.String(), 30*time.Minute)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.store.CreateOAuth2State(r.Context(), oauth2State)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

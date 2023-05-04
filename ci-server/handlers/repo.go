@@ -43,13 +43,16 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		// TODO: Bundle into repo finder and updater
 		repos, err := service.GetUsersRepos(r.Context(), identity)
 		if err != nil {
 			log.Print(err)
 			continue
 		}
 
-		// TODO IMPORTANT: Add repos into db
+		for _, repo := range repos {
+			h.store.CreateRepo(r.Context(), repo)
+		}
 
 		registered, notRegistered := splitRepos(repos)
 		serviceRepos[serviceName] = map[string][]*models.Repo{}

@@ -1,9 +1,9 @@
-MODULE=github.com/shark-ci/shark-ci
+MODULE = github.com/shark-ci/shark-ci
 
-CI_SERVER=ci-server
-CI_SERVER_PATH=$(MODULE)/cmd/ci-server
-RUNNER=runner
-RUNNER_PATH=$(MODULE)/cmd/runner
+CI_SERVER      = ci-server
+CI_SERVER_PATH = $(MODULE)/cmd/ci-server
+RUNNER         = runner
+RUNNER_PATH    = $(MODULE)/cmd/runner
 
 BIN=bin
 

@@ -7,7 +7,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// TODO: Split on multiple storers
+// TODO: Split to multiple storers
 // All Create... methods should set ID to created item
 type Storer interface {
 	Ping(ctx context.Context) error
