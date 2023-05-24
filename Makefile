@@ -14,10 +14,10 @@ all: build
 build: build-ci-server build-runner
 
 build-ci-server:
-	go build -o $(BIN)/$(CI_SERVER) $(CI_SERVER_PATH)
+	go build -race -o $(BIN)/$(CI_SERVER) $(CI_SERVER_PATH)
 
 build-runner:
-	go build -o $(BIN)/$(RUNNER) $(RUNNER_PATH)
+	go build -race -o $(BIN)/$(RUNNER) $(RUNNER_PATH)
 
 clean:
 	go clean

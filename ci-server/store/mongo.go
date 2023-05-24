@@ -22,6 +22,8 @@ type MongoStore struct {
 	oauth2States *mongo.Collection
 }
 
+var _ Storer = &MongoStore{}
+
 // TODO: Move db connection somewhere else after create more xStorer interfaces.
 func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	ms := &MongoStore{}

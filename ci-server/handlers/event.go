@@ -8,19 +8,21 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
+	"github.com/shark-ci/shark-ci/ci-server/message_queue"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/mq"
 )
 
 type EventHandler struct {
 	store      store.Storer
+	mq         message_queue.MessageQueuer
 	serviceMap services.ServiceMap
 }
 
-func NewEventHandler(store store.Storer, serviceMap services.ServiceMap) *EventHandler {
+func NewEventHandler(store store.Storer, mq message_queue.MessageQueuer, serviceMap services.ServiceMap) *EventHandler {
 	return &EventHandler{
 		store:      store,
+		mq:         mq,
 		serviceMap: serviceMap,
 	}
 }
@@ -56,7 +58,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = mq.MQ.PublishJob(job)
+	err = h.mq.SendJob(context.TODO(), job)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

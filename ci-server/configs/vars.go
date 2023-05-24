@@ -48,7 +48,7 @@ func LoadEnv() error {
 	WebhookSecret = getEnv("WEBHOOK_SECRET", "insecure-secret")
 	RunnersSecret = getEnv("RUNNERS_SECRET", "insecure-secret")
 
-	MongoURI = getEnv("MONGO_URI", "mongodb://localhos:27017")
+	MongoURI = getEnv("MONGO_URI", "mongodb://localhost:27017")
 
 	RabbitMQHost = getEnv("RABBITMQ_HOST", "localhost")
 	RabbitMQPort = getEnv("RABBITMQ_PORT", "5672")
@@ -84,7 +84,7 @@ func boolEnv(value string) bool {
 
 func validateEnv() error {
 	if len(Host) == 0 {
-		return errors.New("HOST must be set")
+		return errors.New("environment variable `HOST` must be set")
 	}
 
 	if !GitHubEnabled && !GitLabEnabled {

@@ -11,10 +11,10 @@ import (
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
 	"github.com/shark-ci/shark-ci/ci-server/handlers"
+	"github.com/shark-ci/shark-ci/ci-server/message_queue"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/mq"
 )
 
 func initGitServices(store store.Storer) services.ServiceMap {
@@ -45,19 +45,19 @@ func main() {
 	}
 	defer mongoStore.Close(context.TODO())
 
-	serviceMap := initGitServices(mongoStore)
-
-	closeMQ, err := mq.InitMQ(configs.RabbitMQHost, configs.RabbitMQPort, configs.RabbitMQUsername, configs.RabbitMQPassword)
+	rabbitMQ, err := message_queue.NewRabbitMQ(configs.RabbitMQHost, configs.RabbitMQPort, configs.RabbitMQUsername, configs.RabbitMQPassword)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer closeMQ()
+	defer rabbitMQ.Close(context.TODO())
+
+	serviceMap := initGitServices(mongoStore)
 
 	CSRF := csrf.Protect([]byte(configs.CSRFSecret))
 
 	loginHandler := handlers.NewLoginHandler(mongoStore, serviceMap)
 	logoutHandler := handlers.NewLogoutHandler()
-	eventHandler := handlers.NewEventHandler(mongoStore, serviceMap)
+	eventHandler := handlers.NewEventHandler(mongoStore, rabbitMQ, serviceMap)
 	oauth2Handler := handlers.NewOAuth2Handler(mongoStore, serviceMap)
 	repoHandler := handlers.NewRepoHandler(mongoStore, serviceMap)
 	jobHandler := handlers.NewJobHandler(mongoStore, serviceMap)

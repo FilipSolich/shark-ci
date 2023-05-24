@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/go-github/v49/github"
+	"github.com/google/go-github/v52/github"
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
@@ -23,6 +23,8 @@ type GitHubManager struct {
 	store            store.Storer
 	oauth2Config     *oauth2.Config
 }
+
+var _ ServiceManager = &GitHubManager{}
 
 func NewGitHubManager(clientID string, clientSecret string, store store.Storer) *GitHubManager {
 	return &GitHubManager{
