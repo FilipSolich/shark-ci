@@ -11,10 +11,10 @@ import (
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
 	"github.com/shark-ci/shark-ci/ci-server/handlers"
-	"github.com/shark-ci/shark-ci/ci-server/message_queue"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/message_queue"
 )
 
 func initGitServices(store store.Storer) services.ServiceMap {

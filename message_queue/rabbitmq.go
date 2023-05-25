@@ -35,7 +35,7 @@ func NewRabbitMQ(host string, port string, username string, password string) (*R
 	}
 	defer channel.Close()
 
-	_, err = channel.QueueDeclare(rmq.queueName, false, false, false, false, nil)
+	_, err = channel.QueueDeclare(rmq.queueName, true, false, false, false, nil)
 	if err != nil {
 		rmq.conn.Close()
 		return nil, err
@@ -65,29 +65,51 @@ func (rmq *RabbitMQ) SendJob(ctx context.Context, job *models.Job) error {
 		ContentType:  "application/json",
 		Body:         data,
 	}
-	err = channel.Publish("", rmq.queueName, false, false, pub)
+	err = channel.PublishWithContext(ctx, "", rmq.queueName, false, false, pub)
 	return err
 }
 
-func (rmq *RabbitMQ) RegisterJobHandler(handler func(job *models.Job) error) error {
+func (rmq *RabbitMQ) JobChannel() (jobChannel, error) {
 	channel, err := rmq.conn.Channel()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer channel.Close()
 
-	msgChannel, err := channel.Consume(rmq.queueName, "", true, false, false, false, nil)
-	for msg := range msgChannel {
-		var job models.Job
-		err := json.Unmarshal(msg.Body, &job)
-		if err != nil {
-			return err
-		}
+	// TODO: Why this doesn't work?
+	// err = channel.Qos(1, 0, false)
+	// if err != nil {
+	// 	channel.Close()
+	// 	return nil, err
+	// }
 
-		err = handler(&job)
-		if err != nil {
-			return err
-		}
+	msgChannel, err := channel.Consume(rmq.queueName, "", false, false, false, false, nil)
+	if err != nil {
+		channel.Close()
+		return nil, err
 	}
-	return err
+
+	jobCh := make(jobChannel)
+	go func() {
+		for msg := range msgChannel {
+			var job models.Job
+			err := json.Unmarshal(msg.Body, &job)
+			if err != nil {
+				log.Println(err)
+				msg.Nack(false, false)
+				continue
+			}
+
+			job.Ack = func() error {
+				return msg.Ack(false)
+			}
+			job.Nack = func() error {
+				return msg.Nack(false, true)
+			}
+
+			jobCh <- job
+		}
+		channel.Close()
+	}()
+
+	return jobCh, nil
 }

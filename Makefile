@@ -2,22 +2,22 @@ MODULE = github.com/shark-ci/shark-ci
 
 CI_SERVER      = ci-server
 CI_SERVER_PATH = $(MODULE)/cmd/ci-server
-RUNNER         = runner
-RUNNER_PATH    = $(MODULE)/cmd/runner
+WORKER         = worker
+WORKER_PATH    = $(MODULE)/cmd/worker
 
 BIN=bin
 
-.PHONY: all build build-ci-server build-runner clean
+.PHONY: all build build-ci-server build-worker clean
 
 all: build
 
-build: build-ci-server build-runner
+build: build-ci-server build-worker
 
 build-ci-server:
-	go build -race -o $(BIN)/$(CI_SERVER) $(CI_SERVER_PATH)
+	go build -o $(BIN)/$(CI_SERVER) $(CI_SERVER_PATH)
 
-build-runner:
-	go build -race -o $(BIN)/$(RUNNER) $(RUNNER_PATH)
+build-worker:
+	go build -o $(BIN)/$(WORKER) $(WORKER_PATH)
 
 clean:
 	go clean

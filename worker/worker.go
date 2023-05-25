@@ -1,41 +1,42 @@
-package runner
+package worker
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/go-git/go-git/v5"
 	git_http "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/shark-ci/shark-ci/message_queue"
 	"github.com/shark-ci/shark-ci/models"
-	"github.com/shark-ci/shark-ci/mq"
 )
 
-func Run() error {
-	msgs, err := mq.MQ.GetJobsChanel()
+func Run(mq message_queue.MessageQueuer) error {
+	jobCh, err := mq.JobChannel()
 	if err != nil {
 		return err
 	}
 
-	for msg := range msgs {
-		// TODO: Send info to CI server
-		var job models.Job
-		err := json.Unmarshal(msg.Body, &job)
-		if err != nil {
-			// TODO: Send info to CI server
-			log.Println(err)
-			continue
-		}
-
-		go processJob(&job)
+	for i := 0; i < 10; i++ {
+		go func() {
+			for job := range jobCh {
+				err := processJob(job)
+				if err != nil {
+					log.Println(err)
+					job.Nack()
+				}
+				job.Ack()
+			}
+		}()
 	}
 
 	return nil
 }
 
-func processJob(job *models.Job) {
+func processJob(job models.Job) error {
 	// TODO: Clone or fetch repo
+
+	fmt.Printf("Processing job %s\n", job.ID)
 
 	err := os.Mkdir("testdir", 0750)
 	if err != nil && !os.IsExist(err) {
@@ -51,11 +52,11 @@ func processJob(job *models.Job) {
 		},
 	})
 	fmt.Println(err)
+	return err
 
 	// TODO: Parse YAML
 	// TODO: Create container
 	// TODO: Start container with mounted repo and run commands
 	// TODO: Report result
 	// TODO: Delete container
-	// fmt.Println(job.ID.String(), job.CloneURL)
 }

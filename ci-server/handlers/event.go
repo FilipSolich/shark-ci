@@ -8,9 +8,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/message_queue"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/message_queue"
 )
 
 type EventHandler struct {

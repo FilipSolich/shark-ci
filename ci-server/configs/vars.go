@@ -22,7 +22,6 @@ var (
 	SessionSecret string
 	CSRFSecret    string
 	WebhookSecret string
-	RunnersSecret string
 
 	MongoURI string
 
@@ -46,7 +45,6 @@ func LoadEnv() error {
 	SessionSecret = getEnv("SESSION_SECRET", "insecure-secret")
 	CSRFSecret = getEnv("CSRF_SECRET", "insecure-secret")
 	WebhookSecret = getEnv("WEBHOOK_SECRET", "insecure-secret")
-	RunnersSecret = getEnv("RUNNERS_SECRET", "insecure-secret")
 
 	MongoURI = getEnv("MONGO_URI", "mongodb://localhost:27017")
 
