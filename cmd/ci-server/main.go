@@ -97,11 +97,11 @@ func main() {
 	jobs.HandleFunc(ciserver.JobsPublishLogsHandlerPath+"/{id}", jobHandler.HandleLogReport).Methods(http.MethodPost)
 
 	server := &http.Server{
-		Addr:    ":" + config.Port,
-		Handler: r,
-		//ReadTimeout:  15 * time.Second,
-		//WriteTimeout: 15 * time.Second,
-		//IdleTimeout:  60 * time.Second,
+		Addr:         ":" + config.Port,
+		Handler:      r,
+		ReadTimeout:  0,
+		WriteTimeout: 0,
+		IdleTimeout:  0,
 	}
 	log.Println("Server running on " + server.Addr)
 	log.Fatalln(server.ListenAndServe())

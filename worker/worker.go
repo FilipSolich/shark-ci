@@ -20,13 +20,15 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error
 	for i := 0; i < maxWorkers; i++ {
 		go func() {
 			for job := range jobCh {
+				log.Printf("Processing job %s\n", job.ID)
 				err := processJob(job, reposPath)
 				if err != nil {
-					log.Println(err)
 					// TODO: Should be failed job returned to queue?
 					job.Nack()
+					log.Printf("Job %s failed: %s\n", job.ID, err.Error())
 				}
 				job.Ack()
+				log.Printf("Job %s processed successfully\n", job.ID)
 			}
 		}()
 	}
@@ -35,10 +37,11 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error
 }
 
 func processJob(job models.Job, reposPath string) error {
-	log.Printf("Processing job %s\n", job.ID)
-
 	repoPath := path.Join(reposPath, job.UniqueName)
 	repo, err := UpdateRepo(context.TODO(), repoPath, job.CloneURL, job.Token.AccessToken)
+	if err != nil {
+		return err
+	}
 
 	worktree, err := repo.Worktree()
 	if err != nil {

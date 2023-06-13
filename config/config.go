@@ -29,7 +29,7 @@ func NewCIServerConfigFromEnv() (CIServerConfig, error) {
 		Port:               stringEnv("PORT", "8080"),
 		SecretKey:          stringEnv("SECRET_KEY", ""),
 		MongoURI:           stringEnv("MONGO_URI", "mongodb://localhost:27017"),
-		RabbitMQURI:        stringEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/"),
+		RabbitMQURI:        stringEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672"),
 		GitHubClientID:     stringEnv("GITHUB_CLIENT_ID", ""),
 		GitHubClientSecret: stringEnv("GITHUB_CLIENT_SECRET", ""),
 		GitLabClientID:     stringEnv("GITLAB_CLIENT_ID", ""),
@@ -72,7 +72,7 @@ type WorkerConfig struct {
 func NewWorkerConfigFromEnv() (WorkerConfig, error) {
 	config := WorkerConfig{
 		MaxWorkers:   intEnv("MAX_WORKERS", 4),
-		ReposPath:    stringEnv("REPOS_PATH", "../repos"),
+		ReposPath:    stringEnv("REPOS_PATH", "./repos"),
 		CIServerHost: stringEnv("CISERVER_HOST", "localhost"),
 		CIServerPort: stringEnv("CISERVER_PORT", "8080"),
 		RabbitMQURI:  stringEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/"),

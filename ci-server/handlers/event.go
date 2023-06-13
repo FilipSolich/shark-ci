@@ -43,9 +43,12 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := service.CreateJob(ctx, r)
+	job, err := service.HandleEvent(r)
 	if err != nil {
-		if errors.Is(err, services.ErrEventNotSupported) {
+		if errors.Is(err, services.NoErrPingEvent) {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		} else if errors.Is(err, services.ErrEventNotSupported) {
 			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

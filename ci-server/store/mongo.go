@@ -119,13 +119,12 @@ func (ms *MongoStore) GetIdentityByUniqueName(ctx context.Context, uniqueName st
 }
 
 func (ms *MongoStore) GetIdentityByRepo(ctx context.Context, r *models.Repo) (*models.Identity, error) {
-	identity := &models.Identity{}
-	err := ms.identities.FindOne(ctx, bson.M{"repos": r.ID}).Decode(identity)
+	repo, err := ms.GetRepo(ctx, r.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return identity, nil
+	return ms.GetIdentity(ctx, repo.IdentityID)
 }
 
 func (ms *MongoStore) GetIdentityByUser(ctx context.Context, user *models.User, serviceName string) (*models.Identity, error) {

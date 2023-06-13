@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 
@@ -21,19 +22,20 @@ func CreateRepoDir(path string) error {
 func UpdateRepo(ctx context.Context, path string, cloneURL string, token string) (*git.Repository, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
-		if err == git.ErrRepositoryNotExists {
+		if errors.Is(err, git.ErrRepositoryNotExists) {
 			return cloneRepo(ctx, path, cloneURL, token)
 		}
 		return nil, err
 	}
 
 	err = repo.FetchContext(ctx, &git.FetchOptions{
-		Auth: &git_http.TokenAuth{
-			Token: token,
+		Auth: &git_http.BasicAuth{
+			Username: "abc",
+			Password: token,
 		},
 		Progress: log.Writer(),
 	})
-	if err != nil && err != git.NoErrAlreadyUpToDate {
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return nil, err
 	}
 
@@ -43,8 +45,9 @@ func UpdateRepo(ctx context.Context, path string, cloneURL string, token string)
 func cloneRepo(ctx context.Context, path string, cloneURL string, token string) (*git.Repository, error) {
 	repo, err := git.PlainCloneContext(ctx, path, false, &git.CloneOptions{
 		URL: cloneURL,
-		Auth: &git_http.TokenAuth{
-			Token: token,
+		Auth: &git_http.BasicAuth{
+			Username: "abc",
+			Password: token,
 		},
 		Progress: log.Writer(),
 	})

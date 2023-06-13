@@ -13,8 +13,8 @@ type Job struct {
 	Token      oauth2.Token `json:"token,omitempty" bson:"token,omitempty"`
 	TargetURL  string       `json:"targetURL,omitempty" bson:"targetURL,omitempty"`
 
-	Ack  func() error
-	Nack func() error
+	Ack  func() error `json:"-" bson:"-"`
+	Nack func() error `json:"-" bson:"-"`
 }
 
 func NewJob(repoID string, uniqueName string, commitSHA string, cloneURL string, token oauth2.Token) *Job {

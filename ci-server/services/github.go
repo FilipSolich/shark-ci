@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/google/go-github/v52/github"
@@ -133,13 +134,13 @@ func (ghm *GitHubManager) ChangeWebhookState(ctx context.Context, identity *mode
 	return repo, nil
 }
 
-func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*models.Job, error) {
-	payload, err := github.ValidatePayload(r, []byte(ghm.config.SecretKey))
-	if err != nil {
-		return nil, err
-	}
-
-	event, err := github.ParseWebHook(github.WebHookType(r), payload)
+func (ghm *GitHubManager) HandleEvent(r *http.Request) (*models.Job, error) {
+	//payload, err := github.ValidatePayload(r, []byte(ghm.config.SecretKey))
+	//if err != nil {
+	//	return nil, err
+	//}
+	data, _ := ioutil.ReadAll(r.Body)
+	event, err := github.ParseWebHook(github.WebHookType(r), data)
 	if err != nil {
 		return nil, err
 	}
@@ -150,18 +151,20 @@ func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*mode
 		commit := event.Commits[len(event.Commits)-1]
 
 		username := event.Repo.Owner.GetLogin()
-		identity, err := ghm.store.GetIdentityByUniqueName(ctx, ghm.name+"/"+username)
+		identity, err := ghm.store.GetIdentityByUniqueName(r.Context(), ghm.name+"/"+username)
 		if err != nil {
 			return nil, err
 		}
 
-		repo, err := ghm.store.GetRepoByUniqueName(ctx, ghm.name+"/"+event.Repo.GetFullName())
+		repo, err := ghm.store.GetRepoByUniqueName(r.Context(), ghm.name+"/"+event.Repo.GetFullName())
 		if err != nil {
 			return nil, err
 		}
 
 		job := models.NewJob(repo.ID, repo.UniqueName, commit.GetID(), event.Repo.GetCloneURL(), identity.Token)
 		return job, nil
+	case *github.PingEvent:
+		return nil, NoErrPingEvent
 	default:
 		return nil, ErrEventNotSupported
 	}

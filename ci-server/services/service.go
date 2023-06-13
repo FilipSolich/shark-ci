@@ -12,6 +12,7 @@ import (
 // TODO: Change name to VCS
 
 var ErrEventNotSupported = errors.New("event is not supported")
+var NoErrPingEvent = errors.New("ping event")
 
 type StatusState int
 
@@ -63,7 +64,7 @@ type ServiceManager interface {
 	ChangeWebhookState(ctx context.Context, identity *models.Identity, repo *models.Repo, active bool) (*models.Repo, error)
 
 	// Create new job from HTTP request.
-	CreateJob(ctx context.Context, r *http.Request) (*models.Job, error)
+	HandleEvent(r *http.Request) (*models.Job, error)
 
 	StatusName(status StatusState) (string, error)
 	CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error
