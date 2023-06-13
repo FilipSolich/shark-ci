@@ -7,18 +7,31 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/joho/godotenv"
+	"github.com/shark-ci/shark-ci/config"
 	"github.com/shark-ci/shark-ci/message_queue"
 	"github.com/shark-ci/shark-ci/worker"
 )
 
 func main() {
-	rabbitMQ, err := message_queue.NewRabbitMQ("localhost", "5672", "user", "pass")
+	// TODO: Remove.
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	config, err := config.NewWorkerConfigFromEnv()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	rabbitMQ, err := message_queue.NewRabbitMQ(config.RabbitMQURI)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer rabbitMQ.Close(context.TODO())
 
-	err = worker.Run(rabbitMQ)
+	err = worker.Run(rabbitMQ, config.MaxWorkers, config.ReposPath)
 	if err != nil {
 		log.Fatalln(err)
 	}

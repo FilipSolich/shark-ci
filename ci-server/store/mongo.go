@@ -29,8 +29,7 @@ func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	ms := &MongoStore{}
 	var err error
 
-	// TODO: Change message. mongoURI may contain password.
-	log.Println("Connecting to database: " + mongoURI)
+	log.Println("Connecting to MongoDB")
 	ctx := context.TODO()
 	ms.client, err = mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
@@ -41,7 +40,7 @@ func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("Database connected")
+	log.Println("MongoDB connected")
 
 	ms.db = ms.client.Database("CIServer")
 	ms.users = ms.db.Collection("users")
@@ -66,10 +65,6 @@ func (ms *MongoStore) Ping(ctx context.Context) error {
 
 func (ms *MongoStore) Close(ctx context.Context) error {
 	return ms.client.Disconnect(ctx)
-}
-
-func (ms *MongoStore) Migrate(ctx context.Context) error {
-	return nil
 }
 
 func (ms *MongoStore) GetUser(ctx context.Context, id string) (*models.User, error) {
@@ -97,15 +92,6 @@ func (ms *MongoStore) CreateUser(ctx context.Context, u *models.User) error {
 	_, err := ms.users.InsertOne(ctx, u)
 	return err
 }
-
-//func (ms *MongoStore) UpdateUser(ctx context.Context, u *models.User) error {
-//	update := bson.D{{
-//		Key:   "$set",
-//		Value: u,
-//	}}
-//	_, err := ms.users.UpdateByID(ctx, u.ID, update)
-//	return err
-//}
 
 func (ms *MongoStore) DeleteUser(ctx context.Context, u *models.User) error {
 	_, err := ms.users.DeleteOne(ctx, bson.M{"_id": u.ID})

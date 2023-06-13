@@ -1,11 +1,9 @@
 name: workflow1
-base-image: ubuntu:18.04
+base_image: ubuntu:18.04
 jobs:
   build:
     steps:
     - name: format
-      steps:
-        - "go fmt ./..."
+      run: "go fmt ./..."
     - name: test
-      steps:
-        - "go test ./..."
+      run: "go test ./..."

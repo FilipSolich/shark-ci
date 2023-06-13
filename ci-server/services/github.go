@@ -10,8 +10,9 @@ import (
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
-	"github.com/shark-ci/shark-ci/ci-server/configs"
+	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/config"
 	"github.com/shark-ci/shark-ci/models"
 )
 
@@ -22,21 +23,24 @@ type GitHubManager struct {
 	eventHandlerPath string
 	store            store.Storer
 	oauth2Config     *oauth2.Config
+	config           config.CIServerConfig
 }
 
 var _ ServiceManager = &GitHubManager{}
 
-func NewGitHubManager(clientID string, clientSecret string, store store.Storer) *GitHubManager {
+func NewGitHubManager(clientID string, clientSecret string, store store.Storer, config config.CIServerConfig) *GitHubManager {
 	return &GitHubManager{
 		name:             githubName,
-		eventHandlerPath: configs.EventHandlerPath + "/" + githubName,
+		eventHandlerPath: ciserver.EventHandlerPath + "/" + githubName,
 		store:            store,
 		oauth2Config: &oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			Scopes:       []string{"repo"},
 			Endpoint:     oauth2_github.Endpoint,
-		}}
+		},
+		config: config,
+	}
 }
 
 // Return service name.
@@ -130,7 +134,7 @@ func (ghm *GitHubManager) ChangeWebhookState(ctx context.Context, identity *mode
 }
 
 func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*models.Job, error) {
-	payload, err := github.ValidatePayload(r, []byte(configs.WebhookSecret))
+	payload, err := github.ValidatePayload(r, []byte(ghm.config.SecretKey))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +160,7 @@ func (ghm *GitHubManager) CreateJob(ctx context.Context, r *http.Request) (*mode
 			return nil, err
 		}
 
-		job := models.NewJob(repo.ID, commit.GetID(), event.Repo.GetCloneURL(), identity.Token)
+		job := models.NewJob(repo.ID, repo.UniqueName, commit.GetID(), event.Repo.GetCloneURL(), identity.Token)
 		return job, nil
 	default:
 		return nil, ErrEventNotSupported
@@ -191,9 +195,9 @@ func (ghm *GitHubManager) defaultWebhook() *github.Hook {
 		Active: github.Bool(true),
 		Events: []string{"push", "pull_request"},
 		Config: map[string]any{
-			"url":          fmt.Sprintf("https://%s:%s%s", configs.Host, configs.Port, ghm.eventHandlerPath),
+			"url":          fmt.Sprintf("https://%s:%s%s", ghm.config.Host, ghm.config.Port, ghm.eventHandlerPath),
 			"content_type": "json",
-			"secret":       configs.WebhookSecret,
+			"secret":       ghm.config.SecretKey,
 		},
 	}
 }

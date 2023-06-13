@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/shark-ci/shark-ci/ci-server/configs"
+	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
 	"github.com/shark-ci/shark-ci/message_queue"
@@ -17,6 +17,7 @@ type EventHandler struct {
 	store      store.Storer
 	mq         message_queue.MessageQueuer
 	serviceMap services.ServiceMap
+	serverName string
 }
 
 func NewEventHandler(store store.Storer, mq message_queue.MessageQueuer, serviceMap services.ServiceMap) *EventHandler {
@@ -72,7 +73,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	identity, err := h.store.GetIdentityByRepo(ctx, repo)
 
-	status := services.NewStatus(services.StatusPending, job.TargetURL, configs.CIServer, "Job in progress")
+	status := services.NewStatus(services.StatusPending, job.TargetURL, ciserver.CIServer, "Job in progress")
 	err = service.CreateStatus(ctx, identity, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

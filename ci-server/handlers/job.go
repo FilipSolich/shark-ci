@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
-	"github.com/shark-ci/shark-ci/ci-server/configs"
+	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/ci-server/middlewares"
 	"github.com/shark-ci/shark-ci/ci-server/services"
 	"github.com/shark-ci/shark-ci/ci-server/store"
@@ -114,7 +114,7 @@ func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	status := services.NewStatus(statusState, job.TargetURL, configs.CIServer, description)
+	status := services.NewStatus(statusState, job.TargetURL, ciserver.CIServer, description)
 	err = service.CreateStatus(ctx, identity, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

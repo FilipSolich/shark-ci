@@ -1,28 +1,29 @@
 package worker
 
 import (
-	"fmt"
+	"context"
 	"log"
-	"os"
+	"path"
 
 	"github.com/go-git/go-git/v5"
-	git_http "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/shark-ci/shark-ci/message_queue"
 	"github.com/shark-ci/shark-ci/models"
 )
 
-func Run(mq message_queue.MessageQueuer) error {
+func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error {
 	jobCh, err := mq.JobChannel()
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < maxWorkers; i++ {
 		go func() {
 			for job := range jobCh {
-				err := processJob(job)
+				err := processJob(job, reposPath)
 				if err != nil {
 					log.Println(err)
+					// TODO: Should be failed job returned to queue?
 					job.Nack()
 				}
 				job.Ack()
@@ -33,26 +34,25 @@ func Run(mq message_queue.MessageQueuer) error {
 	return nil
 }
 
-func processJob(job models.Job) error {
-	// TODO: Clone or fetch repo
+func processJob(job models.Job, reposPath string) error {
+	log.Printf("Processing job %s\n", job.ID)
 
-	fmt.Printf("Processing job %s\n", job.ID)
+	repoPath := path.Join(reposPath, job.UniqueName)
+	repo, err := UpdateRepo(context.TODO(), repoPath, job.CloneURL, job.Token.AccessToken)
 
-	err := os.Mkdir("testdir", 0750)
-	if err != nil && !os.IsExist(err) {
-		log.Fatal(err)
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
 	}
 
-	// Clones the repository into the given dir, just as a normal git clone does
-	_, err = git.PlainClone("testdir", false, &git.CloneOptions{
-		URL: job.CloneURL,
-		Auth: &git_http.BasicAuth{
-			Username: "abc123", // anything except an empty string
-			Password: job.Token.AccessToken,
-		},
+	err = worktree.Checkout(&git.CheckoutOptions{
+		Hash: plumbing.NewHash(job.CommitSHA),
 	})
-	fmt.Println(err)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 	// TODO: Parse YAML
 	// TODO: Create container

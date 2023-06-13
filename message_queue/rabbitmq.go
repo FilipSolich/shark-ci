@@ -3,7 +3,6 @@ package message_queue
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -17,12 +16,12 @@ type RabbitMQ struct {
 
 var _ MessageQueuer = &RabbitMQ{}
 
-func NewRabbitMQ(host string, port string, username string, password string) (*RabbitMQ, error) {
+func NewRabbitMQ(rabbitMQURI string) (*RabbitMQ, error) {
 	rmq := &RabbitMQ{queueName: "jobs"}
 	var err error
 
-	log.Printf("Connecting to RabbitMQ: amqp://%s:%s@%s:%s\n", username, password, host, port)
-	rmq.conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s", username, password, host, port))
+	log.Printf("Connecting to RabbitMQ")
+	rmq.conn, err = amqp.Dial(rabbitMQURI)
 	if err != nil {
 		return nil, err
 	}
