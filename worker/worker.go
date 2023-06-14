@@ -3,10 +3,12 @@ package worker
 import (
 	"context"
 	"log"
+	"os"
 	"path"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-yaml/yaml"
 	"github.com/shark-ci/shark-ci/message_queue"
 	"github.com/shark-ci/shark-ci/models"
 )
@@ -55,11 +57,21 @@ func processJob(job models.Job, reposPath string) error {
 		return err
 	}
 
-	return nil
-
 	// TODO: Parse YAML
+	file, err := os.Open(path.Join(repoPath, ".shark-ci/workflow.yaml"))
+	if err != nil {
+		return err
+	}
+
+	var pipeline Pipeline
+	err = yaml.NewDecoder(file).Decode(&pipeline)
+	if err != nil {
+		return err
+	}
+
 	// TODO: Create container
-	// TODO: Start container with mounted repo and run commands
+	// TODO: Start container with copied repo and run commands
 	// TODO: Report result
 	// TODO: Delete container
+	return nil
 }
