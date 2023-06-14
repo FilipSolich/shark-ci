@@ -5,7 +5,6 @@ go 1.20
 require (
 	github.com/docker/docker v24.0.2+incompatible
 	github.com/go-git/go-git/v5 v5.7.0
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/google/go-github/v53 v53.1.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/csrf v1.7.1
@@ -16,6 +15,7 @@ require (
 	github.com/rabbitmq/amqp091-go v1.8.1
 	go.mongodb.org/mongo-driver v1.11.7
 	golang.org/x/oauth2 v0.9.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

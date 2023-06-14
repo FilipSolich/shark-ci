@@ -12,9 +12,9 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-yaml/yaml"
 	"github.com/shark-ci/shark-ci/message_queue"
 	"github.com/shark-ci/shark-ci/models"
+	"gopkg.in/yaml.v3"
 )
 
 func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error {
