@@ -11,10 +11,10 @@ import (
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
-	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/config"
-	"github.com/shark-ci/shark-ci/models"
+	ciserver "github.com/FilipSolich/shark-ci/ci-server"
+	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/config"
+	"github.com/FilipSolich/shark-ci/models"
 )
 
 const githubName = "GitHub"

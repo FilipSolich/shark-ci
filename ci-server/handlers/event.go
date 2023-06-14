@@ -7,10 +7,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
-	"github.com/shark-ci/shark-ci/ci-server/services"
-	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/message_queue"
+	ciserver "github.com/FilipSolich/shark-ci/ci-server"
+	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/message_queue"
 )
 
 type EventHandler struct {

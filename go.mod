@@ -1,4 +1,4 @@
-module github.com/shark-ci/shark-ci
+module github.com/FilipSolich/shark-ci
 
 go 1.20
 

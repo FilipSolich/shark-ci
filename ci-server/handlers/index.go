@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/middlewares"
+	"github.com/FilipSolich/shark-ci/ci-server/configs"
+	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {

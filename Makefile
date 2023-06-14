@@ -1,4 +1,4 @@
-MODULE = github.com/shark-ci/shark-ci
+MODULE = github.com/FilipSolich/shark-ci
 
 CI_SERVER      = ci-server
 CI_SERVER_PATH = $(MODULE)/cmd/ci-server

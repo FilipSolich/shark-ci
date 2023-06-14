@@ -9,15 +9,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
-	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/handlers"
-	"github.com/shark-ci/shark-ci/ci-server/middlewares"
-	"github.com/shark-ci/shark-ci/ci-server/services"
-	"github.com/shark-ci/shark-ci/ci-server/sessions"
-	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/config"
-	"github.com/shark-ci/shark-ci/message_queue"
+	ciserver "github.com/FilipSolich/shark-ci/ci-server"
+	"github.com/FilipSolich/shark-ci/ci-server/configs"
+	"github.com/FilipSolich/shark-ci/ci-server/handlers"
+	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
+	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/sessions"
+	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/config"
+	"github.com/FilipSolich/shark-ci/message_queue"
 )
 
 func initGitServices(store store.Storer, config config.CIServerConfig) services.ServiceMap {

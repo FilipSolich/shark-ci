@@ -8,12 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
+	ciserver "github.com/FilipSolich/shark-ci/ci-server"
+	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
+	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/models"
 	"github.com/gorilla/mux"
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
-	"github.com/shark-ci/shark-ci/ci-server/middlewares"
-	"github.com/shark-ci/shark-ci/ci-server/services"
-	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/models"
 )
 
 const logsFolder = "joblogs"

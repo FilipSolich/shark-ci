@@ -8,13 +8,13 @@ import (
 	"path"
 	"strings"
 
+	"github.com/FilipSolich/shark-ci/message_queue"
+	"github.com/FilipSolich/shark-ci/models"
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/shark-ci/shark-ci/message_queue"
-	"github.com/shark-ci/shark-ci/models"
 	"gopkg.in/yaml.v3"
 )
 

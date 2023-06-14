@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/FilipSolich/shark-ci/models"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/shark-ci/shark-ci/models"
 )
 
 type RabbitMQ struct {

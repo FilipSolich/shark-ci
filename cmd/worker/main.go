@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/FilipSolich/shark-ci/config"
+	"github.com/FilipSolich/shark-ci/message_queue"
+	"github.com/FilipSolich/shark-ci/worker"
 	"github.com/joho/godotenv"
-	"github.com/shark-ci/shark-ci/config"
-	"github.com/shark-ci/shark-ci/message_queue"
-	"github.com/shark-ci/shark-ci/worker"
 )
 
 func main() {

@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
-	"github.com/shark-ci/shark-ci/ci-server/configs"
-	"github.com/shark-ci/shark-ci/ci-server/services"
-	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/ci-server/configs"
+	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/models"
 )
 
 type LoginHandler struct {
