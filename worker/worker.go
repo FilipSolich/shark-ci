@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
@@ -33,6 +34,7 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error
 					// TODO: Should be failed job returned to queue?
 					job.Nack()
 					log.Printf("Job %s failed: %s\n", job.ID, err.Error())
+					continue
 				}
 				job.Ack()
 				log.Printf("Job %s processed successfully\n", job.ID)
@@ -68,6 +70,7 @@ func processJob(ctx context.Context, job models.Job, reposPath string) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	var pipeline Pipeline
 	err = yaml.NewDecoder(file).Decode(&pipeline)
@@ -92,24 +95,55 @@ func processJob(ctx context.Context, job models.Job, reposPath string) error {
 	// Create container.
 	container, err := cli.ContainerCreate(ctx, &containertypes.Config{
 		Image: pipeline.BaseImage,
-		Cmd:   []string{"echo", "hello world"},
+		Cmd:   []string{"sh"},
 		Tty:   true,
 	}, nil, nil, nil, "")
 	if err != nil {
 		return err
 	}
 
+	// Start container.
 	err = cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{})
 	if err != nil {
 		return err
 	}
 
-	// TODO: Start container with copied repo and run commands
-	// TODO: Report result
+	for name, j := range pipeline.Jobs {
+		log.Printf("Job %s runs %s\n", job.ID, name)
+		for _, step := range j.Steps {
+			log.Printf("Job %s runs %s step %s\n", job.ID, name, step.Name)
+			exec, err := cli.ContainerExecCreate(ctx, container.ID, types.ExecConfig{
+				AttachStdout: true,
+				AttachStderr: true,
+				Cmd:          strings.Split(step.Run, " "),
+			})
+			if err != nil {
+				return err
+			}
+
+			hijacked, err := cli.ContainerExecAttach(ctx, exec.ID, types.ExecStartCheck{})
+			if err != nil {
+				return err
+			}
+
+			logs, err := io.ReadAll(hijacked.Reader)
+			if err != nil {
+				hijacked.Close()
+				return err
+			}
+			hijacked.Close()
+
+			status, err := cli.ContainerExecInspect(ctx, exec.ID) // TODO: Will containen status code.
+			if err != nil {
+				return err
+			}
+
+			log.Printf("Job %s runs %s step %s logs: %d:%s\n", job.ID, name, step.Name, status.ExitCode, logs)
+		}
+	}
 
 	// Stop container.
-	wait := 0
-	err = cli.ContainerStop(ctx, container.ID, containertypes.StopOptions{Timeout: &wait})
+	err = cli.ContainerKill(ctx, container.ID, "SIGKILL")
 	if err != nil {
 		return err
 	}
