@@ -3,8 +3,8 @@ package message_queue
 import (
 	"context"
 	"encoding/json"
-	"log"
 
+	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/models"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -20,12 +20,12 @@ func NewRabbitMQ(rabbitMQURI string) (*RabbitMQ, error) {
 	rmq := &RabbitMQ{queueName: "jobs"}
 	var err error
 
-	log.Printf("Connecting to RabbitMQ")
+	log.L.Info("Connecting to RabbitMQ")
 	rmq.conn, err = amqp.Dial(rabbitMQURI)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("RabbitMQ connected")
+	log.L.Info("RabbitMQ connected")
 
 	channel, err := rmq.conn.Channel()
 	if err != nil {
@@ -93,7 +93,7 @@ func (rmq *RabbitMQ) JobChannel() (jobChannel, error) {
 			var job models.Job
 			err := json.Unmarshal(msg.Body, &job)
 			if err != nil {
-				log.Println(err)
+				log.L.Error(err)
 				msg.Nack(false, false)
 				continue
 			}

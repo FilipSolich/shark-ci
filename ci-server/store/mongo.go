@@ -2,8 +2,8 @@ package store
 
 import (
 	"context"
-	"log"
 
+	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -24,12 +24,11 @@ type MongoStore struct {
 
 var _ Storer = &MongoStore{}
 
-// TODO: Move db connection somewhere else after create more xStorer interfaces.
 func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	ms := &MongoStore{}
 	var err error
 
-	log.Println("Connecting to MongoDB")
+	log.L.Info("Connecting to MongoDB")
 	ctx := context.TODO()
 	ms.client, err = mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
@@ -40,7 +39,7 @@ func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("MongoDB connected")
+	log.L.Info("MongoDB connected")
 
 	ms.db = ms.client.Database("CIServer")
 	ms.users = ms.db.Collection("users")

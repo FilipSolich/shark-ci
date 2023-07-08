@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"archive/tar"
 	"context"
 	"io"
 	"log"
@@ -18,7 +19,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error {
+func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compressedReposPath string) error {
 	jobCh, err := mq.JobChannel()
 	if err != nil {
 		return err
@@ -29,7 +30,7 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error
 			for job := range jobCh {
 				log.Printf("Processing job %s\n", job.ID)
 				ctx := context.TODO()
-				err := processJob(ctx, job, reposPath)
+				err := processJob(ctx, job, reposPath, compressedReposPath)
 				if err != nil {
 					// TODO: Should be failed job returned to queue?
 					job.Nack()
@@ -45,10 +46,10 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string) error
 	return nil
 }
 
-func processJob(ctx context.Context, job models.Job, reposPath string) error {
+func processJob(ctx context.Context, job models.Job, reposPath string, compressedReposPath string) error {
 	// Update repository.
 	repoPath := path.Join(reposPath, job.UniqueName)
-	repo, err := UpdateRepo(ctx, repoPath, job.CloneURL, job.Token.AccessToken)
+	repo, err := updateRepo(ctx, repoPath, job.CloneURL, job.Token.AccessToken)
 	if err != nil {
 		return err
 	}
@@ -94,9 +95,10 @@ func processJob(ctx context.Context, job models.Job, reposPath string) error {
 
 	// Create container.
 	container, err := cli.ContainerCreate(ctx, &containertypes.Config{
-		Image: pipeline.BaseImage,
-		Cmd:   []string{"sh"},
-		Tty:   true,
+		Image:      pipeline.BaseImage,
+		Cmd:        []string{"sh"},
+		Tty:        true,
+		WorkingDir: "/repo",
 	}, nil, nil, nil, "")
 	if err != nil {
 		return err
@@ -104,6 +106,26 @@ func processJob(ctx context.Context, job models.Job, reposPath string) error {
 
 	// Start container.
 	err = cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
+
+	// Create compressed repository.
+	compressedRepo, err := archiveRepo(repoPath, compressedReposPath, job.UniqueName, job.CommitSHA)
+	if err != nil {
+		return err
+	}
+
+	a, err := os.Open(compressedRepo)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	tarReader := tar.NewReader(a)
+
+	// This doesnt work.
+	err = cli.CopyToContainer(ctx, container.ID, "/", tarReader, types.CopyToContainerOptions{})
 	if err != nil {
 		return err
 	}

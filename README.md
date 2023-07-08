@@ -10,20 +10,14 @@ CI server written in Go
 
 At least one git service must be enabled (`GITHUB_ENABLED` or `GITLAB_ENABLED`)
 
-| Key                    | Type            | Default             | Description                                                         |
-|------------------------|-----------------|---------------------|---------------------------------------------------------------------|
-| `HOST`                 | `string`        |                     | Hostname.                                                           |
-| `PORT`                 | `int`\|`string` | `8080`              | Port                                                                |
-| `SESSION_SECRET`       | `string`        | `"insecure-secret"` | Random key for session encryption.                                  |
-| `CSRF_SECRET`          | `string`        | `"insecure-secret"` | Random key for csrf encryption.                                     |
-| `WEBHOOK_SECRET`       | `string`        | `"insecure-secret"` | Random key for webhook encryption.                                  |
-| `RABBITMQ_HOST`        | `string`        | `"localhost"`       | RabbtiMQ hostname.                                                  |
-| `RABBITMQ_PORT`        | `int`\|`string` | `5672`              | RabbitMQ port.                                                      |
-| `RABBITMQ_USERNAME`    | `string`        | `"guest"`           | RabbitMQ username.                                                  |
-| `RABBITMQ_PASSWORD`    | `string`        | `"guest"`           | RabbitMQ password.                                                  |
-| `GITHUB_ENABLED`       | `bool`          | `false`             | Allow GitHub repositories for CI.                                   |
-| `GITHUB_CLIENT_ID`     | `string`        |                     | GitHub client ID (Required only if `GITHUB_ENABLED` == `true`).     |
-| `GITHUB_CLIENT_SECRET` | `string`        |                     | GitHub client secret (Required only if `GITHUB_ENABLED` == `true`). |
-| `GITLAB_ENABLED`       | `bool`          | `false`             | Allow GitLab repositories for CI.                                   |
-| `GITLAB_CLIENT_ID`     | `string`        |                     | GitLab client ID (Required only if `GITLAB_ENABLED` == `true`).     |
-| `GITLAB_CLIENT_SECRET` | `string`        |                     | GitLab client secret (Required only if `GITLAB_ENABLED` == `true`). |
+| Key                    | Type            | Default                       | Description                |
+|------------------------|-----------------|-------------------------------|----------------------------|
+| `HOST`                 | `string`        |                               | Hostname.                  |
+| `PORT`                 | `int`\|`string` | `8080`                        | Port.                      |
+| `SECRET_SECRET`        | `string`        | `"insecure-secret"`           | Random key for encryption. |
+| `MONGO_URI`            | `string`        | `"mongodb://localhost:17017"` | RabbitMQ URI.              |
+| `RABBITMQ_URI`         | `string`        | `"amqp://localhost:5672"`     | RabbitMQ URI.              |
+| `GITHUB_CLIENT_ID`     | `string`        |                               | GitHub client ID.          |
+| `GITHUB_CLIENT_SECRET` | `string`        |                               | GitHub client secret.      |
+| `GITLAB_CLIENT_ID`     | `string`        |                               | GitLab client ID.          |
+| `GITLAB_CLIENT_SECRET` | `string`        |                               | GitLab client secret.      |

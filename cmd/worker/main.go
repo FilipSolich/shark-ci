@@ -25,13 +25,18 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	compressedReposPath, err := worker.CreateTmpDir()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	rabbitMQ, err := message_queue.NewRabbitMQ(config.RabbitMQURI)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer rabbitMQ.Close(context.TODO())
 
-	err = worker.Run(rabbitMQ, config.MaxWorkers, config.ReposPath)
+	err = worker.Run(rabbitMQ, config.MaxWorkers, config.ReposPath, compressedReposPath)
 	if err != nil {
 		log.Fatalln(err)
 	}

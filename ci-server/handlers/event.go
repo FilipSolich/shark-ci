@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/services"
@@ -14,15 +15,16 @@ import (
 )
 
 type EventHandler struct {
+	loger      *zap.SugaredLogger
 	store      store.Storer
 	mq         message_queue.MessageQueuer
 	serviceMap services.ServiceMap
-	serverName string
 }
 
-func NewEventHandler(store store.Storer, mq message_queue.MessageQueuer, serviceMap services.ServiceMap) *EventHandler {
+func NewEventHandler(l *zap.SugaredLogger, s store.Storer, mq message_queue.MessageQueuer, serviceMap services.ServiceMap) *EventHandler {
 	return &EventHandler{
-		store:      store,
+		loger:      l,
+		store:      s,
 		mq:         mq,
 		serviceMap: serviceMap,
 	}

@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/configs"
 	"github.com/FilipSolich/shark-ci/ci-server/handlers"
+	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
 	"github.com/FilipSolich/shark-ci/ci-server/services"
 	"github.com/FilipSolich/shark-ci/ci-server/sessions"
@@ -30,15 +31,21 @@ func initGitServices(store store.Storer, config config.CIServerConfig) services.
 }
 
 func main() {
-	// TODO: Remove godotenv.
-	err := godotenv.Load()
+	logger, err := zap.NewDevelopment()
 	if err != nil {
-		log.Fatalln(err)
+	}
+	defer logger.Sync()
+	log.L = logger.Sugar()
+
+	// TODO: Remove godotenv.
+	err = godotenv.Load()
+	if err != nil {
+		log.L.Fatal(err)
 	}
 
 	config, err := config.NewCIServerConfigFromEnv()
 	if err != nil {
-		log.Fatalln(err)
+		log.L.Fatal(err)
 	}
 
 	sessions.InitSessionStore(config.SecretKey)
@@ -48,13 +55,13 @@ func main() {
 
 	mongoStore, err := store.NewMongoStore(config.MongoURI)
 	if err != nil {
-		log.Fatalln(err)
+		log.L.Fatal(err)
 	}
 	defer mongoStore.Close(context.TODO())
 
 	rabbitMQ, err := message_queue.NewRabbitMQ(config.RabbitMQURI)
 	if err != nil {
-		log.Fatalln(err)
+		log.L.Fatal(err)
 	}
 	defer rabbitMQ.Close(context.TODO())
 
@@ -64,9 +71,9 @@ func main() {
 
 	loginHandler := handlers.NewLoginHandler(mongoStore, serviceMap)
 	logoutHandler := handlers.NewLogoutHandler()
-	eventHandler := handlers.NewEventHandler(mongoStore, rabbitMQ, serviceMap)
+	eventHandler := handlers.NewEventHandler(log.L, mongoStore, rabbitMQ, serviceMap)
 	oauth2Handler := handlers.NewOAuth2Handler(mongoStore, serviceMap)
-	repoHandler := handlers.NewRepoHandler(mongoStore, serviceMap)
+	repoHandler := handlers.NewRepoHandler(log.L, mongoStore, serviceMap)
 	jobHandler := handlers.NewJobHandler(mongoStore, serviceMap)
 
 	r := mux.NewRouter()
@@ -103,6 +110,6 @@ func main() {
 		WriteTimeout: 0,
 		IdleTimeout:  0,
 	}
-	log.Println("Server running on " + server.Addr)
-	log.Fatalln(server.ListenAndServe())
+	log.L.Info("Server running on " + server.Addr)
+	log.L.Fatal(server.ListenAndServe())
 }

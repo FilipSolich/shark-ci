@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/csrf"
+	"go.uber.org/zap"
 
 	"github.com/FilipSolich/shark-ci/ci-server/configs"
 	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
@@ -17,13 +17,15 @@ import (
 )
 
 type RepoHandler struct {
-	store      store.Storer
+	l          *zap.SugaredLogger
+	s          store.Storer
 	serviceMap services.ServiceMap
 }
 
-func NewRepoHandler(store store.Storer, serviceMap services.ServiceMap) *RepoHandler {
+func NewRepoHandler(l *zap.SugaredLogger, s store.Storer, serviceMap services.ServiceMap) *RepoHandler {
 	return &RepoHandler{
-		store:      store,
+		l:          l,
+		s:          s,
 		serviceMap: serviceMap,
 	}
 }
@@ -37,21 +39,21 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 
 	serviceRepos := map[string]map[string][]*models.Repo{}
 	for serviceName, service := range h.serviceMap {
-		identity, err := h.store.GetIdentityByUser(ctx, user, serviceName)
+		identity, err := h.s.GetIdentityByUser(ctx, user, serviceName)
 		if err != nil {
-			log.Print(err)
+			h.l.Error(err)
 			continue
 		}
 
 		// TODO: Bundle into repo finder and updater
 		repos, err := service.GetUsersRepos(r.Context(), identity)
 		if err != nil {
-			log.Print(err)
+			h.l.Error(err)
 			continue
 		}
 
 		for _, repo := range repos {
-			h.store.CreateRepo(r.Context(), repo)
+			h.s.CreateRepo(r.Context(), repo)
 		}
 
 		registered, notRegistered := splitRepos(repos)
@@ -70,19 +72,22 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	repo, err = service.CreateWebhook(ctx, identity, repo)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = h.store.UpdateRepoWebhook(ctx, repo)
+	err = h.s.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -93,19 +98,22 @@ func (h *RepoHandler) HandleUnregisterRepo(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = service.DeleteWebhook(ctx, identity, repo)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = h.store.UpdateRepoWebhook(ctx, repo)
+	err = h.s.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -124,19 +132,22 @@ func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, ac
 	ctx := r.Context()
 	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
+		h.l.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	repo, err = service.ChangeWebhookState(ctx, identity, repo, active)
 	if err != nil {
+		h.l.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = h.store.UpdateRepoWebhook(ctx, repo)
+	err = h.s.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -150,7 +161,7 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 	}
 
 	r.ParseForm()
-	repo, err := h.store.GetRepo(ctx, r.Form.Get("repo_id"))
+	repo, err := h.s.GetRepo(ctx, r.Form.Get("repo_id"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -160,7 +171,7 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
 	}
 
-	identity, err := h.store.GetIdentityByUser(ctx, user, repo.ServiceName)
+	identity, err := h.s.GetIdentityByUser(ctx, user, repo.ServiceName)
 	if err != nil {
 		return nil, nil, nil, err
 	}

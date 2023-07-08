@@ -83,7 +83,9 @@ func (ghm *GitHubManager) GetUserIdentity(ctx context.Context, token *oauth2.Tok
 func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error) {
 	client := ghm.getClientByIdentity(ctx, identity)
 
-	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{Type: "owner"})
+	// TODO: Experimenting feature - get all repos, not just owned by user.
+	// TODO: Add pagination.
+	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{})
 
 	repos := make([]*models.Repo, 0, len(ghRepos))
 	for _, repo := range ghRepos {
