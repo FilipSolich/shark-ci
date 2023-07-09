@@ -7,18 +7,18 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
-	"github.com/FilipSolich/shark-ci/ci-server/configs"
-	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/ci-server/template"
 	"github.com/FilipSolich/shark-ci/models"
 )
 
 type LoginHandler struct {
 	store      store.Storer
-	serviceMap services.ServiceMap
+	serviceMap service.ServiceMap
 }
 
-func NewLoginHandler(s store.Storer, serviceMap services.ServiceMap) *LoginHandler {
+func NewLoginHandler(s store.Storer, serviceMap service.ServiceMap) *LoginHandler {
 	return &LoginHandler{
 		store:      s,
 		serviceMap: serviceMap,
@@ -45,13 +45,13 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]string{}
-	for _, service := range h.serviceMap {
-		config := service.OAuth2Config()
+	for _, s := range h.serviceMap {
+		config := s.OAuth2Config()
 		url := config.AuthCodeURL(oauth2State.State, oauth2.AccessTypeOffline)
-		data[service.ServiceName()+"URL"] = url
+		data[s.Name()+"URL"] = url
 	}
 
-	configs.RenderTemplate(w, "login.html", map[string]any{
+	template.RenderTemplate(w, "login.html", map[string]any{
 		"URLs": data,
 	})
 }

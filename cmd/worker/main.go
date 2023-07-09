@@ -7,9 +7,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/FilipSolich/shark-ci/config"
 	"github.com/FilipSolich/shark-ci/message_queue"
 	"github.com/FilipSolich/shark-ci/worker"
+	"github.com/FilipSolich/shark-ci/worker/config"
 	"github.com/joho/godotenv"
 )
 
@@ -20,7 +20,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	config, err := config.NewWorkerConfigFromEnv()
+	config, err := config.NewConfigFromEnv()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -30,13 +30,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	rabbitMQ, err := message_queue.NewRabbitMQ(config.RabbitMQURI)
+	rabbitMQ, err := message_queue.NewRabbitMQ(config.MQ.URI)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer rabbitMQ.Close(context.TODO())
 
-	err = worker.Run(rabbitMQ, config.MaxWorkers, config.ReposPath, compressedReposPath)
+	err = worker.Run(rabbitMQ, config.Worker.MaxWorkers, config.Worker.ReposPath, compressedReposPath)
 	if err != nil {
 		log.Fatalln(err)
 	}

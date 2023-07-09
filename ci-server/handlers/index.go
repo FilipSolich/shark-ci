@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/configs"
 	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
+	"github.com/FilipSolich/shark-ci/ci-server/template"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +13,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configs.RenderTemplate(w, "index.html", map[string]any{
+	template.RenderTemplate(w, "index.html", map[string]any{
 		"ID": user.ID,
 	})
 }

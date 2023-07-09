@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	std_log "log"
 	"net/http"
 
 	"github.com/gorilla/csrf"
@@ -10,29 +11,21 @@ import (
 	"go.uber.org/zap"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
-	"github.com/FilipSolich/shark-ci/ci-server/configs"
+	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/handlers"
 	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
-	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/sessions"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/config"
+	"github.com/FilipSolich/shark-ci/ci-server/template"
 	"github.com/FilipSolich/shark-ci/message_queue"
 )
-
-func initGitServices(store store.Storer, config config.CIServerConfig) services.ServiceMap {
-	serviceMap := services.ServiceMap{}
-	if config.GitHubClientID != "" {
-		ghm := services.NewGitHubManager(config.GitHubClientID, config.GitHubClientSecret, store, config)
-		serviceMap[ghm.ServiceName()] = ghm
-	}
-	return serviceMap
-}
 
 func main() {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
+		std_log.Fatal(err)
 	}
 	defer logger.Sync()
 	log.L = logger.Sugar()
@@ -43,31 +36,30 @@ func main() {
 		log.L.Fatal(err)
 	}
 
-	config, err := config.NewCIServerConfigFromEnv()
+	config, err := config.NewConfigFromEnv()
 	if err != nil {
 		log.L.Fatal(err)
 	}
 
-	sessions.InitSessionStore(config.SecretKey)
+	sessions.InitSessionStore(config.CIServer.SecretKey)
 
-	// TODO: Handle templates better.
-	configs.LoadTemplates()
+	template.LoadTemplates()
 
-	mongoStore, err := store.NewMongoStore(config.MongoURI)
+	mongoStore, err := store.NewMongoStore(config.DB.URI)
 	if err != nil {
 		log.L.Fatal(err)
 	}
 	defer mongoStore.Close(context.TODO())
 
-	rabbitMQ, err := message_queue.NewRabbitMQ(config.RabbitMQURI)
+	rabbitMQ, err := message_queue.NewRabbitMQ(config.MQ.URI)
 	if err != nil {
 		log.L.Fatal(err)
 	}
 	defer rabbitMQ.Close(context.TODO())
 
-	serviceMap := initGitServices(mongoStore, config)
+	serviceMap := service.InitServices(mongoStore, config)
 
-	CSRF := csrf.Protect([]byte(config.SecretKey))
+	CSRF := csrf.Protect([]byte(config.CIServer.SecretKey))
 
 	loginHandler := handlers.NewLoginHandler(mongoStore, serviceMap)
 	logoutHandler := handlers.NewLogoutHandler()
@@ -104,7 +96,7 @@ func main() {
 	jobs.HandleFunc(ciserver.JobsPublishLogsHandlerPath+"/{id}", jobHandler.HandleLogReport).Methods(http.MethodPost)
 
 	server := &http.Server{
-		Addr:         ":" + config.Port,
+		Addr:         ":" + config.CIServer.Port,
 		Handler:      r,
 		ReadTimeout:  0,
 		WriteTimeout: 0,

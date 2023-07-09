@@ -10,7 +10,7 @@ import (
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
-	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/models"
 	"github.com/gorilla/mux"
@@ -20,10 +20,10 @@ const logsFolder = "joblogs"
 
 type JobHandler struct {
 	store      store.Storer
-	serviceMap services.ServiceMap
+	serviceMap service.ServiceMap
 }
 
-func NewJobHandler(store store.Storer, serviceMap services.ServiceMap) *JobHandler {
+func NewJobHandler(store store.Storer, serviceMap service.ServiceMap) *JobHandler {
 	return &JobHandler{
 		store:      store,
 		serviceMap: serviceMap,
@@ -102,20 +102,20 @@ func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) 
 	statusType := r.Form.Get("statusType")
 	description := r.Form.Get("description")
 
-	statusState, ok := services.StatusStateMap[statusType]
+	statusState, ok := service.StatusStateMap[statusType]
 	if !ok {
 		http.Error(w, "unknow status: "+statusType, http.StatusBadRequest)
 		return
 	}
 
-	service, ok := h.serviceMap[repo.ServiceName]
+	srv, ok := h.serviceMap[repo.ServiceName]
 	if !ok {
 		http.Error(w, "unknow service for repo: "+repo.FullName, http.StatusInternalServerError)
 		return
 	}
 
-	status := services.NewStatus(statusState, job.TargetURL, ciserver.CIServer, description)
-	err = service.CreateStatus(ctx, identity, job, status)
+	status := service.NewStatus(statusState, job.TargetURL, ciserver.CIServer, description)
+	err = srv.CreateStatus(ctx, identity, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

@@ -1,8 +1,7 @@
-package services
+package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,28 +11,22 @@ import (
 	oauth2_github "golang.org/x/oauth2/github"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
+	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/config"
 	"github.com/FilipSolich/shark-ci/models"
 )
 
-const githubName = "GitHub"
-
 type GitHubManager struct {
-	name             string
-	eventHandlerPath string
-	store            store.Storer
-	oauth2Config     *oauth2.Config
-	config           config.CIServerConfig
+	store        store.Storer
+	oauth2Config *oauth2.Config
+	config       config.CIServerConfig
 }
 
 var _ ServiceManager = &GitHubManager{}
 
 func NewGitHubManager(clientID string, clientSecret string, store store.Storer, config config.CIServerConfig) *GitHubManager {
 	return &GitHubManager{
-		name:             githubName,
-		eventHandlerPath: ciserver.EventHandlerPath + "/" + githubName,
-		store:            store,
+		store: store,
 		oauth2Config: &oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
@@ -45,8 +38,8 @@ func NewGitHubManager(clientID string, clientSecret string, store store.Storer, 
 }
 
 // Return service name.
-func (ghm *GitHubManager) ServiceName() string {
-	return ghm.name
+func (ghm *GitHubManager) Name() string {
+	return "GitHub"
 }
 
 func (*GitHubManager) StatusName(status StatusState) (string, error) {
@@ -60,7 +53,7 @@ func (*GitHubManager) StatusName(status StatusState) (string, error) {
 	case StatusError:
 		return "error", nil
 	}
-	return "", errors.New("invalid state")
+	return "", fmt.Errorf("invalid state: %d", status)
 }
 
 func (ghm *GitHubManager) OAuth2Config() *oauth2.Config {
@@ -75,7 +68,7 @@ func (ghm *GitHubManager) GetUserIdentity(ctx context.Context, token *oauth2.Tok
 		return nil, err
 	}
 
-	identity := models.NewIdentity(ghUser.GetLogin(), ghm.name, token)
+	identity := models.NewIdentity(ghUser.GetLogin(), ghm.Name(), token)
 	return identity, nil
 }
 
@@ -92,7 +85,7 @@ func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *models.Id
 		if repo.GetArchived() {
 			continue
 		}
-		r := models.NewRepo(identity, repo.GetID(), ghm.ServiceName(), repo.GetName(), repo.GetFullName())
+		r := models.NewRepo(identity, repo.GetID(), ghm.Name(), repo.GetName(), repo.GetFullName())
 		repos = append(repos, r)
 	}
 
@@ -149,27 +142,31 @@ func (ghm *GitHubManager) HandleEvent(r *http.Request) (*models.Job, error) {
 
 	switch event := event.(type) {
 	case *github.PushEvent:
-		// TODO: Should this be commit which triggred webhook or last commit in repo?
-		commit := event.Commits[len(event.Commits)-1]
-
-		username := event.Repo.Owner.GetLogin()
-		identity, err := ghm.store.GetIdentityByUniqueName(r.Context(), ghm.name+"/"+username)
-		if err != nil {
-			return nil, err
-		}
-
-		repo, err := ghm.store.GetRepoByUniqueName(r.Context(), ghm.name+"/"+event.Repo.GetFullName())
-		if err != nil {
-			return nil, err
-		}
-
-		job := models.NewJob(repo.ID, repo.UniqueName, commit.GetID(), event.Repo.GetCloneURL(), identity.Token)
-		return job, nil
+		return ghm.handlePush(r.Context(), event)
 	case *github.PingEvent:
 		return nil, NoErrPingEvent
 	default:
 		return nil, ErrEventNotSupported
 	}
+}
+
+func (ghm *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*models.Job, error) {
+	// TODO: Should this be commit which triggred webhook or last commit in repo?
+	commit := e.Commits[len(e.Commits)-1]
+
+	username := e.Repo.Owner.GetLogin()
+	identity, err := ghm.store.GetIdentityByUniqueName(ctx, ghm.Name()+"/"+username)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := ghm.store.GetRepoByUniqueName(ctx, ghm.Name()+"/"+e.Repo.GetFullName())
+	if err != nil {
+		return nil, err
+	}
+
+	job := models.NewJob(repo.ID, repo.UniqueName, commit.GetID(), e.Repo.GetCloneURL(), identity.Token)
+	return job, nil
 }
 
 func (ghm *GitHubManager) CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error {
@@ -200,7 +197,7 @@ func (ghm *GitHubManager) defaultWebhook() *github.Hook {
 		Active: github.Bool(true),
 		Events: []string{"push", "pull_request"},
 		Config: map[string]any{
-			"url":          fmt.Sprintf("https://%s:%s%s", ghm.config.Host, ghm.config.Port, ghm.eventHandlerPath),
+			"url":          fmt.Sprintf("https://%s:%s%s", ghm.config.Host, ghm.config.Port, ciserver.EventHandlerPath+"/"+ghm.Name()),
 			"content_type": "json",
 			"secret":       ghm.config.SecretKey,
 		},

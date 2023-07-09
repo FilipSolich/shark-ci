@@ -1,10 +1,12 @@
-package services
+package service
 
 import (
 	"context"
 	"errors"
 	"net/http"
 
+	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/config"
 	"github.com/FilipSolich/shark-ci/models"
 	"golang.org/x/oauth2"
 )
@@ -48,8 +50,17 @@ func NewStatus(state StatusState, targetURL string, ctx string, description stri
 
 type ServiceMap map[string]ServiceManager
 
+func InitServices(s store.Storer, config config.Config) ServiceMap {
+	serviceMap := ServiceMap{}
+	if config.GitHub.ClientID != "" {
+		ghm := NewGitHubManager(config.GitHub.ClientID, config.GitHub.ClientSecret, s, config.CIServer)
+		serviceMap[ghm.Name()] = ghm
+	}
+	return serviceMap
+}
+
 type ServiceManager interface {
-	ServiceName() string          // Return service name.
+	Name() string                 // Return service name.
 	OAuth2Config() *oauth2.Config // Return OAuth2 config.
 
 	// Get or create user with OAuth2 token.

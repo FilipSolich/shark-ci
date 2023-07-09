@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/sessions"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/models"
@@ -12,10 +12,10 @@ import (
 
 type OAuth2Handler struct {
 	store      store.Storer
-	serviceMap services.ServiceMap
+	serviceMap service.ServiceMap
 }
 
-func NewOAuth2Handler(s store.Storer, serviceMap services.ServiceMap) *OAuth2Handler {
+func NewOAuth2Handler(s store.Storer, serviceMap service.ServiceMap) *OAuth2Handler {
 	return &OAuth2Handler{
 		store:      s,
 		serviceMap: serviceMap,
@@ -27,7 +27,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	serviceName := r.URL.Query().Get("service")
 
-	service, ok := h.serviceMap[serviceName]
+	srv, ok := h.serviceMap[serviceName]
 	if !ok {
 		http.Error(w, "unknown OAuth2 provider: "+serviceName, http.StatusBadRequest)
 		return
@@ -47,7 +47,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get Oauth2 token from auth service.
-	config := service.OAuth2Config()
+	config := srv.OAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -56,7 +56,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Get or create new UserIdentity and new User if needed.
 	// TODO: Get user from request and pass it into function call.
-	serviceIdentity, err := service.GetUserIdentity(ctx, token)
+	serviceIdentity, err := srv.GetUserIdentity(ctx, token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

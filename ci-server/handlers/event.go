@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
-	"github.com/FilipSolich/shark-ci/ci-server/services"
+	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/message_queue"
 )
@@ -18,10 +18,10 @@ type EventHandler struct {
 	loger      *zap.SugaredLogger
 	store      store.Storer
 	mq         message_queue.MessageQueuer
-	serviceMap services.ServiceMap
+	serviceMap service.ServiceMap
 }
 
-func NewEventHandler(l *zap.SugaredLogger, s store.Storer, mq message_queue.MessageQueuer, serviceMap services.ServiceMap) *EventHandler {
+func NewEventHandler(l *zap.SugaredLogger, s store.Storer, mq message_queue.MessageQueuer, serviceMap service.ServiceMap) *EventHandler {
 	return &EventHandler{
 		loger:      l,
 		store:      s,
@@ -39,18 +39,18 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	service, ok := h.serviceMap[serviceName]
+	srv, ok := h.serviceMap[serviceName]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	job, err := service.HandleEvent(r)
+	job, err := srv.HandleEvent(r)
 	if err != nil {
-		if errors.Is(err, services.NoErrPingEvent) {
-			w.WriteHeader(http.StatusNoContent)
+		if errors.Is(err, service.NoErrPingEvent) {
+			w.Write([]byte("pong"))
 			return
-		} else if errors.Is(err, services.ErrEventNotSupported) {
+		} else if errors.Is(err, service.ErrEventNotSupported) {
 			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -78,8 +78,8 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	identity, err := h.store.GetIdentityByRepo(ctx, repo)
 
-	status := services.NewStatus(services.StatusPending, job.TargetURL, ciserver.CIServer, "Job in progress")
-	err = service.CreateStatus(ctx, identity, job, status)
+	status := service.NewStatus(service.StatusPending, job.TargetURL, ciserver.CIServer, "Job in progress")
+	err = srv.CreateStatus(ctx, identity, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
