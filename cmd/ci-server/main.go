@@ -16,7 +16,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
-	"github.com/FilipSolich/shark-ci/ci-server/sessions"
+	"github.com/FilipSolich/shark-ci/ci-server/session"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/ci-server/template"
 	"github.com/FilipSolich/shark-ci/message_queue"
@@ -41,7 +41,7 @@ func main() {
 		log.L.Fatal(err)
 	}
 
-	sessions.InitSessionStore(config.CIServer.SecretKey)
+	session.InitSessionStore(config.CIServer.SecretKey)
 
 	template.LoadTemplates()
 

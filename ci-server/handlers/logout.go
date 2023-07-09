@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/sessions"
+	"github.com/FilipSolich/shark-ci/ci-server/session"
 )
 
 // TODO: Move under login handler with register.
@@ -14,7 +14,7 @@ func NewLogoutHandler() *LogoutHandler {
 }
 
 func (h *LogoutHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	session, _ := sessions.Store.Get(r, "session")
+	session, _ := session.Store.Get(r, "session")
 	session.Options.MaxAge = -1
 	err := session.Save(r, w)
 	if err != nil {

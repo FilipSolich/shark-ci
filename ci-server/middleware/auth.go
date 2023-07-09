@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/sessions"
+	"github.com/FilipSolich/shark-ci/ci-server/session"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/gorilla/mux"
 )
@@ -11,8 +11,8 @@ import (
 func AuthMiddleware(store store.Storer) mux.MiddlewareFunc {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			session, _ := sessions.Store.Get(r, "session")
-			id, ok := session.Values[sessions.SessionKey].(string)
+			s, _ := session.Store.Get(r, "session")
+			id, ok := s.Values[session.SessionKey].(string)
 			if !ok {
 				http.Redirect(w, r, "/login", http.StatusFound)
 				return

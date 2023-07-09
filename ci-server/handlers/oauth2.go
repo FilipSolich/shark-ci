@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/FilipSolich/shark-ci/ci-server/service"
-	"github.com/FilipSolich/shark-ci/ci-server/sessions"
+	"github.com/FilipSolich/shark-ci/ci-server/session"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/models"
 )
@@ -86,9 +86,9 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store session.
-	session, _ := sessions.Store.Get(r, "session")
-	session.Values[sessions.SessionKey] = user.ID
-	err = session.Save(r, w)
+	s, _ := session.Store.Get(r, "session")
+	s.Values[session.SessionKey] = user.ID
+	err = s.Save(r, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
