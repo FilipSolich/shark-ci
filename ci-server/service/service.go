@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/config"
 	"github.com/FilipSolich/shark-ci/models"
 	"golang.org/x/oauth2"
 )
