@@ -3,10 +3,9 @@ module github.com/FilipSolich/shark-ci
 go 1.20
 
 require (
-	github.com/docker/docker v24.0.2+incompatible
-	github.com/go-chi/chi/v5 v5.0.8
+	github.com/docker/docker v24.0.4+incompatible
 	github.com/go-git/go-git/v5 v5.7.0
-	github.com/google/go-github/v53 v53.1.0
+	github.com/google/go-github/v53 v53.2.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/csrf v1.7.1
 	github.com/gorilla/handlers v1.5.1
@@ -14,15 +13,15 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.8.1
-	go.mongodb.org/mongo-driver v1.11.7
+	go.mongodb.org/mongo-driver v1.12.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/oauth2 v0.9.0
+	golang.org/x/oauth2 v0.10.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230626094100-7e9e0395ebec // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
@@ -41,7 +40,7 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.16.6 // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
@@ -56,18 +55,18 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.11.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/mod v0.12.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.9.3 // indirect
+	golang.org/x/tools v0.11.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools/v3 v3.4.0 // indirect
 )
