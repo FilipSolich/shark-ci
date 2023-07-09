@@ -7,9 +7,12 @@ WORKER_PATH    = $(MODULE)/cmd/worker
 
 BIN=bin
 
-.PHONY: all build build-ci-server build-worker run run-ci-server run-worker clean
+.PHONY: all build build-ci-server build-worker run-ci-server run-worker clean docker-build docker-build-ci-server docker-build-worker
 
 all: build
+
+$(BIN)/$(CI_SERVER): build-ci-server
+$(BIN)/$(WORKER): build-worker
 
 build: build-ci-server build-worker
 
@@ -19,14 +22,20 @@ build-ci-server:
 build-worker:
 	go build -o $(BIN)/$(WORKER) $(WORKER_PATH)
 
-run: run-ci-server run-worker
-
-run-ci-server:
+run-ci-server: $(BIN)/$(CI_SERVER)
 	$(BIN)/$(CI_SERVER)
 
-run-worker:
+run-worker: $(BIN)/$(WORKER)
 	$(BIN)/$(WORKER)
 
 clean:
 	go clean
 	rm -rf $(BIN)
+
+docker-build: docker-build-ci-server docker-build-worker
+
+docker-build-ci-server:
+	docker build -f Dockerfile.ci-server -t filipsolich/ci-server .
+
+docker-build-worker:
+	docker build -f Dockerfile.worker -t filipsolich/worker .
