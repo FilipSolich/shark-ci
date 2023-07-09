@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/csrf"
 	"go.uber.org/zap"
 
-	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
+	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/ci-server/template"
@@ -32,7 +32,7 @@ func NewRepoHandler(l *zap.SugaredLogger, s store.Storer, serviceMap service.Ser
 
 func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := middlewares.UserFromContext(ctx, w)
+	user, ok := middleware.UserFromContext(ctx, w)
 	if !ok {
 		return
 	}
@@ -155,7 +155,7 @@ func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, ac
 }
 
 func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Identity, *models.Repo, service.ServiceManager, error) {
-	user, ok := middlewares.UserFromContext(ctx, w)
+	user, ok := middleware.UserFromContext(ctx, w)
 	if !ok {
 		return nil, nil, nil, errors.New("unauthorized user")
 	}

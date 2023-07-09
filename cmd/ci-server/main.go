@@ -14,7 +14,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/handlers"
 	"github.com/FilipSolich/shark-ci/ci-server/log"
-	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
+	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/sessions"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
@@ -69,8 +69,8 @@ func main() {
 	jobHandler := handlers.NewJobHandler(mongoStore, serviceMap)
 
 	r := mux.NewRouter()
-	r.Use(middlewares.LoggingMiddleware)
-	r.Handle("/", middlewares.AuthMiddleware(mongoStore)(http.HandlerFunc(handlers.IndexHandler)))
+	r.Use(middleware.LoggingMiddleware)
+	r.Handle("/", middleware.AuthMiddleware(mongoStore)(http.HandlerFunc(handlers.IndexHandler)))
 	r.HandleFunc("/login", loginHandler.HandleLogin)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
 	r.HandleFunc(ciserver.EventHandlerPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
@@ -82,7 +82,7 @@ func main() {
 	// Repositories subrouter.
 	repos := r.PathPrefix("/repositories").Subrouter()
 	repos.Use(CSRF)
-	repos.Use(middlewares.AuthMiddleware(mongoStore))
+	repos.Use(middleware.AuthMiddleware(mongoStore))
 	repos.HandleFunc("", repoHandler.HandleRepos)
 	repos.HandleFunc("/register", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
@@ -91,7 +91,7 @@ func main() {
 
 	// Jobs subrouter.
 	jobs := r.PathPrefix(ciserver.JobsPath).Subrouter()
-	jobs.Handle("/{id}", middlewares.AuthMiddleware(mongoStore)(http.HandlerFunc(jobHandler.HandleJob)))
+	jobs.Handle("/{id}", middleware.AuthMiddleware(mongoStore)(http.HandlerFunc(jobHandler.HandleJob)))
 	jobs.HandleFunc(ciserver.JobsReportStatusHandlerPath+"/{id}", jobHandler.HandleStatusReport).Methods(http.MethodPost)
 	jobs.HandleFunc(ciserver.JobsPublishLogsHandlerPath+"/{id}", jobHandler.HandleLogReport).Methods(http.MethodPost)
 

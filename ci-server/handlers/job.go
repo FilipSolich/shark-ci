@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
-	"github.com/FilipSolich/shark-ci/ci-server/middlewares"
+	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/models"
@@ -32,7 +32,7 @@ func NewJobHandler(store store.Storer, serviceMap service.ServiceMap) *JobHandle
 
 func (h *JobHandler) HandleJob(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := middlewares.UserFromContext(ctx, w)
+	user, ok := middleware.UserFromContext(ctx, w)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
