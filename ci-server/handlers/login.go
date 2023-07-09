@@ -10,7 +10,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/ci-server/template"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 )
 
 type LoginHandler struct {
@@ -32,7 +32,7 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauth2State := models.NewOAuth2Satate(state.String(), 30*time.Minute)
+	oauth2State := model.NewOAuth2Satate(state.String(), 30*time.Minute)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

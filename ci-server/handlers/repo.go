@@ -13,7 +13,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/ci-server/template"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 )
 
 type RepoHandler struct {
@@ -37,7 +37,7 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serviceRepos := map[string]map[string][]*models.Repo{}
+	serviceRepos := map[string]map[string][]*model.Repo{}
 	for serviceName, srv := range h.serviceMap {
 		identity, err := h.s.GetIdentityByUser(ctx, user, serviceName)
 		if err != nil {
@@ -57,7 +57,7 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 		}
 
 		registered, notRegistered := splitRepos(repos)
-		serviceRepos[serviceName] = map[string][]*models.Repo{}
+		serviceRepos[serviceName] = map[string][]*model.Repo{}
 		serviceRepos[serviceName]["registered"] = registered
 		serviceRepos[serviceName]["not_registered"] = notRegistered
 	}
@@ -154,7 +154,7 @@ func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, ac
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Identity, *models.Repo, service.ServiceManager, error) {
+func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*model.Identity, *model.Repo, service.ServiceManager, error) {
 	user, ok := middleware.UserFromContext(ctx, w)
 	if !ok {
 		return nil, nil, nil, errors.New("unauthorized user")
@@ -179,9 +179,9 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 	return identity, repo, srv, nil
 }
 
-func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
-	registered := []*models.Repo{}
-	notRegistered := []*models.Repo{}
+func splitRepos(repos []*model.Repo) ([]*model.Repo, []*model.Repo) {
+	registered := []*model.Repo{}
+	notRegistered := []*model.Repo{}
 	for _, repo := range repos {
 		if repo.WebhookID == 0 {
 			notRegistered = append(notRegistered, repo)

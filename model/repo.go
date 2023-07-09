@@ -1,4 +1,4 @@
-package models
+package model
 
 type Repo struct {
 	ID            string `bson:"_id,omitempty"`

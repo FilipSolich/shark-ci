@@ -13,7 +13,7 @@ import (
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 )
 
 type GitHubManager struct {
@@ -60,7 +60,7 @@ func (ghm *GitHubManager) OAuth2Config() *oauth2.Config {
 	return ghm.oauth2Config
 }
 
-func (ghm *GitHubManager) GetUserIdentity(ctx context.Context, token *oauth2.Token) (*models.Identity, error) {
+func (ghm *GitHubManager) GetUserIdentity(ctx context.Context, token *oauth2.Token) (*model.Identity, error) {
 	ghClient := ghm.getGitHubClient(ctx, token)
 
 	ghUser, _, err := ghClient.Users.Get(ctx, "")
@@ -68,31 +68,31 @@ func (ghm *GitHubManager) GetUserIdentity(ctx context.Context, token *oauth2.Tok
 		return nil, err
 	}
 
-	identity := models.NewIdentity(ghUser.GetLogin(), ghm.Name(), token)
+	identity := model.NewIdentity(ghUser.GetLogin(), ghm.Name(), token)
 	return identity, nil
 }
 
 // Get repositories which aren't archived and are owned by user `identity`.
-func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error) {
+func (ghm *GitHubManager) GetUsersRepos(ctx context.Context, identity *model.Identity) ([]*model.Repo, error) {
 	client := ghm.getClientByIdentity(ctx, identity)
 
 	// TODO: Experimenting feature - get all repos, not just owned by user.
 	// TODO: Add pagination.
 	ghRepos, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{})
 
-	repos := make([]*models.Repo, 0, len(ghRepos))
+	repos := make([]*model.Repo, 0, len(ghRepos))
 	for _, repo := range ghRepos {
 		if repo.GetArchived() {
 			continue
 		}
-		r := models.NewRepo(identity, repo.GetID(), ghm.Name(), repo.GetName(), repo.GetFullName())
+		r := model.NewRepo(identity, repo.GetID(), ghm.Name(), repo.GetName(), repo.GetFullName())
 		repos = append(repos, r)
 	}
 
 	return repos, err
 }
 
-func (ghm *GitHubManager) CreateWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) (*models.Repo, error) {
+func (ghm *GitHubManager) CreateWebhook(ctx context.Context, identity *model.Identity, repo *model.Repo) (*model.Repo, error) {
 	client := ghm.getClientByIdentity(ctx, identity)
 
 	hook := ghm.defaultWebhook()
@@ -107,7 +107,7 @@ func (ghm *GitHubManager) CreateWebhook(ctx context.Context, identity *models.Id
 	return repo, nil
 }
 
-func (ghm *GitHubManager) DeleteWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) error {
+func (ghm *GitHubManager) DeleteWebhook(ctx context.Context, identity *model.Identity, repo *model.Repo) error {
 	client := ghm.getClientByIdentity(ctx, identity)
 
 	_, err := client.Repositories.DeleteHook(ctx, identity.Username, repo.Name, repo.WebhookID)
@@ -115,7 +115,7 @@ func (ghm *GitHubManager) DeleteWebhook(ctx context.Context, identity *models.Id
 	return err
 }
 
-func (ghm *GitHubManager) ChangeWebhookState(ctx context.Context, identity *models.Identity, repo *models.Repo, active bool) (*models.Repo, error) {
+func (ghm *GitHubManager) ChangeWebhookState(ctx context.Context, identity *model.Identity, repo *model.Repo, active bool) (*model.Repo, error) {
 	client := ghm.getClientByIdentity(ctx, identity)
 
 	ghHook := ghm.defaultWebhook()
@@ -129,7 +129,7 @@ func (ghm *GitHubManager) ChangeWebhookState(ctx context.Context, identity *mode
 	return repo, nil
 }
 
-func (ghm *GitHubManager) HandleEvent(r *http.Request) (*models.Job, error) {
+func (ghm *GitHubManager) HandleEvent(r *http.Request) (*model.Job, error) {
 	//payload, err := github.ValidatePayload(r, []byte(ghm.config.SecretKey))
 	//if err != nil {
 	//	return nil, err
@@ -150,7 +150,7 @@ func (ghm *GitHubManager) HandleEvent(r *http.Request) (*models.Job, error) {
 	}
 }
 
-func (ghm *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*models.Job, error) {
+func (ghm *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*model.Job, error) {
 	// TODO: Should this be commit which triggred webhook or last commit in repo?
 	commit := e.Commits[len(e.Commits)-1]
 
@@ -165,11 +165,11 @@ func (ghm *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (
 		return nil, err
 	}
 
-	job := models.NewJob(repo.ID, repo.UniqueName, commit.GetID(), e.Repo.GetCloneURL(), identity.Token)
+	job := model.NewJob(repo.ID, repo.UniqueName, commit.GetID(), e.Repo.GetCloneURL(), identity.Token)
 	return job, nil
 }
 
-func (ghm *GitHubManager) CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error {
+func (ghm *GitHubManager) CreateStatus(ctx context.Context, identity *model.Identity, job *model.Job, status Status) error {
 	client := ghm.getClientByIdentity(ctx, identity)
 	repo, err := ghm.store.GetRepo(ctx, job.RepoID)
 	if err != nil {
@@ -209,6 +209,6 @@ func (ghm *GitHubManager) getGitHubClient(ctx context.Context, token *oauth2.Tok
 	return github.NewClient(client)
 }
 
-func (ghm *GitHubManager) getClientByIdentity(ctx context.Context, identity *models.Identity) *github.Client {
+func (ghm *GitHubManager) getClientByIdentity(ctx context.Context, identity *model.Identity) *github.Client {
 	return ghm.getGitHubClient(ctx, &identity.Token)
 }

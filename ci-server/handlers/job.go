@@ -12,7 +12,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 	"github.com/gorilla/mux"
 )
 
@@ -151,7 +151,7 @@ func (h *JobHandler) HandleLogReport(w http.ResponseWriter, r *http.Request) {
 	io.Copy(newLog, file)
 }
 
-func (h *JobHandler) getJobFromRequest(r *http.Request) (*models.Job, error) {
+func (h *JobHandler) getJobFromRequest(r *http.Request) (*model.Job, error) {
 	ctx := r.Context()
 	params := mux.Vars(r)
 	jobID, ok := params["id"]

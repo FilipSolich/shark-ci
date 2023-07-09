@@ -7,7 +7,7 @@ import (
 
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 	"golang.org/x/oauth2"
 )
 
@@ -65,18 +65,18 @@ type ServiceManager interface {
 
 	// Get or create user with OAuth2 token.
 	// Also creates new user profile if user does not exist.
-	GetUserIdentity(ctx context.Context, token *oauth2.Token) (*models.Identity, error)
+	GetUserIdentity(ctx context.Context, token *oauth2.Token) (*model.Identity, error)
 
 	// Return user's repos on from service.
-	GetUsersRepos(ctx context.Context, identity *models.Identity) ([]*models.Repo, error)
+	GetUsersRepos(ctx context.Context, identity *model.Identity) ([]*model.Repo, error)
 
-	CreateWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) (*models.Repo, error)
-	DeleteWebhook(ctx context.Context, identity *models.Identity, repo *models.Repo) error
-	ChangeWebhookState(ctx context.Context, identity *models.Identity, repo *models.Repo, active bool) (*models.Repo, error)
+	CreateWebhook(ctx context.Context, identity *model.Identity, repo *model.Repo) (*model.Repo, error)
+	DeleteWebhook(ctx context.Context, identity *model.Identity, repo *model.Repo) error
+	ChangeWebhookState(ctx context.Context, identity *model.Identity, repo *model.Repo, active bool) (*model.Repo, error)
 
 	// Create new job from HTTP request.
-	HandleEvent(r *http.Request) (*models.Job, error)
+	HandleEvent(r *http.Request) (*model.Job, error)
 
 	StatusName(status StatusState) (string, error)
-	CreateStatus(ctx context.Context, identity *models.Identity, job *models.Job, status Status) error
+	CreateStatus(ctx context.Context, identity *model.Identity, job *model.Job, status Status) error
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/FilipSolich/shark-ci/ci-server/log"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -47,7 +47,7 @@ func (rmq *RabbitMQ) Close(ctx context.Context) error {
 	return rmq.conn.Close()
 }
 
-func (rmq *RabbitMQ) SendJob(ctx context.Context, job *models.Job) error {
+func (rmq *RabbitMQ) SendJob(ctx context.Context, job *model.Job) error {
 	data, err := json.Marshal(job)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func (rmq *RabbitMQ) JobChannel() (jobChannel, error) {
 	jobCh := make(jobChannel)
 	go func() {
 		for msg := range msgChannel {
-			var job models.Job
+			var job model.Job
 			err := json.Unmarshal(msg.Body, &job)
 			if err != nil {
 				log.L.Error(err)

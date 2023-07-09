@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/FilipSolich/shark-ci/message_queue"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -46,7 +46,7 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compr
 	return nil
 }
 
-func processJob(ctx context.Context, job models.Job, reposPath string, compressedReposPath string) error {
+func processJob(ctx context.Context, job model.Job, reposPath string, compressedReposPath string) error {
 	// Update repository.
 	repoPath := path.Join(reposPath, job.UniqueName)
 	repo, err := updateRepo(ctx, repoPath, job.CloneURL, job.Token.AccessToken)

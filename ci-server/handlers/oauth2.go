@@ -7,7 +7,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/session"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/models"
+	"github.com/FilipSolich/shark-ci/model"
 )
 
 type OAuth2Handler struct {
@@ -77,7 +77,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.store.GetUserByIdentity(ctx, identity)
 	if err != nil {
-		user := models.NewUser([]string{identity.ID})
+		user := model.NewUser([]string{identity.ID})
 		err = h.store.CreateUser(ctx, user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
