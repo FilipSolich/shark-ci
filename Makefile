@@ -7,7 +7,7 @@ WORKER_PATH    = $(MODULE)/cmd/worker
 
 BIN=bin
 
-.PHONY: all build build-ci-server build-worker clean
+.PHONY: all build build-ci-server build-worker run run-ci-server run-worker clean
 
 all: build
 
@@ -18,6 +18,14 @@ build-ci-server:
 
 build-worker:
 	go build -o $(BIN)/$(WORKER) $(WORKER_PATH)
+
+run: run-ci-server run-worker
+
+run-ci-server:
+	$(BIN)/$(CI_SERVER)
+
+run-worker:
+	$(BIN)/$(WORKER)
 
 clean:
 	go clean

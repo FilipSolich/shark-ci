@@ -1,0 +1,8 @@
+.git/
+.shark-ci/
+.vscode/
+
+bin/
+repos/
+
+.env
