@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/FilipSolich/shark-ci/message_queue"
+	"github.com/FilipSolich/shark-ci/shared/message_queue"
 	"github.com/FilipSolich/shark-ci/worker"
 	"github.com/FilipSolich/shark-ci/worker/config"
 	"github.com/joho/godotenv"

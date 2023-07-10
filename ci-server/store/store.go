@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/FilipSolich/shark-ci/model"
+	"github.com/FilipSolich/shark-ci/shared/model"
 	"golang.org/x/oauth2"
 )
 

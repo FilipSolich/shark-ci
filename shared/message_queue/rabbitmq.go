@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/FilipSolich/shark-ci/ci-server/log"
-	"github.com/FilipSolich/shark-ci/model"
+	"github.com/FilipSolich/shark-ci/shared/model"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

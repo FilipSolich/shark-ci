@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/FilipSolich/shark-ci/ci-server/log"
-	"github.com/FilipSolich/shark-ci/model"
+	"github.com/FilipSolich/shark-ci/shared/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

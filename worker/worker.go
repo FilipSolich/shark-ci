@@ -9,8 +9,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/FilipSolich/shark-ci/message_queue"
-	"github.com/FilipSolich/shark-ci/model"
+	"github.com/FilipSolich/shark-ci/shared/message_queue"
+	"github.com/FilipSolich/shark-ci/shared/model"
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"

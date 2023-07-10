@@ -11,7 +11,7 @@ import (
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/message_queue"
+	"github.com/FilipSolich/shark-ci/shared/message_queue"
 )
 
 type EventHandler struct {

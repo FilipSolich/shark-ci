@@ -13,7 +13,7 @@ import (
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/model"
+	"github.com/FilipSolich/shark-ci/shared/model"
 )
 
 type GitHubManager struct {

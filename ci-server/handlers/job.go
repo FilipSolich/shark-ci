@@ -12,7 +12,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/model"
+	"github.com/FilipSolich/shark-ci/shared/model"
 	"github.com/gorilla/mux"
 )
 
