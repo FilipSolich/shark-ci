@@ -17,16 +17,16 @@ import (
 )
 
 type RepoHandler struct {
-	l          *zap.SugaredLogger
-	s          store.Storer
-	serviceMap service.ServiceMap
+	l        *zap.SugaredLogger
+	s        store.Storer
+	services service.Services
 }
 
-func NewRepoHandler(l *zap.SugaredLogger, s store.Storer, serviceMap service.ServiceMap) *RepoHandler {
+func NewRepoHandler(l *zap.SugaredLogger, s store.Storer, services service.Services) *RepoHandler {
 	return &RepoHandler{
-		l:          l,
-		s:          s,
-		serviceMap: serviceMap,
+		l:        l,
+		s:        s,
+		services: services,
 	}
 }
 
@@ -38,15 +38,15 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serviceRepos := map[string]map[string][]*model.Repo{}
-	for serviceName, srv := range h.serviceMap {
-		identity, err := h.s.GetIdentityByUser(ctx, user, serviceName)
+	for serviceName, srv := range h.services {
+		serviceUser, err := h.s.GetServiceUserByUser(ctx, user, serviceName)
 		if err != nil {
 			h.l.Error(err)
 			continue
 		}
 
 		// TODO: Bundle into repo finder and updater
-		repos, err := srv.GetUsersRepos(r.Context(), identity)
+		repos, err := srv.GetUsersRepos(r.Context(), serviceUser)
 		if err != nil {
 			h.l.Error(err)
 			continue
@@ -70,14 +70,14 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 
 func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
+	serviceUser, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
 		h.l.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	repo, err = service.CreateWebhook(ctx, identity, repo)
+	repo, err = service.CreateWebhook(ctx, serviceUser, repo)
 	if err != nil {
 		h.l.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -96,14 +96,14 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 
 func (h *RepoHandler) HandleUnregisterRepo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	identity, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
+	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
 		h.l.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = srv.DeleteWebhook(ctx, identity, repo)
+	err = srv.DeleteWebhook(ctx, serviceUser, repo)
 	if err != nil {
 		h.l.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -130,14 +130,14 @@ func (h *RepoHandler) HandleDeactivateRepo(w http.ResponseWriter, r *http.Reques
 
 func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
 	ctx := r.Context()
-	identity, repo, service, err := h.getInfoFromRequest(ctx, w, r)
+	serviceUser, repo, service, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
 		h.l.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	repo, err = service.ChangeWebhookState(ctx, identity, repo, active)
+	repo, err = service.ChangeWebhookState(ctx, serviceUser, repo, active)
 	if err != nil {
 		h.l.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -154,7 +154,7 @@ func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, ac
 	http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*model.Identity, *model.Repo, service.ServiceManager, error) {
+func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*model.ServiceUser, *model.Repo, service.ServiceManager, error) {
 	user, ok := middleware.UserFromContext(ctx, w)
 	if !ok {
 		return nil, nil, nil, errors.New("unauthorized user")
@@ -166,17 +166,17 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 		return nil, nil, nil, err
 	}
 
-	srv, ok := h.serviceMap[repo.ServiceName]
+	srv, ok := h.services[repo.ServiceName]
 	if !ok {
 		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
 	}
 
-	identity, err := h.s.GetIdentityByUser(ctx, user, repo.ServiceName)
+	serviceUser, err := h.s.GetServiceUserByUser(ctx, user, repo.ServiceName)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	return identity, repo, srv, nil
+	return serviceUser, repo, srv, nil
 }
 
 func splitRepos(repos []*model.Repo) ([]*model.Repo, []*model.Repo) {

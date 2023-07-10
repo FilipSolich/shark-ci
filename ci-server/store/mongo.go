@@ -76,7 +76,7 @@ func (ms *MongoStore) GetUser(ctx context.Context, id string) (*model.User, erro
 	return user, nil
 }
 
-func (ms *MongoStore) GetUserByIdentity(ctx context.Context, i *model.Identity) (*model.User, error) {
+func (ms *MongoStore) GetUserByServiceUser(ctx context.Context, i *model.ServiceUser) (*model.User, error) {
 	user := &model.User{}
 	err := ms.users.FindOne(ctx, bson.M{"identities": i.ID}).Decode(&user)
 	if err != nil {
@@ -97,58 +97,58 @@ func (ms *MongoStore) DeleteUser(ctx context.Context, u *model.User) error {
 	return err
 }
 
-func (ms *MongoStore) GetIdentity(ctx context.Context, id string) (*model.Identity, error) {
-	identity := &model.Identity{}
-	err := ms.identities.FindOne(ctx, bson.M{"_id": id}).Decode(identity)
+func (ms *MongoStore) GetServiceUser(ctx context.Context, id string) (*model.ServiceUser, error) {
+	serviceUser := &model.ServiceUser{}
+	err := ms.identities.FindOne(ctx, bson.M{"_id": id}).Decode(serviceUser)
 	if err != nil {
 		return nil, err
 	}
 
-	return identity, nil
+	return serviceUser, nil
 }
 
-func (ms *MongoStore) GetIdentityByUniqueName(ctx context.Context, uniqueName string) (*model.Identity, error) {
-	identity := &model.Identity{}
-	err := ms.identities.FindOne(ctx, bson.M{"uniqueName": uniqueName}).Decode(identity)
+func (ms *MongoStore) GetServiceUserByUniqueName(ctx context.Context, uniqueName string) (*model.ServiceUser, error) {
+	serviceUser := &model.ServiceUser{}
+	err := ms.identities.FindOne(ctx, bson.M{"uniqueName": uniqueName}).Decode(serviceUser)
 	if err != nil {
 		return nil, err
 	}
 
-	return identity, nil
+	return serviceUser, nil
 }
 
-func (ms *MongoStore) GetIdentityByRepo(ctx context.Context, r *model.Repo) (*model.Identity, error) {
+func (ms *MongoStore) GetServiceUserByRepo(ctx context.Context, r *model.Repo) (*model.ServiceUser, error) {
 	repo, err := ms.GetRepo(ctx, r.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return ms.GetIdentity(ctx, repo.IdentityID)
+	return ms.GetServiceUser(ctx, repo.ServiceUserID)
 }
 
-func (ms *MongoStore) GetIdentityByUser(ctx context.Context, user *model.User, serviceName string) (*model.Identity, error) {
-	identity := &model.Identity{}
+func (ms *MongoStore) GetServiceUserByUser(ctx context.Context, user *model.User, serviceName string) (*model.ServiceUser, error) {
+	serviceUser := &model.ServiceUser{}
 	filter := bson.D{
 		{Key: "_id", Value: bson.D{
 			{Key: "$in", Value: user.Identities},
 		}},
 		{Key: "serviceName", Value: serviceName},
 	}
-	err := ms.identities.FindOne(ctx, filter).Decode(&identity)
+	err := ms.identities.FindOne(ctx, filter).Decode(&serviceUser)
 	if err != nil {
 		return nil, err
 	}
 
-	return identity, nil
+	return serviceUser, nil
 }
 
-func (ms *MongoStore) CreateIdentity(ctx context.Context, i *model.Identity) error {
+func (ms *MongoStore) CreateServiceUser(ctx context.Context, i *model.ServiceUser) error {
 	i.ID = primitive.NewObjectID().Hex()
 	_, err := ms.identities.InsertOne(ctx, i)
 	return err
 }
 
-func (ms *MongoStore) UpdateIdentityToken(ctx context.Context, i *model.Identity, token oauth2.Token) error {
+func (ms *MongoStore) UpdateServiceUserToken(ctx context.Context, i *model.ServiceUser, token oauth2.Token) error {
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "token", Value: token},
@@ -158,7 +158,7 @@ func (ms *MongoStore) UpdateIdentityToken(ctx context.Context, i *model.Identity
 	return err
 }
 
-func (ms *MongoStore) DeleteIdentity(ctx context.Context, i *model.Identity) error {
+func (ms *MongoStore) DeleteServiceUser(ctx context.Context, i *model.ServiceUser) error {
 	_, err := ms.identities.DeleteOne(ctx, bson.M{"_id": i.ID})
 	return err
 }

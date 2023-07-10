@@ -15,18 +15,18 @@ import (
 )
 
 type EventHandler struct {
-	loger      *zap.SugaredLogger
-	store      store.Storer
-	mq         message_queue.MessageQueuer
-	serviceMap service.ServiceMap
+	loger    *zap.SugaredLogger
+	store    store.Storer
+	mq       message_queue.MessageQueuer
+	services service.Services
 }
 
-func NewEventHandler(l *zap.SugaredLogger, s store.Storer, mq message_queue.MessageQueuer, serviceMap service.ServiceMap) *EventHandler {
+func NewEventHandler(l *zap.SugaredLogger, s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
 	return &EventHandler{
-		loger:      l,
-		store:      s,
-		mq:         mq,
-		serviceMap: serviceMap,
+		loger:    l,
+		store:    s,
+		mq:       mq,
+		services: services,
 	}
 }
 
@@ -39,7 +39,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	srv, ok := h.serviceMap[serviceName]
+	srv, ok := h.services[serviceName]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -76,10 +76,10 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identity, err := h.store.GetIdentityByRepo(ctx, repo)
+	serviceUser, err := h.store.GetServiceUserByRepo(ctx, repo)
 
 	status := service.NewStatus(service.StatusPending, job.TargetURL, ciserver.CIServer, "Job in progress")
-	err = srv.CreateStatus(ctx, identity, job, status)
+	err = srv.CreateStatus(ctx, serviceUser, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

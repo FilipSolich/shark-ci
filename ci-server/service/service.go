@@ -11,8 +11,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// TODO: Change name to VCS
-
 var ErrEventNotSupported = errors.New("event is not supported")
 var NoErrPingEvent = errors.New("ping event")
 
@@ -48,35 +46,31 @@ func NewStatus(state StatusState, targetURL string, ctx string, description stri
 	}
 }
 
-type ServiceMap map[string]ServiceManager
+type Services map[string]ServiceManager
 
-func InitServices(s store.Storer, config config.Config) ServiceMap {
-	serviceMap := ServiceMap{}
-	if config.GitHub.ClientID != "" {
+func InitServices(s store.Storer, config config.Config) Services {
+	services := Services{}
+	if config.GitHub.ClientID != "" && config.GitHub.ClientSecret != "" {
 		ghm := NewGitHubManager(config.GitHub.ClientID, config.GitHub.ClientSecret, s, config.CIServer)
-		serviceMap[ghm.Name()] = ghm
+		services[ghm.Name()] = ghm
 	}
-	return serviceMap
+	// TODO: Add GitLab.
+	return services
 }
 
 type ServiceManager interface {
-	Name() string                 // Return service name.
-	OAuth2Config() *oauth2.Config // Return OAuth2 config.
+	Name() string
+	StatusName(status StatusState) (string, error)
+	OAuth2Config() *oauth2.Config
 
-	// Get or create user with OAuth2 token.
-	// Also creates new user profile if user does not exist.
-	GetUserIdentity(ctx context.Context, token *oauth2.Token) (*model.Identity, error)
+	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model.ServiceUser, error)
+	GetUsersRepos(ctx context.Context, serviceUser *model.ServiceUser) ([]*model.Repo, error)
 
-	// Return user's repos on from service.
-	GetUsersRepos(ctx context.Context, identity *model.Identity) ([]*model.Repo, error)
+	CreateWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) (*model.Repo, error)
+	DeleteWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) error
+	ChangeWebhookState(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, active bool) (*model.Repo, error)
 
-	CreateWebhook(ctx context.Context, identity *model.Identity, repo *model.Repo) (*model.Repo, error)
-	DeleteWebhook(ctx context.Context, identity *model.Identity, repo *model.Repo) error
-	ChangeWebhookState(ctx context.Context, identity *model.Identity, repo *model.Repo, active bool) (*model.Repo, error)
-
-	// Create new job from HTTP request.
 	HandleEvent(r *http.Request) (*model.Job, error)
 
-	StatusName(status StatusState) (string, error)
-	CreateStatus(ctx context.Context, identity *model.Identity, job *model.Job, status Status) error
+	CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, job *model.Job, status Status) error
 }

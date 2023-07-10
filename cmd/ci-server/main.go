@@ -57,16 +57,16 @@ func main() {
 	}
 	defer rabbitMQ.Close(context.TODO())
 
-	serviceMap := service.InitServices(mongoStore, config)
+	services := service.InitServices(mongoStore, config)
 
 	CSRF := csrf.Protect([]byte(config.CIServer.SecretKey))
 
-	loginHandler := handlers.NewLoginHandler(mongoStore, serviceMap)
+	loginHandler := handlers.NewLoginHandler(mongoStore, services)
 	logoutHandler := handlers.NewLogoutHandler()
-	eventHandler := handlers.NewEventHandler(log.L, mongoStore, rabbitMQ, serviceMap)
-	oauth2Handler := handlers.NewOAuth2Handler(mongoStore, serviceMap)
-	repoHandler := handlers.NewRepoHandler(log.L, mongoStore, serviceMap)
-	jobHandler := handlers.NewJobHandler(mongoStore, serviceMap)
+	eventHandler := handlers.NewEventHandler(log.L, mongoStore, rabbitMQ, services)
+	oauth2Handler := handlers.NewOAuth2Handler(log.L, mongoStore, services)
+	repoHandler := handlers.NewRepoHandler(log.L, mongoStore, services)
+	jobHandler := handlers.NewJobHandler(mongoStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)

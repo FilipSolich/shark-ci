@@ -8,17 +8,20 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/session"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/shared/model"
+	"go.uber.org/zap"
 )
 
 type OAuth2Handler struct {
-	store      store.Storer
-	serviceMap service.ServiceMap
+	l        *zap.SugaredLogger
+	s        store.Storer
+	services service.Services
 }
 
-func NewOAuth2Handler(s store.Storer, serviceMap service.ServiceMap) *OAuth2Handler {
+func NewOAuth2Handler(l *zap.SugaredLogger, s store.Storer, services service.Services) *OAuth2Handler {
 	return &OAuth2Handler{
-		store:      s,
-		serviceMap: serviceMap,
+		l:        l,
+		s:        s,
+		services: services,
 	}
 }
 
@@ -27,20 +30,20 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	serviceName := r.URL.Query().Get("service")
 
-	srv, ok := h.serviceMap[serviceName]
+	srv, ok := h.services[serviceName]
 	if !ok {
 		http.Error(w, "unknown OAuth2 provider: "+serviceName, http.StatusBadRequest)
 		return
 	}
 
 	ctx := context.TODO()
-	oauth2State, err := h.store.GetOAuth2StateByState(ctx, state)
+	oauth2State, err := h.s.GetOAuth2StateByState(ctx, state)
 	if err != nil {
 		http.Error(w, "incorrect state", http.StatusBadRequest)
 		return
 	}
 
-	h.store.DeleteOAuth2State(ctx, oauth2State) // TODO: What to do if delete fails
+	h.s.DeleteOAuth2State(ctx, oauth2State) // TODO: What to do if delete fails
 	if !oauth2State.IsValid() {
 		http.Error(w, "oauth2 state expired", http.StatusBadRequest)
 		return
@@ -50,37 +53,41 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	config := srv.OAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// Get or create new UserIdentity and new User if needed.
+	// Get or create new ServiceUser and new User if needed.
 	// TODO: Get user from request and pass it into function call.
-	serviceIdentity, err := srv.GetUserIdentity(ctx, token)
+	serviceUser, err := srv.GetServiceUser(ctx, token)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// Check if identity exists
-	identity, err := h.store.GetIdentityByUniqueName(ctx, serviceIdentity.UniqueName)
+	// Check if ServiceUser exists
+	u, err := h.s.GetServiceUserByUniqueName(ctx, serviceUser.UniqueName)
 	if err != nil {
-		identity = serviceIdentity
-		err = h.store.CreateIdentity(ctx, identity)
+		u = serviceUser
+		err = h.s.CreateServiceUser(ctx, u)
 	} else {
-		err = h.store.UpdateIdentityToken(ctx, identity, serviceIdentity.Token)
+		err = h.s.UpdateServiceUserToken(ctx, u, serviceUser.Token)
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	user, err := h.store.GetUserByIdentity(ctx, identity)
+	user, err := h.s.GetUserByServiceUser(ctx, u)
 	if err != nil {
-		user := model.NewUser([]string{identity.ID})
-		err = h.store.CreateUser(ctx, user)
+		user := model.NewUser([]string{u.ID})
+		err = h.s.CreateUser(ctx, user)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			h.l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
@@ -90,7 +97,8 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	s.Values[session.SessionKey] = user.ID
 	err = s.Save(r, w)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

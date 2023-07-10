@@ -19,14 +19,14 @@ import (
 const logsFolder = "joblogs"
 
 type JobHandler struct {
-	store      store.Storer
-	serviceMap service.ServiceMap
+	store    store.Storer
+	services service.Services
 }
 
-func NewJobHandler(store store.Storer, serviceMap service.ServiceMap) *JobHandler {
+func NewJobHandler(store store.Storer, services service.Services) *JobHandler {
 	return &JobHandler{
-		store:      store,
-		serviceMap: serviceMap,
+		store:    store,
+		services: services,
 	}
 }
 
@@ -51,13 +51,13 @@ func (h *JobHandler) HandleJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identity, err := h.store.GetIdentityByRepo(ctx, repo)
+	serviceUser, err := h.store.GetServiceUserByRepo(ctx, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	repoOwner, err := h.store.GetUserByIdentity(ctx, identity)
+	repoOwner, err := h.store.GetUserByServiceUser(ctx, serviceUser)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -92,7 +92,7 @@ func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	identity, err := h.store.GetIdentityByRepo(ctx, repo)
+	serviceUser, err := h.store.GetServiceUserByRepo(ctx, repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -108,14 +108,14 @@ func (h *JobHandler) HandleStatusReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	srv, ok := h.serviceMap[repo.ServiceName]
+	srv, ok := h.services[repo.ServiceName]
 	if !ok {
 		http.Error(w, "unknow service for repo: "+repo.FullName, http.StatusInternalServerError)
 		return
 	}
 
 	status := service.NewStatus(statusState, job.TargetURL, ciserver.CIServer, description)
-	err = srv.CreateStatus(ctx, identity, job, status)
+	err = srv.CreateStatus(ctx, serviceUser, job, status)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

@@ -2,7 +2,7 @@ package model
 
 type Repo struct {
 	ID            string `bson:"_id,omitempty"`
-	IdentityID    string `bson:"identity"`
+	ServiceUserID string `bson:"serviceUser"`
 	RepoServiceID int64  `bson:"repoServiceID,omitempty"`
 	ServiceName   string `bson:"serviceName"`
 	Name          string `bson:"name,omitempty"`
@@ -12,9 +12,9 @@ type Repo struct {
 	WebhookActive bool   `bson:"webhookActive,omitempty"`
 }
 
-func NewRepo(identity *Identity, repoID int64, serviceName string, name string, fullName string) *Repo {
+func NewRepo(serviceUser *ServiceUser, repoID int64, serviceName string, name string, fullName string) *Repo {
 	return &Repo{
-		IdentityID:    identity.ID,
+		ServiceUserID: serviceUser.ID,
 		RepoServiceID: repoID,
 		ServiceName:   serviceName,
 		Name:          name,

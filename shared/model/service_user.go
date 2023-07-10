@@ -2,7 +2,7 @@ package model
 
 import "golang.org/x/oauth2"
 
-type Identity struct {
+type ServiceUser struct {
 	ID          string       `bson:"_id,omitempty"`
 	Username    string       `bson:"username,omitempty"`
 	ServiceName string       `bson:"serviceName,omitempty"`
@@ -10,8 +10,8 @@ type Identity struct {
 	Token       oauth2.Token `bson:"token,omitempty"`
 }
 
-func NewIdentity(username string, serviceName string, token *oauth2.Token) *Identity {
-	return &Identity{
+func NewServiceUser(username string, serviceName string, token *oauth2.Token) *ServiceUser {
+	return &ServiceUser{
 		Username:    username,
 		ServiceName: serviceName,
 		UniqueName:  serviceName + "/" + username,

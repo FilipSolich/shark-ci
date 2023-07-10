@@ -14,17 +14,17 @@ type Storer interface {
 	Close(ctx context.Context) error
 
 	GetUser(ctx context.Context, id string) (*model.User, error)
-	GetUserByIdentity(ctx context.Context, i *model.Identity) (*model.User, error)
+	GetUserByServiceUser(ctx context.Context, i *model.ServiceUser) (*model.User, error)
 	CreateUser(ctx context.Context, u *model.User) error
 	DeleteUser(ctx context.Context, u *model.User) error
 
-	GetIdentity(ctx context.Context, id string) (*model.Identity, error)
-	GetIdentityByUniqueName(ctx context.Context, uniqueName string) (*model.Identity, error)
-	GetIdentityByRepo(ctx context.Context, r *model.Repo) (*model.Identity, error)
-	GetIdentityByUser(ctx context.Context, user *model.User, serviceName string) (*model.Identity, error)
-	CreateIdentity(ctx context.Context, i *model.Identity) error
-	UpdateIdentityToken(ctx context.Context, i *model.Identity, token oauth2.Token) error
-	DeleteIdentity(ctx context.Context, i *model.Identity) error
+	GetServiceUser(ctx context.Context, id string) (*model.ServiceUser, error)
+	GetServiceUserByUniqueName(ctx context.Context, uniqueName string) (*model.ServiceUser, error)
+	GetServiceUserByRepo(ctx context.Context, r *model.Repo) (*model.ServiceUser, error)
+	GetServiceUserByUser(ctx context.Context, user *model.User, serviceName string) (*model.ServiceUser, error)
+	CreateServiceUser(ctx context.Context, i *model.ServiceUser) error
+	UpdateServiceUserToken(ctx context.Context, i *model.ServiceUser, token oauth2.Token) error
+	DeleteServiceUser(ctx context.Context, i *model.ServiceUser) error
 
 	GetRepo(ctx context.Context, id string) (*model.Repo, error)
 	GetRepoByUniqueName(ctx context.Context, uniqueName string) (*model.Repo, error)
