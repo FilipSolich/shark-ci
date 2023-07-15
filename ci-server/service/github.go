@@ -17,16 +17,16 @@ import (
 )
 
 type GitHubManager struct {
-	store        store.Storer
+	s            store.Storer
 	oauth2Config *oauth2.Config
 	config       config.CIServerConfig
 }
 
 var _ ServiceManager = &GitHubManager{}
 
-func NewGitHubManager(clientID string, clientSecret string, store store.Storer, config config.CIServerConfig) *GitHubManager {
+func NewGitHubManager(clientID string, clientSecret string, s store.Storer, config config.CIServerConfig) *GitHubManager {
 	return &GitHubManager{
-		store: store,
+		s: s,
 		oauth2Config: &oauth2.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
@@ -154,12 +154,12 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 	commit := e.Commits[len(e.Commits)-1]
 
 	username := e.Repo.Owner.GetLogin()
-	serviceUser, err := m.store.GetServiceUserByUniqueName(ctx, m.Name()+"/"+username)
+	serviceUser, err := m.s.GetServiceUserByUniqueName(ctx, m.Name()+"/"+username)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := m.store.GetRepoByUniqueName(ctx, m.Name()+"/"+e.Repo.GetFullName())
+	repo, err := m.s.GetRepoByUniqueName(ctx, m.Name()+"/"+e.Repo.GetFullName())
 	if err != nil {
 		return nil, err
 	}
@@ -168,12 +168,8 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 	return job, nil
 }
 
-func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, job *model.Job, status Status) error {
+func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, job *model.Job, status Status) error {
 	client := m.getClientByServiceUser(ctx, serviceUser)
-	repo, err := m.store.GetRepo(ctx, job.RepoID)
-	if err != nil {
-		return err
-	}
 
 	statusName, err := m.StatusName(status.State)
 	if err != nil {

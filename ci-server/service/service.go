@@ -72,5 +72,5 @@ type ServiceManager interface {
 
 	HandleEvent(r *http.Request) (*model.Job, error)
 
-	CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, job *model.Job, status Status) error
+	CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, job *model.Job, status Status) error
 }

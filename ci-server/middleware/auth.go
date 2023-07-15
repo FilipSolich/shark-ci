@@ -8,18 +8,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func AuthMiddleware(store store.Storer) mux.MiddlewareFunc {
+func AuthMiddleware(s store.Storer) mux.MiddlewareFunc {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s, _ := session.Store.Get(r, "session")
-			id, ok := s.Values[session.SessionKey].(string)
+			sess, _ := session.Store.Get(r, "session")
+			id, ok := sess.Values[session.SessionKey].(string)
 			if !ok {
 				http.Redirect(w, r, "/login", http.StatusFound)
 				return
 			}
 
 			ctx := r.Context()
-			user, err := store.GetUser(ctx, id)
+			user, err := s.GetUser(ctx, id)
 			if err != nil {
 				http.Redirect(w, r, "/login", http.StatusFound)
 				return

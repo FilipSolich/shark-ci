@@ -12,7 +12,7 @@ CI server written in Go
 |------------------------|-----------------------------|----------------------------|
 | `HOST`                 |                             | Hostname.                  |
 | `PORT`                 | `8080`                      | Port.                      |
-| `SECRET_SECRET`        | `insecure-secret`           | Random key for encryption. |
+| `SECRET_KEY`           | `insecure-secret`           | Random key for encryption. |
 | `MONGO_URI`            | `mongodb://localhost:17017` | RabbitMQ URI.              |
 | `RABBITMQ_URI`         | `amqp://localhost:5672`     | RabbitMQ URI.              |
 | `GITHUB_CLIENT_ID`     |                             | GitHub client ID.          |

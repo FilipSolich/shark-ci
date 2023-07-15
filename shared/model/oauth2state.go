@@ -11,7 +11,7 @@ type OAuth2State struct {
 	Expire    time.Time `bson:"expire,omitempty"`
 }
 
-func NewOAuth2Satate(state string, expireAfter time.Duration) *OAuth2State {
+func NewOAuth2State(state string, expireAfter time.Duration) *OAuth2State {
 	createdAt := time.Now()
 	return &OAuth2State{
 		State:     state,

@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"context"
@@ -15,16 +15,16 @@ import (
 )
 
 type EventHandler struct {
-	loger    *zap.SugaredLogger
-	store    store.Storer
+	l        *zap.SugaredLogger
+	s        store.Storer
 	mq       message_queue.MessageQueuer
 	services service.Services
 }
 
 func NewEventHandler(l *zap.SugaredLogger, s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
 	return &EventHandler{
-		loger:    l,
-		store:    s,
+		l:        l,
+		s:        s,
 		mq:       mq,
 		services: services,
 	}
@@ -49,39 +49,43 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, service.NoErrPingEvent) {
 			w.Write([]byte("pong"))
-			return
 		} else if errors.Is(err, service.ErrEventNotSupported) {
 			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
 		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			h.l.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
 
-	err = h.store.CreateJob(context.TODO(), job)
+	err = h.s.CreateJob(context.TODO(), job)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = h.mq.SendJob(context.TODO(), job)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	repo, err := h.store.GetRepo(ctx, job.RepoID)
+	repo, err := h.s.GetRepo(ctx, job.RepoID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	serviceUser, err := h.store.GetServiceUserByRepo(ctx, repo)
+	serviceUser, err := h.s.GetServiceUserByRepo(ctx, repo)
 
 	status := service.NewStatus(service.StatusPending, job.TargetURL, ciserver.CIServer, "Job in progress")
-	err = srv.CreateStatus(ctx, serviceUser, job, status)
+	err = srv.CreateStatus(ctx, serviceUser, repo, job, status)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }

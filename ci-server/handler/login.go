@@ -1,10 +1,11 @@
-package handlers
+package handler
 
 import (
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
 	"github.com/FilipSolich/shark-ci/ci-server/service"
@@ -14,33 +15,38 @@ import (
 )
 
 type LoginHandler struct {
-	store    store.Storer
+	l        *zap.SugaredLogger
+	s        store.Storer
 	services service.Services
 }
 
-func NewLoginHandler(s store.Storer, services service.Services) *LoginHandler {
+func NewLoginHandler(l *zap.SugaredLogger, s store.Storer, services service.Services) *LoginHandler {
 	return &LoginHandler{
-		store:    s,
+		l:        l,
+		s:        s,
 		services: services,
 	}
 }
 
-func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 	state, err := uuid.NewRandom()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	oauth2State := model.NewOAuth2Satate(state.String(), 30*time.Minute)
+	oauth2State := model.NewOAuth2State(state.String(), 30*time.Minute)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = h.store.CreateOAuth2State(r.Context(), oauth2State)
+	err = h.s.CreateOAuth2State(r.Context(), oauth2State)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

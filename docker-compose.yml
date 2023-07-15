@@ -6,6 +6,17 @@ services:
     volumes:
       - mongodata:/data/db
 
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=shark-ci
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   rabbitmq:
     image: rabbitmq:3.10-management
     ports:
@@ -17,3 +28,4 @@ services:
 
 volumes:
   mongodata:
+  pgdata:

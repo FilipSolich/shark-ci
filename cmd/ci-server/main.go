@@ -12,7 +12,7 @@ import (
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/config"
-	"github.com/FilipSolich/shark-ci/ci-server/handlers"
+	"github.com/FilipSolich/shark-ci/ci-server/handler"
 	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
@@ -61,17 +61,16 @@ func main() {
 
 	CSRF := csrf.Protect([]byte(config.CIServer.SecretKey))
 
-	loginHandler := handlers.NewLoginHandler(mongoStore, services)
-	logoutHandler := handlers.NewLogoutHandler()
-	eventHandler := handlers.NewEventHandler(log.L, mongoStore, rabbitMQ, services)
-	oauth2Handler := handlers.NewOAuth2Handler(log.L, mongoStore, services)
-	repoHandler := handlers.NewRepoHandler(log.L, mongoStore, services)
-	jobHandler := handlers.NewJobHandler(mongoStore, services)
+	loginHandler := handler.NewLoginHandler(log.L, mongoStore, services)
+	logoutHandler := handler.NewLogoutHandler()
+	eventHandler := handler.NewEventHandler(log.L, mongoStore, rabbitMQ, services)
+	oauth2Handler := handler.NewOAuth2Handler(log.L, mongoStore, services)
+	repoHandler := handler.NewRepoHandler(log.L, mongoStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
-	r.Handle("/", middleware.AuthMiddleware(mongoStore)(http.HandlerFunc(handlers.IndexHandler)))
-	r.HandleFunc("/login", loginHandler.HandleLogin)
+	r.Handle("/", middleware.AuthMiddleware(mongoStore)(http.HandlerFunc(handler.IndexHandler)))
+	r.HandleFunc("/login", loginHandler.HandleLoginPage)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
 	r.HandleFunc(ciserver.EventHandlerPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
 
@@ -88,12 +87,6 @@ func main() {
 	repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
-
-	// Jobs subrouter.
-	jobs := r.PathPrefix(ciserver.JobsPath).Subrouter()
-	jobs.Handle("/{id}", middleware.AuthMiddleware(mongoStore)(http.HandlerFunc(jobHandler.HandleJob)))
-	jobs.HandleFunc(ciserver.JobsReportStatusHandlerPath+"/{id}", jobHandler.HandleStatusReport).Methods(http.MethodPost)
-	jobs.HandleFunc(ciserver.JobsPublishLogsHandlerPath+"/{id}", jobHandler.HandleLogReport).Methods(http.MethodPost)
 
 	server := &http.Server{
 		Addr:         ":" + config.CIServer.Port,
