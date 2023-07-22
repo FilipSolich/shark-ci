@@ -12,7 +12,7 @@ func AuthMiddleware(s store.Storer) mux.MiddlewareFunc {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess, _ := session.Store.Get(r, "session")
-			id, ok := sess.Values[session.SessionKey].(string)
+			id, ok := sess.Values[session.SessionKey].(int64)
 			if !ok {
 				http.Redirect(w, r, "/login", http.StatusFound)
 				return

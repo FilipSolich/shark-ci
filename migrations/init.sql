@@ -48,10 +48,12 @@ CREATE TABLE IF NOT EXISTS "pipeline" (
     FOREIGN KEY (repo_id) REFERENCES "repo" (id)
 );
 
-CREATE TYPE log_line AS (
+CREATE TABLE IF NOT EXIST "pipeline_log_line" (
     line bigint,
     file text,
-    content text
+    content text,
+    pipeline_log_id bigint,
+    FOREIGN KEY (pipeline_log_id) REFERENCES "pipeline_log" (id)
 );
 
 CREATE TABLE IF NOT EXISTS "pipeline_log" (
@@ -59,7 +61,6 @@ CREATE TABLE IF NOT EXISTS "pipeline_log" (
     started_at timestamp,
     finished_at timestamp,
     cmd text,
-    output log_line[],
     return_code int,
     pipeline_id bigint,
     FOREIGN KEY (pipeline_id) REFERENCES "pipeline" (id)

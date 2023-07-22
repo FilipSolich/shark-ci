@@ -11,7 +11,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/ci-server/template"
-	"github.com/FilipSolich/shark-ci/shared/model"
+	"github.com/FilipSolich/shark-ci/shared/model2"
 )
 
 type LoginHandler struct {
@@ -36,7 +36,10 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauth2State := model.NewOAuth2State(state.String(), 30*time.Minute)
+	oauth2State := &model2.OAuth2State{
+		State:  state,
+		Expire: time.Now().Add(30 * time.Minute),
+	}
 	err = h.s.CreateOAuth2State(r.Context(), oauth2State)
 	if err != nil {
 		h.l.Error("store: cannot create OAuth2 state", "err", err)
@@ -47,7 +50,7 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 	data := map[string]string{}
 	for _, s := range h.services {
 		config := s.OAuth2Config()
-		url := config.AuthCodeURL(oauth2State.State, oauth2.AccessTypeOffline)
+		url := config.AuthCodeURL(oauth2State.State.String(), oauth2.AccessTypeOffline)
 		data[s.Name()+"URL"] = url
 	}
 

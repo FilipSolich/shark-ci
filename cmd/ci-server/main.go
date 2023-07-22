@@ -22,7 +22,7 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
 )
 
-func clean(s store.Storer, d time.Duration, l *slog.Logger) {
+func cleaner(s store.Storer, d time.Duration, l *slog.Logger) {
 	ticker := time.NewTicker(d)
 	go func() {
 		for {
@@ -95,21 +95,21 @@ func main() {
 	defer rabbitMQ.Close(context.TODO())
 	logger.Info("RabbitMQ connected")
 
-	clean(mongoStore, 24*time.Hour, logger)
+	cleaner(pgStore, 24*time.Hour, logger)
 
-	services := service.InitServices(mongoStore, config)
+	services := service.InitServices(pgStore, config)
 
 	CSRF := csrf.Protect([]byte(config.CIServer.SecretKey))
 
-	loginHandler := handler.NewLoginHandler(logger, mongoStore, services)
+	loginHandler := handler.NewLoginHandler(logger, pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(logger, mongoStore, rabbitMQ, services)
-	oauth2Handler := handler.NewOAuth2Handler(logger, mongoStore, services)
-	repoHandler := handler.NewRepoHandler(logger, mongoStore, services)
+	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services)
+	oauth2Handler := handler.NewOAuth2Handler(logger, pgStore, services)
+	repoHandler := handler.NewRepoHandler(logger, pgStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
-	r.Handle("/", middleware.AuthMiddleware(mongoStore)(http.HandlerFunc(handler.IndexHandler)))
+	r.Handle("/", middleware.AuthMiddleware(pgStore)(http.HandlerFunc(handler.IndexHandler)))
 	r.HandleFunc("/login", loginHandler.HandleLoginPage)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
 	r.HandleFunc(ciserver.EventHandlerPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
@@ -121,7 +121,7 @@ func main() {
 	// Repositories subrouter.
 	repos := r.PathPrefix("/repositories").Subrouter()
 	repos.Use(CSRF)
-	repos.Use(middleware.AuthMiddleware(mongoStore))
+	repos.Use(middleware.AuthMiddleware(pgStore))
 	repos.HandleFunc("", repoHandler.HandleRepos)
 	repos.HandleFunc("/register", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)

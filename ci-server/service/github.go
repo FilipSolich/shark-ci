@@ -14,6 +14,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/shared/model"
+	"github.com/FilipSolich/shark-ci/shared/model2"
 )
 
 type GitHubManager struct {
@@ -60,7 +61,7 @@ func (m *GitHubManager) OAuth2Config() *oauth2.Config {
 	return m.oauth2Config
 }
 
-func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token) (*model.ServiceUser, error) {
+func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error) {
 	client := m.getGitHubClient(ctx, token)
 
 	user, _, err := client.Users.Get(ctx, "")
@@ -68,7 +69,15 @@ func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token)
 		return nil, err
 	}
 
-	serviceUser := model.NewServiceUser(user.GetLogin(), m.Name(), token)
+	serviceUser := &model2.ServiceUser{
+		Username:     user.GetLogin(),
+		Email:        user.GetEmail(),
+		Service:      m.Name(),
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		TokenType:    token.TokenType,
+		TokenExpire:  token.Expiry,
+	}
 	return serviceUser, nil
 }
 

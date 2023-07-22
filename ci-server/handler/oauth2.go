@@ -1,13 +1,12 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/session"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/shared/model"
+	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 )
 
@@ -36,8 +35,14 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.TODO()
-	oauth2State, err := h.s.GetOAuth2StateByState(ctx, state)
+	ctx := r.Context()
+	uuid_state, err := uuid.Parse(state)
+	if err != nil {
+		http.Error(w, "incorrect state", http.StatusBadRequest)
+		return
+	}
+
+	oauth2State, err := h.s.GetOAuth2State(ctx, uuid_state)
 	if err != nil {
 		http.Error(w, "incorrect state", http.StatusBadRequest)
 		return
@@ -63,7 +68,6 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get or create new ServiceUser and new User if needed.
-	// TODO: Get user from request and pass it into function call.
 	serviceUser, err := srv.GetServiceUser(ctx, token)
 	if err != nil {
 		h.l.Error("service: cannot get service user", "err", err)
@@ -71,39 +75,27 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if ServiceUser exists
-	u, err := h.s.GetServiceUserByUniqueName(ctx, serviceUser.UniqueName)
+	var uID int64
+	su, err := h.s.GetServiceUserByUniqueName(ctx, serviceUser.Service, serviceUser.Username)
 	if err != nil {
-		u = serviceUser
-		err = h.s.CreateServiceUser(ctx, u)
+		uID, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
 		if err != nil {
-			h.l.Error("store: cannot create user", "err", err)
+			h.l.Error("store: cannot create user and service user", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	} else {
-		err = h.s.UpdateServiceUserToken(ctx, u, serviceUser.Token)
+		uID = su.UserID
+		err = h.s.UpdateServiceUserToken(ctx, serviceUser, token)
 		if err != nil {
-			h.l.Error("store: cannot update user", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-
-	user, err := h.s.GetUserByServiceUser(ctx, u)
-	if err != nil {
-		user := model.NewUser([]string{u.ID})
-		err = h.s.CreateUser(ctx, user)
-		if err != nil {
-			h.l.Error("store: cannot create user", "err", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			h.l.Error("store: cannot update user OAuth2 token", "err", err)
+			// TODO: Is old token still usable? Or should handler return here?
 		}
 	}
 
 	// Store session.
 	s, _ := session.Store.Get(r, "session")
-	s.Values[session.SessionKey] = user.ID
+	s.Values[session.SessionKey] = uID
 	err = s.Save(r, w)
 	if err != nil {
 		h.l.Error("cannot save session", "err", err)

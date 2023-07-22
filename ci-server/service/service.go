@@ -8,6 +8,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/shared/model"
+	"github.com/FilipSolich/shark-ci/shared/model2"
 	"golang.org/x/oauth2"
 )
 
@@ -63,7 +64,7 @@ type ServiceManager interface {
 	StatusName(status StatusState) (string, error)
 	OAuth2Config() *oauth2.Config
 
-	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model.ServiceUser, error)
+	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error)
 	GetUsersRepos(ctx context.Context, serviceUser *model.ServiceUser) ([]*model.Repo, error)
 
 	CreateWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) (*model.Repo, error)
