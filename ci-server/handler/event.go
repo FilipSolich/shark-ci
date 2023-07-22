@@ -1,17 +1,18 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
+	"golang.org/x/oauth2"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
+	"github.com/FilipSolich/shark-ci/shared/types"
 )
 
 type EventHandler struct {
@@ -45,7 +46,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := srv.HandleEvent(r)
+	pipeline, err := srv.HandleEvent(r)
 	if err != nil {
 		if errors.Is(err, service.NoErrPingEvent) {
 			w.Write([]byte("pong"))
@@ -58,36 +59,50 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.s.CreateJob(context.TODO(), job)
+	err = h.s.CreatePipeline(ctx, pipeline)
 	if err != nil {
-		h.l.Error("store: cannot create job", "err", err)
+		h.l.Error("store: cannot create pipeline", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = h.mq.SendJob(context.TODO(), job)
-	if err != nil {
-		h.l.Error("store: cannot send job", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	repo, err := h.s.GetRepo(ctx, job.RepoID)
-	if err != nil {
-		h.l.Error("store: cannot get repo", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	serviceUser, err := h.s.GetServiceUserByRepo(ctx, repo)
+	serviceUser, err := h.s.GetServiceUserByRepo(ctx, pipeline.RepoID)
 	if err != nil {
 		h.l.Error("store: cannot get service user", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	status := service.NewStatus(service.StatusPending, job.TargetURL, ciserver.CIServer, "Job in progress")
-	err = srv.CreateStatus(ctx, serviceUser, repo, job, status)
+	work := types.Work{
+		Pipeline: *pipeline,
+		Token: oauth2.Token{
+			AccessToken:  serviceUser.AccessToken,
+			TokenType:    serviceUser.TokenType,
+			RefreshToken: serviceUser.RefreshToken,
+			Expiry:       serviceUser.TokenExpire,
+		},
+	}
+	err = h.mq.SendWork(ctx, work)
+	if err != nil {
+		h.l.Error("message queue: cannot send work", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	repoName, err := h.s.GetRepoName(ctx, pipeline.RepoID)
+	if err != nil {
+		h.l.Error("store: cannot get repo name", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	status := service.Status{
+		State:       service.StatusPending,
+		TargetURL:   pipeline.TargetURL,
+		Context:     ciserver.CIServer,
+		Description: "Job in progress",
+	}
+	err = srv.CreateStatus(ctx, serviceUser, repoName, pipeline.CommitSHA, status)
 	if err != nil {
 		h.l.Error("cannot create status", err)
 		w.WriteHeader(http.StatusInternalServerError)

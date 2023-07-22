@@ -14,7 +14,7 @@ type Storer interface {
 	Ping(ctx context.Context) error
 	Close(ctx context.Context) error
 
-	// Is called as goroutine from main and should clean up expired OAuth2States
+	// Cleanup expired OAuth2 states.
 	Clean(ctx context.Context) error
 
 	GetOAuth2State(ctx context.Context, state uuid.UUID) (*model2.OAuth2State, error)
@@ -25,7 +25,15 @@ type Storer interface {
 	CreateUserAndServiceUser(ctx context.Context, serviceUser *model2.ServiceUser) (int64, error)
 
 	GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*model2.ServiceUser, error)
+	//GetServiceUserTokenByUniqueName(ctx context.Context, service string, username string) (*oauth2.Token, error) // TODO: Unused
+	GetServiceUserByRepo(ctx context.Context, repoID int64) (*model2.ServiceUser, error)
 	UpdateServiceUserToken(ctx context.Context, serviceUser *model2.ServiceUser, token *oauth2.Token) error
+
+	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
+	GetRepoName(ctx context.Context, repoID int64) (string, error)
+	//GetTokenByRepo(ctx context.Context, repoID int64) (*oauth2.Token, error)
+
+	CreatePipeline(ctx context.Context, pipeline *model2.Pipeline) error
 
 	// -- TODO: Old API --
 
@@ -36,7 +44,7 @@ type Storer interface {
 
 	GetServiceUser(ctx context.Context, id string) (*model.ServiceUser, error)
 	//GetServiceUserByUniqueName(ctx context.Context, uniqueName string) (*model.ServiceUser, error)
-	GetServiceUserByRepo(ctx context.Context, r *model.Repo) (*model.ServiceUser, error)
+	//GetServiceUserByRepo(ctx context.Context, r *model.Repo) (*model.ServiceUser, error)
 	GetServiceUserByUser(ctx context.Context, user *model.User, serviceName string) (*model.ServiceUser, error)
 	CreateServiceUser(ctx context.Context, i *model.ServiceUser) error
 	//UpdateServiceUserToken(ctx context.Context, i *model.ServiceUser, token oauth2.Token) error

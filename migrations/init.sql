@@ -38,12 +38,9 @@ CREATE TABLE IF NOT EXISTS "pipeline" (
     commit_sha text NOT NULL,
     clone_url text NOT NULL,
     status text,
+    target_url text,
     started_at timestamp,
     finished_at timestamp,
-    access_token text NOT NULL,
-    refresh_token text,
-    token_type text,
-    token_expire timestamp,
     repo_id bigint NOT NULL,
     FOREIGN KEY (repo_id) REFERENCES "repo" (id)
 );

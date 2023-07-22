@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/google/go-github/v53/github"
@@ -43,18 +42,19 @@ func (*GitHubManager) Name() string {
 	return "GitHub"
 }
 
-func (*GitHubManager) StatusName(status StatusState) (string, error) {
+func (*GitHubManager) StatusName(status StatusState) string {
 	switch status {
 	case StatusSuccess:
-		return "success", nil
+		return "success"
 	case StatusPending:
-		return "pending", nil
+		return "pending"
 	case StatusRunning:
-		return "pending", nil
+		return "pending"
 	case StatusError:
-		return "error", nil
+		return "error"
+	default:
+		return ""
 	}
-	return "", fmt.Errorf("invalid state: %d", status)
 }
 
 func (m *GitHubManager) OAuth2Config() *oauth2.Config {
@@ -137,13 +137,12 @@ func (m *GitHubManager) ChangeWebhookState(ctx context.Context, serviceUser *mod
 	return repo, nil
 }
 
-func (m *GitHubManager) HandleEvent(r *http.Request) (*model.Job, error) {
-	//payload, err := github.ValidatePayload(r, []byte(m.config.SecretKey))
-	//if err != nil {
-	//	return nil, err
-	//}
-	data, _ := ioutil.ReadAll(r.Body)
-	event, err := github.ParseWebHook(github.WebHookType(r), data)
+func (m *GitHubManager) HandleEvent(r *http.Request) (*model2.Pipeline, error) {
+	payload, err := github.ValidatePayload(r, []byte(m.config.SecretKey))
+	if err != nil {
+		return nil, err
+	}
+	event, err := github.ParseWebHook(github.WebHookType(r), payload)
 	if err != nil {
 		return nil, err
 	}
@@ -158,40 +157,36 @@ func (m *GitHubManager) HandleEvent(r *http.Request) (*model.Job, error) {
 	}
 }
 
-func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*model.Job, error) {
-	// TODO: Should this be commit which triggred webhook or last commit in repo?
-	commit := e.Commits[len(e.Commits)-1]
+func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*model2.Pipeline, error) {
+	commit := e.HeadCommit.GetSHA()
 
-	username := e.Repo.Owner.GetLogin()
-	serviceUser, err := m.s.GetServiceUserByUniqueName(ctx, m.Name()+"/"+username)
+	repoID, err := m.s.GetRepoIDByServiceRepoID(ctx, m.Name(), e.Repo.GetID())
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := m.s.GetRepoByUniqueName(ctx, m.Name()+"/"+e.Repo.GetFullName())
-	if err != nil {
-		return nil, err
+	// TODO: Create TargetURL.
+
+	pipeline := &model2.Pipeline{
+		CommitSHA: commit,
+		CloneURL:  e.Repo.GetCloneURL(),
+		Status:    m.StatusName(StatusPending),
+		RepoID:    repoID,
 	}
 
-	job := model.NewJob(repo.ID, repo.UniqueName, commit.GetID(), e.Repo.GetCloneURL(), serviceUser.Token)
-	return job, nil
+	return pipeline, nil
 }
 
-func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, job *model.Job, status Status) error {
+func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, repoName string, commit string, status Status) error {
 	client := m.getClientByServiceUser(ctx, serviceUser)
 
-	statusName, err := m.StatusName(status.State)
-	if err != nil {
-		return err
-	}
-
 	s := &github.RepoStatus{
-		State:       github.String(statusName),
+		State:       github.String(m.StatusName(status.State)),
 		TargetURL:   github.String(status.TargetURL),
 		Context:     github.String(status.Context),
 		Description: github.String(status.Description),
 	}
-	_, _, err = client.Repositories.CreateStatus(ctx, serviceUser.Username, repo.Name, job.CommitSHA, s)
+	_, _, err := client.Repositories.CreateStatus(ctx, serviceUser.Username, repoName, commit, s)
 
 	return err
 }

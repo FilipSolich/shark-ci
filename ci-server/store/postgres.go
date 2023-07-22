@@ -114,9 +114,62 @@ func (s *PostgresStore) GetServiceUserByUniqueName(ctx context.Context, service 
 	return su, nil
 }
 
+//func (s *PostgresStore) GetServiceUserTokenByUniqueName(ctx context.Context, service string, username string) (*oauth2.Token, error) {
+//	token := &oauth2.Token{}
+//	err := s.db.QueryRowContext(ctx, "SELECT access_token, refresh_token, token_type, token_expire FROM service_user WHERE username = $1 AND service = $2", username, service).Scan(&token.AccessToken, &token.RefreshToken, &token.TokenType, &token.Expiry)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return token, nil
+//}
+
+func (s *PostgresStore) GetServiceUserByRepo(ctx context.Context, repoID int64) (*model2.ServiceUser, error) {
+	su := &model2.ServiceUser{}
+	err := s.db.QueryRowContext(ctx, "SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id FROM service_user WHERE id = (SELECT service_user_id FROM repo WHERE id = $1)", repoID).Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken, &su.RefreshToken, &su.TokenType, &su.TokenExpire, &su.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return su, nil
+}
+
 func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUser *model2.ServiceUser, token *oauth2.Token) error {
 	_, err := s.db.ExecContext(ctx, "UPDATE service_user SET access_token = $1, refresh_token = $2, token_type = $3, token_expire = $4 WHERE id = $5", token.AccessToken, token.RefreshToken, token.TokenType, token.Expiry, serviceUser.ID)
 	return err
 }
 
-// -- Old API --
+func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error) {
+	var repoID int64
+	err := s.db.QueryRowContext(ctx, "SELECT id FROM repo WHERE service = $1 AND service_repo_id = $2", service, serviceRepoID).Scan(&repoID)
+	if err != nil {
+		return 0, err
+	}
+
+	return repoID, nil
+}
+
+func (s *PostgresStore) GetRepoName(ctx context.Context, repoID int64) (string, error) {
+	var repoName string
+	err := s.db.QueryRowContext(ctx, "SELECT name FROM repo WHERE id = $1", repoID).Scan(&repoName)
+	if err != nil {
+		return "", err
+	}
+
+	return repoName, nil
+}
+
+//func (s *PostgresStore) GetTokenByRepo(ctx context.Context, repoID int64) (*oauth2.Token, error) {
+//	token := &oauth2.Token{}
+//	err := s.db.QueryRowContext(ctx, "SELECT access_token, refresh_token, token_type, token_expire FROM service_user WHERE id = (SELECT service_user_id FROM repo WHERE id = $1)", repoID).Scan(&token.AccessToken, &token.RefreshToken, &token.TokenType, &token.Expiry)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return token, nil
+//}
+
+func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *model2.Pipeline) error {
+	_, err := s.db.ExecContext(ctx, "INSERT INTO pipeline (commit_sha, clone_url, status, repo_id) VALUES ($1, $2, $3, $4)", pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID)
+	return err
+}

@@ -61,17 +61,19 @@ func InitServices(s store.Storer, config config.Config) Services {
 
 type ServiceManager interface {
 	Name() string
-	StatusName(status StatusState) (string, error)
+	StatusName(status StatusState) string
 	OAuth2Config() *oauth2.Config
 
 	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error)
+
+	HandleEvent(r *http.Request) (*model2.Pipeline, error)
+
+	CreateStatus(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, commit string, status Status) error
+	// --- TODO: Old API ---
+
 	GetUsersRepos(ctx context.Context, serviceUser *model.ServiceUser) ([]*model.Repo, error)
 
 	CreateWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) (*model.Repo, error)
 	DeleteWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) error
 	ChangeWebhookState(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, active bool) (*model.Repo, error)
-
-	HandleEvent(r *http.Request) (*model.Job, error)
-
-	CreateStatus(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, job *model.Job, status Status) error
 }
