@@ -8,16 +8,16 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/session"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/shared/model"
-	"go.uber.org/zap"
+	"golang.org/x/exp/slog"
 )
 
 type OAuth2Handler struct {
-	l        *zap.SugaredLogger
+	l        *slog.Logger
 	s        store.Storer
 	services service.Services
 }
 
-func NewOAuth2Handler(l *zap.SugaredLogger, s store.Storer, services service.Services) *OAuth2Handler {
+func NewOAuth2Handler(l *slog.Logger, s store.Storer, services service.Services) *OAuth2Handler {
 	return &OAuth2Handler{
 		l:        l,
 		s:        s,
@@ -43,7 +43,11 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.s.DeleteOAuth2State(ctx, oauth2State) // TODO: What to do if delete fails
+	err = h.s.DeleteOAuth2State(ctx, oauth2State) // TODO: What to do if delete fails
+	if err != nil {
+		h.l.Warn("store: cannot delete OAuth2 state", "err", err)
+	}
+
 	if !oauth2State.IsValid() {
 		http.Error(w, "oauth2 state expired", http.StatusBadRequest)
 		return
@@ -53,7 +57,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	config := srv.OAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("cannot get OAuth2 token", "err", err, "service", srv.Name(), "code", code)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -62,7 +66,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	// TODO: Get user from request and pass it into function call.
 	serviceUser, err := srv.GetServiceUser(ctx, token)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("service: cannot get service user", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -72,13 +76,18 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		u = serviceUser
 		err = h.s.CreateServiceUser(ctx, u)
+		if err != nil {
+			h.l.Error("store: cannot create user", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	} else {
 		err = h.s.UpdateServiceUserToken(ctx, u, serviceUser.Token)
-	}
-	if err != nil {
-		h.l.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		if err != nil {
+			h.l.Error("store: cannot update user", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	user, err := h.s.GetUserByServiceUser(ctx, u)
@@ -86,7 +95,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		user := model.NewUser([]string{u.ID})
 		err = h.s.CreateUser(ctx, user)
 		if err != nil {
-			h.l.Error(err)
+			h.l.Error("store: cannot create user", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -97,7 +106,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	s.Values[session.SessionKey] = user.ID
 	err = s.Save(r, w)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("cannot save session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

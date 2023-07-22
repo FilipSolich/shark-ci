@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 
-	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/shared/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -28,18 +27,11 @@ func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	ms := &MongoStore{}
 	var err error
 
-	log.L.Info("Connecting to MongoDB")
 	ctx := context.TODO()
 	ms.client, err = mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		return nil, err
 	}
-
-	err = ms.Ping(ctx)
-	if err != nil {
-		return nil, err
-	}
-	log.L.Info("MongoDB connected")
 
 	ms.db = ms.client.Database("CIServer")
 	ms.users = ms.db.Collection("users")
@@ -64,6 +56,11 @@ func (ms *MongoStore) Ping(ctx context.Context) error {
 
 func (ms *MongoStore) Close(ctx context.Context) error {
 	return ms.client.Disconnect(ctx)
+}
+
+// Mongo support TTL indexes, so we don't need to implement cleaner.
+func (ms *MongoStore) Clean(_ context.Context) error {
+	return nil
 }
 
 func (ms *MongoStore) GetUser(ctx context.Context, id string) (*model.User, error) {

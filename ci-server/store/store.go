@@ -13,6 +13,9 @@ type Storer interface {
 	Ping(ctx context.Context) error
 	Close(ctx context.Context) error
 
+	// Is called as goroutine from main and should clean up expired OAuth2States
+	Clean(ctx context.Context) error
+
 	GetUser(ctx context.Context, id string) (*model.User, error)
 	GetUserByServiceUser(ctx context.Context, i *model.ServiceUser) (*model.User, error)
 	CreateUser(ctx context.Context, u *model.User) error

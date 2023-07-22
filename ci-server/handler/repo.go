@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/csrf"
-	"go.uber.org/zap"
+	"golang.org/x/exp/slog"
 
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
@@ -17,12 +17,12 @@ import (
 )
 
 type RepoHandler struct {
-	l        *zap.SugaredLogger
+	l        *slog.Logger
 	s        store.Storer
 	services service.Services
 }
 
-func NewRepoHandler(l *zap.SugaredLogger, s store.Storer, services service.Services) *RepoHandler {
+func NewRepoHandler(l *slog.Logger, s store.Storer, services service.Services) *RepoHandler {
 	return &RepoHandler{
 		l:        l,
 		s:        s,
@@ -41,14 +41,14 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 	for serviceName, srv := range h.services {
 		serviceUser, err := h.s.GetServiceUserByUser(ctx, user, serviceName)
 		if err != nil {
-			h.l.Error(err)
+			h.l.Error("store: cannot get service user", "err", err)
 			continue
 		}
 
 		// TODO: Bundle into repo finder and updater
 		repos, err := srv.GetUsersRepos(r.Context(), serviceUser)
 		if err != nil {
-			h.l.Error(err)
+			h.l.Error("service: cannot get user repositorues from service", "err", err)
 			continue
 		}
 
@@ -70,23 +70,23 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 
 func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	serviceUser, repo, service, err := h.getInfoFromRequest(ctx, w, r)
+	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("cannot get info from request", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	repo, err = service.CreateWebhook(ctx, serviceUser, repo)
+	repo, err = srv.CreateWebhook(ctx, serviceUser, repo)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("service: cannot create a webhook", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = h.s.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("store: cannot update a webhook", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -98,21 +98,21 @@ func (h *RepoHandler) HandleUnregisterRepo(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("cannot get info from request", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = srv.DeleteWebhook(ctx, serviceUser, repo)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("service: cannot delete webhook", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = h.s.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("store: cannot update webhook", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -130,23 +130,23 @@ func (h *RepoHandler) HandleDeactivateRepo(w http.ResponseWriter, r *http.Reques
 
 func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
 	ctx := r.Context()
-	serviceUser, repo, service, err := h.getInfoFromRequest(ctx, w, r)
+	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("cannot get infor from request", "err", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	repo, err = service.ChangeWebhookState(ctx, serviceUser, repo, active)
+	repo, err = srv.ChangeWebhookState(ctx, serviceUser, repo, active)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("service: cannot change a webhook state", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = h.s.UpdateRepoWebhook(ctx, repo)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("store: cannot update a webhook", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

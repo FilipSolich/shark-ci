@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/shared/model"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"golang.org/x/exp/slog"
 )
 
 type RabbitMQ struct {
@@ -20,12 +20,10 @@ func NewRabbitMQ(rabbitMQURI string) (*RabbitMQ, error) {
 	rmq := &RabbitMQ{queueName: "jobs"}
 	var err error
 
-	log.L.Info("Connecting to RabbitMQ")
 	rmq.conn, err = amqp.Dial(rabbitMQURI)
 	if err != nil {
 		return nil, err
 	}
-	log.L.Info("RabbitMQ connected")
 
 	channel, err := rmq.conn.Channel()
 	if err != nil {
@@ -93,7 +91,7 @@ func (rmq *RabbitMQ) JobChannel() (jobChannel, error) {
 			var job model.Job
 			err := json.Unmarshal(msg.Body, &job)
 			if err != nil {
-				log.L.Error(err)
+				slog.Error("cannot unmarshal job from message queue", "err", err)
 				msg.Nack(false, false)
 				continue
 			}

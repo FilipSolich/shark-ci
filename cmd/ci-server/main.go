@@ -2,18 +2,18 @@ package main
 
 import (
 	"context"
-	std_log "log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"go.uber.org/zap"
+	"golang.org/x/exp/slog"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/handler"
-	"github.com/FilipSolich/shark-ci/ci-server/log"
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/session"
@@ -22,50 +22,90 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
 )
 
+func clean(s store.Storer, d time.Duration, l *slog.Logger) {
+	ticker := time.NewTicker(d)
+	go func() {
+		for {
+			<-ticker.C
+			err := s.Clean(context.TODO())
+			if err != nil {
+				l.Error("store: databse cleanup failed", "err", err)
+			}
+		}
+	}()
+}
+
 func main() {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		std_log.Fatal(err)
-	}
-	defer logger.Sync()
-	log.L = logger.Sugar()
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
 
 	// TODO: Remove godotenv.
-	err = godotenv.Load()
+	err := godotenv.Load()
 	if err != nil {
-		log.L.Fatal(err)
+		logger.Error("loading environment failed", "err", err)
+		os.Exit(1)
 	}
 
 	config, err := config.NewConfigFromEnv()
 	if err != nil {
-		log.L.Fatal(err)
+		logger.Error("creating config failed", "err", err)
+		os.Exit(1)
 	}
 
 	session.InitSessionStore(config.CIServer.SecretKey)
 
 	template.LoadTemplates()
 
+	logger.Info("connecting to PostgreSQL")
+	pgStore, err := store.NewPostgresStore(config.DB.URI)
+	if err != nil {
+		logger.Error("store: connecting to PostgreSQL failed", "err", err)
+		os.Exit(1)
+	}
+	defer pgStore.Close(context.TODO())
+
+	err = pgStore.Ping(context.TODO())
+	if err != nil {
+		logger.Error("store: pinging to PostgreSQL failed", "err", err)
+		os.Exit(1)
+	}
+	logger.Info("PostgreSQL connected")
+
+	logger.Info("connecting to MongoDB")
 	mongoStore, err := store.NewMongoStore(config.DB.URI)
 	if err != nil {
-		log.L.Fatal(err)
+		logger.Error("store: connecting to MongoDB failed", "err", err)
+		os.Exit(1)
 	}
 	defer mongoStore.Close(context.TODO())
 
+	err = mongoStore.Ping(context.TODO())
+	if err != nil {
+		logger.Error("store: pinging to MongoDB failed", "err", err)
+		os.Exit(1)
+	}
+	logger.Info("MongoDB connected")
+
+	logger.Info("connecting to RabbitMQ")
 	rabbitMQ, err := message_queue.NewRabbitMQ(config.MQ.URI)
 	if err != nil {
-		log.L.Fatal(err)
+		logger.Error("mq: connecting to RabbitMQ failed", "err", err)
+		os.Exit(1)
 	}
 	defer rabbitMQ.Close(context.TODO())
+	logger.Info("RabbitMQ connected")
+
+	clean(mongoStore, 24*time.Hour, logger)
 
 	services := service.InitServices(mongoStore, config)
 
 	CSRF := csrf.Protect([]byte(config.CIServer.SecretKey))
 
-	loginHandler := handler.NewLoginHandler(log.L, mongoStore, services)
+	loginHandler := handler.NewLoginHandler(logger, mongoStore, services)
 	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(log.L, mongoStore, rabbitMQ, services)
-	oauth2Handler := handler.NewOAuth2Handler(log.L, mongoStore, services)
-	repoHandler := handler.NewRepoHandler(log.L, mongoStore, services)
+	eventHandler := handler.NewEventHandler(logger, mongoStore, rabbitMQ, services)
+	oauth2Handler := handler.NewOAuth2Handler(logger, mongoStore, services)
+	repoHandler := handler.NewRepoHandler(logger, mongoStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
@@ -95,6 +135,11 @@ func main() {
 		WriteTimeout: 0,
 		IdleTimeout:  0,
 	}
-	log.L.Info("Server running on " + server.Addr)
-	log.L.Fatal(server.ListenAndServe())
+	logger.Info("server running on " + server.Addr)
+
+	err = server.ListenAndServe()
+	if err != nil {
+		logger.Error("server crashed", "err", err)
+		os.Exit(1)
+	}
 }

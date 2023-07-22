@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"go.uber.org/zap"
+	"golang.org/x/exp/slog"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
@@ -15,13 +15,13 @@ import (
 )
 
 type EventHandler struct {
-	l        *zap.SugaredLogger
+	l        *slog.Logger
 	s        store.Storer
 	mq       message_queue.MessageQueuer
 	services service.Services
 }
 
-func NewEventHandler(l *zap.SugaredLogger, s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
+func NewEventHandler(l *slog.Logger, s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
 	return &EventHandler{
 		l:        l,
 		s:        s,
@@ -52,7 +52,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		} else if errors.Is(err, service.ErrEventNotSupported) {
 			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
 		} else {
-			h.l.Error(err)
+			h.l.Error("service: cannot hadle event", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
@@ -60,31 +60,36 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	err = h.s.CreateJob(context.TODO(), job)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("store: cannot create job", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = h.mq.SendJob(context.TODO(), job)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("store: cannot send job", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	repo, err := h.s.GetRepo(ctx, job.RepoID)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("store: cannot get repo", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	serviceUser, err := h.s.GetServiceUserByRepo(ctx, repo)
+	if err != nil {
+		h.l.Error("store: cannot get service user", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	status := service.NewStatus(service.StatusPending, job.TargetURL, ciserver.CIServer, "Job in progress")
 	err = srv.CreateStatus(ctx, serviceUser, repo, job, status)
 	if err != nil {
-		h.l.Error(err)
+		h.l.Error("cannot create status", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
