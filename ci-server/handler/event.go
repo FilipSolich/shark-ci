@@ -46,7 +46,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pipeline, err := srv.HandleEvent(r)
+	pipeline, err := srv.HandleEvent(ctx, r)
 	if err != nil {
 		if errors.Is(err, service.NoErrPingEvent) {
 			w.Write([]byte("pong"))

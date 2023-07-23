@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"github.com/FilipSolich/shark-ci/shared/model"
+	"github.com/FilipSolich/shark-ci/shared/types"
 )
 
 type MessageQueuer interface {
 	Close(ctx context.Context) error
-	SendJob(ctx context.Context, job *model.Job) error
+	SendWork(ctx context.Context, work types.Work) error
 	JobChannel() (jobChannel, error)
 }
 

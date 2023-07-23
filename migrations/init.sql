@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "service_user" (
     token_type text,
     token_expire timestamp,
     user_id bigint NOT NULL ,
+    UNIQUE (service, username),
     FOREIGN KEY (user_id) REFERENCES "user" (id)
 );
 
@@ -24,12 +25,12 @@ CREATE TABLE IF NOT EXISTS "oauth2_state" (
 
 CREATE TABLE IF NOT EXISTS "repo" (
     id bigserial PRIMARY KEY,
-    repo_service_id bigint NOT NULL ,
     name text NOT NULL,
     service text NOT NULL,
+    repo_service_id bigint NOT NULL ,
     webhook_id bigint,
-    webhook_active boolean,
     service_user_id bigint NOT NULL ,
+    UNIQUE (service, repo_service_id),
     FOREIGN KEY (service_user_id) REFERENCES "service_user" (id)
 );
 
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXIST "pipeline_log_line" (
     file text,
     content text,
     pipeline_log_id bigint,
+    UNIQUE (pipeline_log_id, line)
     FOREIGN KEY (pipeline_log_id) REFERENCES "pipeline_log" (id)
 );
 

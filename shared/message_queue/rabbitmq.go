@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/FilipSolich/shark-ci/shared/model"
+	"github.com/FilipSolich/shark-ci/shared/types"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/exp/slog"
 )
@@ -17,41 +18,41 @@ type RabbitMQ struct {
 var _ MessageQueuer = &RabbitMQ{}
 
 func NewRabbitMQ(rabbitMQURI string) (*RabbitMQ, error) {
-	rmq := &RabbitMQ{queueName: "jobs"}
+	mq := &RabbitMQ{queueName: "jobs"}
 	var err error
 
-	rmq.conn, err = amqp.Dial(rabbitMQURI)
+	mq.conn, err = amqp.Dial(rabbitMQURI)
 	if err != nil {
 		return nil, err
 	}
 
-	channel, err := rmq.conn.Channel()
+	channel, err := mq.conn.Channel()
 	if err != nil {
-		rmq.conn.Close()
+		mq.conn.Close()
 		return nil, err
 	}
 	defer channel.Close()
 
-	_, err = channel.QueueDeclare(rmq.queueName, true, false, false, false, nil)
+	_, err = channel.QueueDeclare(mq.queueName, true, false, false, false, nil)
 	if err != nil {
-		rmq.conn.Close()
+		mq.conn.Close()
 		return nil, err
 	}
 
-	return rmq, nil
+	return mq, nil
 }
 
-func (rmq *RabbitMQ) Close(ctx context.Context) error {
-	return rmq.conn.Close()
+func (mq *RabbitMQ) Close(ctx context.Context) error {
+	return mq.conn.Close()
 }
 
-func (rmq *RabbitMQ) SendJob(ctx context.Context, job *model.Job) error {
-	data, err := json.Marshal(job)
+func (mq *RabbitMQ) SendWork(ctx context.Context, work types.Work) error {
+	data, err := json.Marshal(work)
 	if err != nil {
 		return err
 	}
 
-	channel, err := rmq.conn.Channel()
+	channel, err := mq.conn.Channel()
 	if err != nil {
 		return err
 	}
@@ -62,12 +63,12 @@ func (rmq *RabbitMQ) SendJob(ctx context.Context, job *model.Job) error {
 		ContentType:  "application/json",
 		Body:         data,
 	}
-	err = channel.PublishWithContext(ctx, "", rmq.queueName, false, false, pub)
+	err = channel.PublishWithContext(ctx, "", mq.queueName, false, false, pub)
 	return err
 }
 
-func (rmq *RabbitMQ) JobChannel() (jobChannel, error) {
-	channel, err := rmq.conn.Channel()
+func (mq *RabbitMQ) JobChannel() (jobChannel, error) {
+	channel, err := mq.conn.Channel()
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +80,7 @@ func (rmq *RabbitMQ) JobChannel() (jobChannel, error) {
 	// 	return nil, err
 	// }
 
-	msgChannel, err := channel.Consume(rmq.queueName, "", false, false, false, false, nil)
+	msgChannel, err := channel.Consume(mq.queueName, "", false, false, false, false, nil)
 	if err != nil {
 		channel.Close()
 		return nil, err

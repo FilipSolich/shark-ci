@@ -1,6 +1,9 @@
 package model2
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Pipeline struct {
 	ID         int64     `json:"id"`
@@ -11,4 +14,9 @@ type Pipeline struct {
 	StartedAt  time.Time `json:"started_at"`
 	FinishedAt time.Time `json:"finished_at"`
 	RepoID     int64     `json:"repo_id"`
+}
+
+func (p *Pipeline) CreateTargetURL() {
+	// TODO: Create real URL.
+	p.TargetURL = fmt.Sprintf("http://localhost:8080/pipelines/%d", p.ID)
 }

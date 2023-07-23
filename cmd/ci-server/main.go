@@ -22,14 +22,14 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
 )
 
-func cleaner(s store.Storer, d time.Duration, l *slog.Logger) {
+func cleaner(s store.Storer, d time.Duration) {
 	ticker := time.NewTicker(d)
 	go func() {
 		for {
 			<-ticker.C
 			err := s.Clean(context.TODO())
 			if err != nil {
-				l.Error("store: databse cleanup failed", "err", err)
+				slog.Error("store: databse cleanup failed", "err", err)
 			}
 		}
 	}()
@@ -71,20 +71,20 @@ func main() {
 	}
 	logger.Info("PostgreSQL connected")
 
-	logger.Info("connecting to MongoDB")
-	mongoStore, err := store.NewMongoStore(config.DB.URI)
-	if err != nil {
-		logger.Error("store: connecting to MongoDB failed", "err", err)
-		os.Exit(1)
-	}
-	defer mongoStore.Close(context.TODO())
+	//logger.Info("connecting to MongoDB")
+	//mongoStore, err := store.NewMongoStore(config.DB.URI)
+	//if err != nil {
+	//	logger.Error("store: connecting to MongoDB failed", "err", err)
+	//	os.Exit(1)
+	//}
+	//defer mongoStore.Close(context.TODO())
 
-	err = mongoStore.Ping(context.TODO())
-	if err != nil {
-		logger.Error("store: pinging to MongoDB failed", "err", err)
-		os.Exit(1)
-	}
-	logger.Info("MongoDB connected")
+	//err = mongoStore.Ping(context.TODO())
+	//if err != nil {
+	//	logger.Error("store: pinging to MongoDB failed", "err", err)
+	//	os.Exit(1)
+	//}
+	//logger.Info("MongoDB connected")
 
 	logger.Info("connecting to RabbitMQ")
 	rabbitMQ, err := message_queue.NewRabbitMQ(config.MQ.URI)
@@ -95,7 +95,7 @@ func main() {
 	defer rabbitMQ.Close(context.TODO())
 	logger.Info("RabbitMQ connected")
 
-	cleaner(pgStore, 24*time.Hour, logger)
+	cleaner(pgStore, 24*time.Hour)
 
 	services := service.InitServices(pgStore, config)
 

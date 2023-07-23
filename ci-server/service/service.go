@@ -24,27 +24,11 @@ const (
 	StatusError                      // GitHub -> Error, GitLab -> Failed
 )
 
-var StatusStateMap = map[string]StatusState{
-	"success": StatusSuccess,
-	"pending": StatusPending,
-	"running": StatusRunning,
-	"error":   StatusError,
-}
-
 type Status struct {
 	State       StatusState
 	TargetURL   string
 	Context     string
 	Description string
-}
-
-func NewStatus(state StatusState, targetURL string, ctx string, description string) Status {
-	return Status{
-		State:       state,
-		TargetURL:   targetURL,
-		Context:     ctx,
-		Description: description,
-	}
 }
 
 type Services map[string]ServiceManager
@@ -65,13 +49,12 @@ type ServiceManager interface {
 	OAuth2Config() *oauth2.Config
 
 	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error)
+	GetUsersRepos(ctx context.Context, serviceUser *model2.ServiceUser) ([]model2.Repo, error)
 
-	HandleEvent(r *http.Request) (*model2.Pipeline, error)
+	HandleEvent(ctx context.Context, r *http.Request) (*model2.Pipeline, error)
 
 	CreateStatus(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, commit string, status Status) error
 	// --- TODO: Old API ---
-
-	GetUsersRepos(ctx context.Context, serviceUser *model.ServiceUser) ([]*model.Repo, error)
 
 	CreateWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) (*model.Repo, error)
 	DeleteWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) error

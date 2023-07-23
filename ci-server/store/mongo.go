@@ -11,6 +11,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// TODO: Mongo store does not implement storer interface
+
 type MongoStore struct {
 	client       *mongo.Client
 	db           *mongo.Database
@@ -21,7 +23,7 @@ type MongoStore struct {
 	oauth2States *mongo.Collection
 }
 
-var _ Storer = &MongoStore{}
+//var _ Storer = &MongoStore{}
 
 func NewMongoStore(mongoURI string) (*MongoStore, error) {
 	ms := &MongoStore{}
