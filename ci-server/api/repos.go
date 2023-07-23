@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"golang.org/x/exp/slog"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/shared/model2"
+	"github.com/gorilla/mux"
 )
 
 type RepoAPI struct {
@@ -87,3 +89,63 @@ func (api *RepoAPI) RefreshRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (api *RepoAPI) CreateWebhook(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, ok := middleware.UserFromContext(ctx, w)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	repoIDstring := vars["repoID"]
+	repoID, err := strconv.ParseInt(repoIDstring, 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	repo, err := api.s.GetRepo(ctx, repoID)
+	if err != nil {
+		api.l.Warn("store: cannot get repo", "err", err, "repoID", repoID)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	srv, ok := api.services[repo.Service]
+	if !ok {
+		api.l.Error("service: unknown service", "service", repo.Service)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	serviceUser, err := api.s.GetServiceUserByRepo(ctx, repo.ID)
+	if err != nil {
+		api.l.Error("store: cannot get service user by repo", "err", err, "repoID", repo.ID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if serviceUser.UserID != user.ID {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	webhookID, err := srv.CreateWebhook(ctx, serviceUser, repo)
+	if err != nil {
+		api.l.Error("service: cannot create webhook", "err", err, "repoID", repo.ID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = api.s.UpdateRepoWebhook(ctx, repo.ID, webhookID)
+	if err != nil {
+		api.l.Error("store: cannot update repo webhook", "err", err, "repoID", repo.ID)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+// TODO: Delete webhook.

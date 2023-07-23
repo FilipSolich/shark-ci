@@ -7,7 +7,6 @@ import (
 
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/shared/model"
 	"github.com/FilipSolich/shark-ci/shared/model2"
 	"golang.org/x/oauth2"
 )
@@ -51,12 +50,10 @@ type ServiceManager interface {
 	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error)
 	GetUsersRepos(ctx context.Context, serviceUser *model2.ServiceUser) ([]model2.Repo, error)
 
+	CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) (int64, error)
+	DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) error
+
 	HandleEvent(ctx context.Context, r *http.Request) (*model2.Pipeline, error)
 
 	CreateStatus(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, commit string, status Status) error
-	// --- TODO: Old API ---
-
-	CreateWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) (*model.Repo, error)
-	DeleteWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) error
-	ChangeWebhookState(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, active bool) (*model.Repo, error)
 }

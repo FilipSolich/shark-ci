@@ -2,17 +2,14 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/go-github/v53/github"
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
-	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/shared/model"
 	"github.com/FilipSolich/shark-ci/shared/model2"
 )
 
@@ -37,7 +34,6 @@ func NewGitHubManager(clientID string, clientSecret string, s store.Storer, conf
 	}
 }
 
-// Return service name.
 func (*GitHubManager) Name() string {
 	return "GitHub"
 }
@@ -62,7 +58,7 @@ func (m *GitHubManager) OAuth2Config() *oauth2.Config {
 }
 
 func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error) {
-	client := m.getGitHubClient(ctx, token)
+	client := m.clientWithToken(ctx, token)
 
 	user, _, err := client.Users.Get(ctx, "")
 	if err != nil {
@@ -105,61 +101,32 @@ func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *model2.S
 	return repos, err
 }
 
-func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) (*model.Repo, error) {
-	client := m.getClientByServiceUser(ctx, serviceUser)
+func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) (int64, error) {
+	client := m.clientForServiceUser(ctx, serviceUser)
 
-	hook := m.defaultWebhook()
+	hook := &github.Hook{
+		Active: github.Bool(true),
+		Events: []string{"push", "pull_request"},
+		Config: map[string]any{
+			"url":          m.config.WebhookEndpoint + "/" + m.Name(),
+			"content_type": "json",
+			"secret":       m.config.SecretKey,
+		},
+	}
+
 	hook, _, err := client.Repositories.CreateHook(ctx, serviceUser.Username, repo.Name, hook)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	repo.WebhookID = hook.GetID()
-	repo.WebhookActive = true
-
-	return repo, nil
+	return hook.GetID(), nil
 }
 
-func (m *GitHubManager) DeleteWebhook(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo) error {
-	client := m.getClientByServiceUser(ctx, serviceUser)
+func (m *GitHubManager) DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) error {
+	client := m.clientForServiceUser(ctx, serviceUser)
 
 	_, err := client.Repositories.DeleteHook(ctx, serviceUser.Username, repo.Name, repo.WebhookID)
-	repo.DeleteWebhook()
 	return err
-}
-
-func (m *GitHubManager) ChangeWebhookState(ctx context.Context, serviceUser *model.ServiceUser, repo *model.Repo, active bool) (*model.Repo, error) {
-	client := m.getClientByServiceUser(ctx, serviceUser)
-
-	ghHook := m.defaultWebhook()
-	ghHook.Active = github.Bool(active)
-	_, _, err := client.Repositories.EditHook(ctx, serviceUser.Username, repo.Name, repo.WebhookID, ghHook)
-	if err != nil {
-		return nil, err
-	}
-
-	repo.WebhookActive = active
-	return repo, nil
-}
-
-func (m *GitHubManager) ParseEvent(r *http.Request) (*model2.Pipeline, error) {
-	payload, err := github.ValidatePayload(r, []byte(m.config.SecretKey))
-	if err != nil {
-		return nil, err
-	}
-	event, err := github.ParseWebHook(github.WebHookType(r), payload)
-	if err != nil {
-		return nil, err
-	}
-
-	switch event := event.(type) {
-	case *github.PushEvent:
-		return m.handlePush(r.Context(), event)
-	case *github.PingEvent:
-		return nil, NoErrPingEvent
-	default:
-		return nil, ErrEventNotSupported
-	}
 }
 
 func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*model2.Pipeline, error) {
@@ -215,33 +182,16 @@ func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *model2.Se
 	return err
 }
 
-func (m *GitHubManager) defaultWebhook() *github.Hook {
-	return &github.Hook{
-		Active: github.Bool(true),
-		Events: []string{"push", "pull_request"},
-		Config: map[string]any{
-			"url":          fmt.Sprintf("https://%s:%s%s", m.config.Host, m.config.Port, ciserver.EventHandlerPath+"/"+m.Name()),
-			"content_type": "json",
-			"secret":       m.config.SecretKey,
-		},
-	}
-}
-
-func (m *GitHubManager) getGitHubClient(ctx context.Context, token *oauth2.Token) *github.Client {
+func (m *GitHubManager) clientWithToken(ctx context.Context, token *oauth2.Token) *github.Client {
 	client := m.oauth2Config.Client(ctx, token)
 	return github.NewClient(client)
 }
 
-func (m *GitHubManager) getClientByServiceUser(ctx context.Context, serviceUser *model.ServiceUser) *github.Client {
-	return m.getGitHubClient(ctx, &serviceUser.Token)
-}
-
 func (m *GitHubManager) clientForServiceUser(ctx context.Context, serviceUser *model2.ServiceUser) *github.Client {
-	OAuth2Client := m.oauth2Config.Client(ctx, &oauth2.Token{
+	return m.clientWithToken(ctx, &oauth2.Token{
 		AccessToken:  serviceUser.AccessToken,
 		RefreshToken: serviceUser.RefreshToken,
 		TokenType:    serviceUser.TokenType,
 		Expiry:       serviceUser.TokenExpire,
 	})
-	return github.NewClient(OAuth2Client)
 }

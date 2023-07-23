@@ -1,5 +1,7 @@
 package model2
 
+// TODO: Add owner.
+
 type Repo struct {
 	ID            int64  `json:"id"`
 	Service       string `json:"service"`

@@ -2,7 +2,9 @@ package config
 
 import (
 	"errors"
+	"fmt"
 
+	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/shared/env"
 )
 
@@ -30,9 +32,10 @@ type Config struct {
 }
 
 type CIServerConfig struct {
-	Host      string
-	Port      string
-	SecretKey string
+	Host            string
+	Port            string
+	SecretKey       string
+	WebhookEndpoint string
 }
 
 func NewConfigFromEnv() (Config, error) {
@@ -58,6 +61,13 @@ func NewConfigFromEnv() (Config, error) {
 		},
 	}
 	err := config.validate()
+	if err != nil {
+		return Config{}, err
+	}
+
+	config.CIServer.WebhookEndpoint = fmt.Sprintf("https://%s:%s%s",
+		config.CIServer.Host, config.CIServer.Port, ciserver.EventHandlerPath)
+
 	return config, err
 }
 

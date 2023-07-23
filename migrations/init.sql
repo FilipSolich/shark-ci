@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS "repo" (
     webhook_id bigint,
     service_user_id bigint NOT NULL ,
     UNIQUE (service, repo_service_id),
+    UNIQUE (service, webhook_id),
     FOREIGN KEY (service_user_id) REFERENCES "service_user" (id)
 );
 

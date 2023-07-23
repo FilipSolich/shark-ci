@@ -27,10 +27,12 @@ type Storer interface {
 	GetServiceUsersByUser(ctx context.Context, userID int64) ([]model2.ServiceUser, error)
 	UpdateServiceUserToken(ctx context.Context, serviceUser *model2.ServiceUser, token *oauth2.Token) error
 
+	GetRepo(ctx context.Context, repoID int64) (*model2.Repo, error)
 	GetRepoName(ctx context.Context, repoID int64) (string, error)
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
 	GetReposByUser(ctx context.Context, userID int64) ([]model2.Repo, error)
 	CreateOrUpdateRepos(ctx context.Context, repos []model2.Repo) error
+	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID int64) error
 
 	CreatePipeline(ctx context.Context, pipeline *model2.Pipeline) error
 

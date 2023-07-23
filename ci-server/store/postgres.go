@@ -186,6 +186,21 @@ func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUser 
 	return err
 }
 
+func (s *PostgresStore) GetRepo(ctx context.Context, repoID int64) (*model2.Repo, error) {
+	repo := &model2.Repo{}
+	err := s.db.QueryRowContext(ctx, ""+
+		"SELECT id, service, repo_service_id, name, webhook_id, service_user_id"+
+		"FROM repo"+
+		"WHERE id = $1",
+		repoID).
+		Scan(&repo.ID, &repo.Service, &repo.RepoServiceID, &repo.Name, &repo.WebhookID, &repo.ServiceUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
+}
+
 func (s *PostgresStore) GetRepoName(ctx context.Context, repoID int64) (string, error) {
 	var repoName string
 	err := s.db.QueryRowContext(ctx, "SELECT name FROM repo WHERE id = $1", repoID).Scan(&repoName)
@@ -256,6 +271,16 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []model2.
 	}
 
 	return nil
+}
+
+func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID int64) error {
+	var value any = webhookID
+	if webhookID == 0 {
+		value = nil
+	}
+
+	_, err := s.db.ExecContext(ctx, "UPDATE repo SET webhook_id = $1 WHERE id = $2", value, repoID)
+	return err
 }
 
 func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *model2.Pipeline) error {
