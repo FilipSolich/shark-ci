@@ -46,10 +46,10 @@ func NewConfigFromEnv() (Config, error) {
 			SecretKey: env.StringEnv("SECRET_KEY", ""),
 		},
 		DB: DatabaseConfig{
-			URI: env.StringEnv("MONGO_URI", "mongodb://localhost:27017"),
+			URI: env.StringEnv("DB_URI", "postgres://localhost:5432/shark-ci"),
 		},
 		MQ: MessageQueueConfig{
-			URI: env.StringEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672"),
+			URI: env.StringEnv("MQ_URI", "amqp://guest:guest@localhost:5672"),
 		},
 		GitHub: ServiceConfig{
 			ClientID:     env.StringEnv("GITHUB_CLIENT_ID", ""),
@@ -65,8 +65,8 @@ func NewConfigFromEnv() (Config, error) {
 		return Config{}, err
 	}
 
-	config.CIServer.WebhookEndpoint = fmt.Sprintf("https://%s:%s%s",
-		config.CIServer.Host, config.CIServer.Port, ciserver.EventHandlerPath)
+	config.CIServer.WebhookEndpoint = fmt.Sprintf("https://%s%s",
+		config.CIServer.Host, ciserver.EventHandlerPath)
 
 	return config, err
 }

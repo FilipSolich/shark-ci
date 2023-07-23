@@ -1,11 +1,4 @@
 services:
-  mongo:
-    image: mongo:6
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodata:/data/db
-
   postgres:
     image: postgres:15
     ports:
@@ -27,5 +20,4 @@ services:
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
 
 volumes:
-  mongodata:
   pgdata:

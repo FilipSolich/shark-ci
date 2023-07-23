@@ -9,36 +9,35 @@ import (
 	"path"
 	"strings"
 
-	"github.com/FilipSolich/shark-ci/shared/message_queue"
-	"github.com/FilipSolich/shark-ci/shared/model"
-	"github.com/docker/docker/api/types"
+	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"gopkg.in/yaml.v3"
+
+	"github.com/FilipSolich/shark-ci/shared/message_queue"
+	"github.com/FilipSolich/shark-ci/shared/types"
 )
 
 func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compressedReposPath string) error {
-	jobCh, err := mq.JobChannel()
+	workCh, err := mq.WorkChannel()
 	if err != nil {
 		return err
 	}
 
 	for i := 0; i < maxWorkers; i++ {
 		go func() {
-			for job := range jobCh {
-				log.Printf("Processing job %s\n", job.ID)
+			for work := range workCh {
+				log.Printf("Processing job %d\n", work.Pipeline.ID)
 				ctx := context.TODO()
-				err := processJob(ctx, job, reposPath, compressedReposPath)
+				err := processJob(ctx, work, reposPath, compressedReposPath)
 				if err != nil {
 					// TODO: Should be failed job returned to queue?
-					job.Nack()
-					log.Printf("Job %s failed: %s\n", job.ID, err.Error())
+					log.Printf("Job %d failed: %s\n", work.Pipeline.ID, err.Error())
 					continue
 				}
-				job.Ack()
-				log.Printf("Job %s processed successfully\n", job.ID)
+				log.Printf("Job %d processed successfully\n", work.Pipeline.ID)
 			}
 		}()
 	}
@@ -46,10 +45,10 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compr
 	return nil
 }
 
-func processJob(ctx context.Context, job model.Job, reposPath string, compressedReposPath string) error {
+func processJob(ctx context.Context, work types.Work, reposPath string, compressedReposPath string) error {
 	// Update repository.
-	repoPath := path.Join(reposPath, job.UniqueName)
-	repo, err := updateRepo(ctx, repoPath, job.CloneURL, job.Token.AccessToken)
+	repoPath := path.Join(reposPath, "FIX this")
+	repo, err := updateRepo(ctx, repoPath, work.Pipeline.CloneURL, work.Token.AccessToken)
 	if err != nil {
 		return err
 	}
@@ -60,7 +59,7 @@ func processJob(ctx context.Context, job model.Job, reposPath string, compressed
 	}
 
 	err = worktree.Checkout(&git.CheckoutOptions{
-		Hash: plumbing.NewHash(job.CommitSHA),
+		Hash: plumbing.NewHash(work.Pipeline.CommitSHA),
 	})
 	if err != nil {
 		return err
@@ -86,7 +85,7 @@ func processJob(ctx context.Context, job model.Job, reposPath string, compressed
 	}
 	defer cli.Close()
 
-	out, err := cli.ImagePull(ctx, pipeline.BaseImage, types.ImagePullOptions{})
+	out, err := cli.ImagePull(ctx, pipeline.BaseImage, dockertypes.ImagePullOptions{})
 	if err != nil {
 		return err
 	}
@@ -105,13 +104,13 @@ func processJob(ctx context.Context, job model.Job, reposPath string, compressed
 	}
 
 	// Start container.
-	err = cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{})
+	err = cli.ContainerStart(ctx, container.ID, dockertypes.ContainerStartOptions{})
 	if err != nil {
 		return err
 	}
 
 	// Create compressed repository.
-	compressedRepo, err := archiveRepo(repoPath, compressedReposPath, job.UniqueName, job.CommitSHA)
+	compressedRepo, err := archiveRepo(repoPath, compressedReposPath, "FIX: THIS", work.Pipeline.CommitSHA)
 	if err != nil {
 		return err
 	}
@@ -125,16 +124,16 @@ func processJob(ctx context.Context, job model.Job, reposPath string, compressed
 	tarReader := tar.NewReader(a)
 
 	// This doesnt work.
-	err = cli.CopyToContainer(ctx, container.ID, "/", tarReader, types.CopyToContainerOptions{})
+	err = cli.CopyToContainer(ctx, container.ID, "/", tarReader, dockertypes.CopyToContainerOptions{})
 	if err != nil {
 		return err
 	}
 
 	for name, j := range pipeline.Jobs {
-		log.Printf("Job %s runs %s\n", job.ID, name)
+		log.Printf("Pipelin %d runs %s\n", work.Pipeline.ID, name)
 		for _, step := range j.Steps {
-			log.Printf("Job %s runs %s step %s\n", job.ID, name, step.Name)
-			exec, err := cli.ContainerExecCreate(ctx, container.ID, types.ExecConfig{
+			log.Printf("Pipeline %d runs %s step %s\n", work.Pipeline.ID, name, step.Name)
+			exec, err := cli.ContainerExecCreate(ctx, container.ID, dockertypes.ExecConfig{
 				AttachStdout: true,
 				AttachStderr: true,
 				Cmd:          strings.Split(step.Run, " "),
@@ -143,7 +142,7 @@ func processJob(ctx context.Context, job model.Job, reposPath string, compressed
 				return err
 			}
 
-			hijacked, err := cli.ContainerExecAttach(ctx, exec.ID, types.ExecStartCheck{})
+			hijacked, err := cli.ContainerExecAttach(ctx, exec.ID, dockertypes.ExecStartCheck{})
 			if err != nil {
 				return err
 			}
@@ -160,7 +159,7 @@ func processJob(ctx context.Context, job model.Job, reposPath string, compressed
 				return err
 			}
 
-			log.Printf("Job %s runs %s step %s logs: %d:%s\n", job.ID, name, step.Name, status.ExitCode, logs)
+			log.Printf("Job %d runs %s step %s logs: %d:%s\n", work.Pipeline.ID, name, step.Name, status.ExitCode, logs)
 		}
 	}
 
@@ -171,7 +170,7 @@ func processJob(ctx context.Context, job model.Job, reposPath string, compressed
 	}
 
 	// Delete container.
-	err = cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true})
+	err = cli.ContainerRemove(ctx, container.ID, dockertypes.ContainerRemoveOptions{Force: true})
 	if err != nil {
 		return err
 	}

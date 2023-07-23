@@ -71,21 +71,6 @@ func main() {
 	}
 	logger.Info("PostgreSQL connected")
 
-	//logger.Info("connecting to MongoDB")
-	//mongoStore, err := store.NewMongoStore(config.DB.URI)
-	//if err != nil {
-	//	logger.Error("store: connecting to MongoDB failed", "err", err)
-	//	os.Exit(1)
-	//}
-	//defer mongoStore.Close(context.TODO())
-
-	//err = mongoStore.Ping(context.TODO())
-	//if err != nil {
-	//	logger.Error("store: pinging to MongoDB failed", "err", err)
-	//	os.Exit(1)
-	//}
-	//logger.Info("MongoDB connected")
-
 	logger.Info("connecting to RabbitMQ")
 	rabbitMQ, err := message_queue.NewRabbitMQ(config.MQ.URI)
 	if err != nil {

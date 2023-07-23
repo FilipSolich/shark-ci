@@ -6,9 +6,9 @@ import (
 
 	"golang.org/x/exp/slog"
 
+	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/shared/model"
 )
 
 type RepoHandler struct {
@@ -149,7 +149,7 @@ func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, ac
 	//http.Redirect(w, r, "/repositories", http.StatusFound)
 }
 
-func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*model.ServiceUser, *model.Repo, service.ServiceManager, error) {
+func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.ServiceUser, *models.Repo, service.ServiceManager, error) {
 	//user, ok := middleware.UserFromContext(ctx, w)
 	//if !ok {
 	//	return nil, nil, nil, errors.New("unauthorized user")
@@ -175,9 +175,9 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 	return nil, nil, nil, nil
 }
 
-func splitRepos(repos []*model.Repo) ([]*model.Repo, []*model.Repo) {
-	registered := []*model.Repo{}
-	notRegistered := []*model.Repo{}
+func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
+	registered := []*models.Repo{}
+	notRegistered := []*models.Repo{}
 	for _, repo := range repos {
 		if repo.WebhookID == 0 {
 			notRegistered = append(notRegistered, repo)

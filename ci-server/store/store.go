@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/FilipSolich/shark-ci/shared/model2"
+	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 )
@@ -15,51 +15,24 @@ type Storer interface {
 	// Cleanup expired OAuth2 states.
 	Clean(ctx context.Context) error
 
-	GetOAuth2State(ctx context.Context, state uuid.UUID) (*model2.OAuth2State, error)
-	CreateOAuth2State(ctx context.Context, state *model2.OAuth2State) error
-	DeleteOAuth2State(ctx context.Context, state *model2.OAuth2State) error
+	GetOAuth2State(ctx context.Context, state uuid.UUID) (*models.OAuth2State, error)
+	CreateOAuth2State(ctx context.Context, state *models.OAuth2State) error
+	DeleteOAuth2State(ctx context.Context, state *models.OAuth2State) error
 
-	GetUser(ctx context.Context, id int64) (*model2.User, error)
-	CreateUserAndServiceUser(ctx context.Context, serviceUser *model2.ServiceUser) (int64, error)
+	GetUser(ctx context.Context, id int64) (*models.User, error)
+	CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, error)
 
-	GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*model2.ServiceUser, error)
-	GetServiceUserByRepo(ctx context.Context, repoID int64) (*model2.ServiceUser, error)
-	GetServiceUsersByUser(ctx context.Context, userID int64) ([]model2.ServiceUser, error)
-	UpdateServiceUserToken(ctx context.Context, serviceUser *model2.ServiceUser, token *oauth2.Token) error
+	GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*models.ServiceUser, error)
+	GetServiceUserByRepo(ctx context.Context, repoID int64) (*models.ServiceUser, error)
+	GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error)
+	UpdateServiceUserToken(ctx context.Context, serviceUser *models.ServiceUser, token *oauth2.Token) error
 
-	GetRepo(ctx context.Context, repoID int64) (*model2.Repo, error)
+	GetRepo(ctx context.Context, repoID int64) (*models.Repo, error)
 	GetRepoName(ctx context.Context, repoID int64) (string, error)
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
-	GetReposByUser(ctx context.Context, userID int64) ([]model2.Repo, error)
-	CreateOrUpdateRepos(ctx context.Context, repos []model2.Repo) error
+	GetReposByUser(ctx context.Context, userID int64) ([]models.Repo, error)
+	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID int64) error
 
-	CreatePipeline(ctx context.Context, pipeline *model2.Pipeline) error
-
-	// -- TODO: Old API --
-
-	//GetUser(ctx context.Context, id string) (*model.User, error)
-	//GetUserByServiceUser(ctx context.Context, i *model.ServiceUser) (*model.User, error)
-	//CreateUser(ctx context.Context, u *model.User) error
-	//DeleteUser(ctx context.Context, u *model.User) error
-
-	//GetServiceUser(ctx context.Context, id string) (*model.ServiceUser, error)
-	//GetServiceUserByUniqueName(ctx context.Context, uniqueName string) (*model.ServiceUser, error)
-	//GetServiceUserByRepo(ctx context.Context, r *model.Repo) (*model.ServiceUser, error)
-	//GetServiceUserByUser(ctx context.Context, user *model.User, serviceName string) (*model.ServiceUser, error)
-	//CreateServiceUser(ctx context.Context, i *model.ServiceUser) error
-	//UpdateServiceUserToken(ctx context.Context, i *model.ServiceUser, token oauth2.Token) error
-	//DeleteServiceUser(ctx context.Context, i *model.ServiceUser) error
-
-	//GetRepo(ctx context.Context, id string) (*model.Repo, error)
-	//GetRepoByUniqueName(ctx context.Context, uniqueName string) (*model.Repo, error)
-	//CreateRepo(ctx context.Context, r *model.Repo) error
-	//UpdateRepoWebhook(ctx context.Context, r *model.Repo) error
-	//DeleteRepo(ctx context.Context, r *model.Repo) error
-
-	//GetOAuth2StateByState(ctx context.Context, state string) (*model.OAuth2State, error)
-
-	//GetJob(ctx context.Context, id string) (*model.Job, error)
-	//CreateJob(ctx context.Context, j *model.Job) error
-	//DeleteJob(ctx context.Context, j *model.Job) error
+	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error
 }

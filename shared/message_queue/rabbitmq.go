@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/FilipSolich/shark-ci/shared/model"
 	"github.com/FilipSolich/shark-ci/shared/types"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/exp/slog"
@@ -67,7 +66,7 @@ func (mq *RabbitMQ) SendWork(ctx context.Context, work types.Work) error {
 	return err
 }
 
-func (mq *RabbitMQ) JobChannel() (jobChannel, error) {
+func (mq *RabbitMQ) WorkChannel() (chan types.Work, error) {
 	channel, err := mq.conn.Channel()
 	if err != nil {
 		return nil, err
@@ -86,28 +85,21 @@ func (mq *RabbitMQ) JobChannel() (jobChannel, error) {
 		return nil, err
 	}
 
-	jobCh := make(jobChannel)
+	workCh := make(chan types.Work)
 	go func() {
 		for msg := range msgChannel {
-			var job model.Job
-			err := json.Unmarshal(msg.Body, &job)
+			var work types.Work
+			err := json.Unmarshal(msg.Body, &work)
 			if err != nil {
 				slog.Error("cannot unmarshal job from message queue", "err", err)
 				msg.Nack(false, false)
 				continue
 			}
 
-			job.Ack = func() error {
-				return msg.Ack(false)
-			}
-			job.Nack = func() error {
-				return msg.Nack(false, true)
-			}
-
-			jobCh <- job
+			workCh <- work
 		}
 		channel.Close()
 	}()
 
-	return jobCh, nil
+	return workCh, nil
 }

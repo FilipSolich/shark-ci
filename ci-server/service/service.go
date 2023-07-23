@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/FilipSolich/shark-ci/ci-server/config"
+	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/shared/model2"
 	"golang.org/x/oauth2"
 )
 
@@ -47,13 +47,13 @@ type ServiceManager interface {
 	StatusName(status StatusState) string
 	OAuth2Config() *oauth2.Config
 
-	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error)
-	GetUsersRepos(ctx context.Context, serviceUser *model2.ServiceUser) ([]model2.Repo, error)
+	GetServiceUser(ctx context.Context, token *oauth2.Token) (*models.ServiceUser, error)
+	GetUsersRepos(ctx context.Context, serviceUser *models.ServiceUser) ([]models.Repo, error)
 
-	CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string) (int64, error)
-	DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, webhookID int64) error
+	CreateWebhook(ctx context.Context, serviceUser *models.ServiceUser, repoName string) (int64, error)
+	DeleteWebhook(ctx context.Context, serviceUser *models.ServiceUser, repoName string, webhookID int64) error
 
-	HandleEvent(ctx context.Context, r *http.Request) (*model2.Pipeline, error)
+	HandleEvent(ctx context.Context, r *http.Request) (*models.Pipeline, error)
 
-	CreateStatus(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, commit string, status Status) error
+	CreateStatus(ctx context.Context, serviceUser *models.ServiceUser, repoName string, commit string, status Status) error
 }

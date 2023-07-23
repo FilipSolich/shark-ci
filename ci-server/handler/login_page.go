@@ -8,10 +8,10 @@ import (
 	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 
+	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/ci-server/template"
-	"github.com/FilipSolich/shark-ci/shared/model2"
 )
 
 type LoginHandler struct {
@@ -36,7 +36,7 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauth2State := &model2.OAuth2State{
+	oauth2State := &models.OAuth2State{
 		State:  state,
 		Expire: time.Now().Add(30 * time.Minute),
 	}

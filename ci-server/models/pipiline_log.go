@@ -1,4 +1,4 @@
-package model2
+package models
 
 type PipelineLog struct {
 	ID         int64     `json:"id"`

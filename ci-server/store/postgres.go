@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/FilipSolich/shark-ci/shared/model2"
+	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type PostgresStore struct {
@@ -17,7 +17,7 @@ type PostgresStore struct {
 }
 
 func NewPostgresStore(postgresURI string) (*PostgresStore, error) {
-	db, err := sql.Open("postgres", postgresURI)
+	db, err := sql.Open("pgx", postgresURI)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +40,8 @@ func (s *PostgresStore) Clean(ctx context.Context) error {
 	return err
 }
 
-func (s *PostgresStore) GetOAuth2State(ctx context.Context, state uuid.UUID) (*model2.OAuth2State, error) {
-	oauth2State := &model2.OAuth2State{}
+func (s *PostgresStore) GetOAuth2State(ctx context.Context, state uuid.UUID) (*models.OAuth2State, error) {
+	oauth2State := &models.OAuth2State{}
 	err := s.db.QueryRowContext(ctx, "SELECT state, expire FROM oauth2_state WHERE state = $1",
 		state.String()).
 		Scan(&oauth2State.State, &oauth2State.Expire)
@@ -52,20 +52,20 @@ func (s *PostgresStore) GetOAuth2State(ctx context.Context, state uuid.UUID) (*m
 	return oauth2State, nil
 }
 
-func (s *PostgresStore) CreateOAuth2State(ctx context.Context, state *model2.OAuth2State) error {
+func (s *PostgresStore) CreateOAuth2State(ctx context.Context, state *models.OAuth2State) error {
 	_, err := s.db.ExecContext(ctx,
 		"INSERT INTO oauth2_state (state, expire) VALUES ($1, $2)",
 		state.State.String(), state.Expire)
 	return err
 }
 
-func (s *PostgresStore) DeleteOAuth2State(ctx context.Context, state *model2.OAuth2State) error {
+func (s *PostgresStore) DeleteOAuth2State(ctx context.Context, state *models.OAuth2State) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM oauth2_state WHERE state = $1", state.State.String())
 	return err
 }
 
-func (s *PostgresStore) GetUser(ctx context.Context, id int64) (*model2.User, error) {
-	u := &model2.User{}
+func (s *PostgresStore) GetUser(ctx context.Context, id int64) (*models.User, error) {
+	u := &models.User{}
 	err := s.db.QueryRowContext(ctx, "SELECT id, name, email FROM user WHERE id = $1", id).
 		Scan(&u.ID, &u.Username, &u.Email)
 	if err != nil {
@@ -75,14 +75,14 @@ func (s *PostgresStore) GetUser(ctx context.Context, id int64) (*model2.User, er
 	return u, nil
 }
 
-func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUser *model2.ServiceUser) (int64, error) {
+func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
 
-	user := model2.User{
+	user := models.User{
 		Username: serviceUser.Username,
 		Email:    serviceUser.Email,
 	}
@@ -115,8 +115,8 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 	return userID, nil
 }
 
-func (s *PostgresStore) GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*model2.ServiceUser, error) {
-	su := &model2.ServiceUser{}
+func (s *PostgresStore) GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*models.ServiceUser, error) {
+	su := &models.ServiceUser{}
 	err := s.db.QueryRowContext(ctx, ""+
 		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id"+
 		"FROM service_user"+
@@ -131,8 +131,8 @@ func (s *PostgresStore) GetServiceUserByUniqueName(ctx context.Context, service 
 	return su, nil
 }
 
-func (s *PostgresStore) GetServiceUserByRepo(ctx context.Context, repoID int64) (*model2.ServiceUser, error) {
-	su := &model2.ServiceUser{}
+func (s *PostgresStore) GetServiceUserByRepo(ctx context.Context, repoID int64) (*models.ServiceUser, error) {
+	su := &models.ServiceUser{}
 	err := s.db.QueryRowContext(ctx, ""+
 		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id"+
 		"FROM service_user"+
@@ -147,7 +147,7 @@ func (s *PostgresStore) GetServiceUserByRepo(ctx context.Context, repoID int64) 
 	return su, nil
 }
 
-func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64) ([]model2.ServiceUser, error) {
+func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) {
 	rows, err := s.db.QueryContext(ctx, ""+
 		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id"+
 		"FROM service_user"+
@@ -158,9 +158,9 @@ func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64)
 	}
 	defer rows.Close()
 
-	var serviceUsers []model2.ServiceUser
+	var serviceUsers []models.ServiceUser
 	for rows.Next() {
-		su := model2.ServiceUser{}
+		su := models.ServiceUser{}
 		err := rows.Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken,
 			&su.RefreshToken, &su.TokenType, &su.TokenExpire, &su.UserID)
 		if err != nil {
@@ -177,7 +177,7 @@ func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64)
 	return serviceUsers, nil
 }
 
-func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUser *model2.ServiceUser, token *oauth2.Token) error {
+func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUser *models.ServiceUser, token *oauth2.Token) error {
 	_, err := s.db.ExecContext(ctx, ""+
 		"UPDATE service_user"+
 		"SET access_token = $1, refresh_token = $2, token_type = $3, token_expire = $4"+
@@ -186,8 +186,8 @@ func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUser 
 	return err
 }
 
-func (s *PostgresStore) GetRepo(ctx context.Context, repoID int64) (*model2.Repo, error) {
-	repo := &model2.Repo{}
+func (s *PostgresStore) GetRepo(ctx context.Context, repoID int64) (*models.Repo, error) {
+	repo := &models.Repo{}
 	err := s.db.QueryRowContext(ctx, ""+
 		"SELECT id, service, repo_service_id, name, webhook_id, service_user_id"+
 		"FROM repo"+
@@ -223,7 +223,7 @@ func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service st
 	return repoID, nil
 }
 
-func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]model2.Repo, error) {
+func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]models.Repo, error) {
 	rows, err := s.db.QueryContext(ctx, ""+
 		"SELECT id, service, repo_service_id, name, webhook_id, service_user_id"+
 		"FROM repo"+
@@ -234,9 +234,9 @@ func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]mod
 	}
 	defer rows.Close()
 
-	var repos []model2.Repo
+	var repos []models.Repo
 	for rows.Next() {
-		repo := model2.Repo{}
+		repo := models.Repo{}
 		err := rows.Scan(&repo.ID, &repo.Service, &repo.RepoServiceID, &repo.Name, &repo.WebhookID, &repo.ServiceUserID)
 		if err != nil {
 			return repos, err
@@ -252,7 +252,7 @@ func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]mod
 	return repos, nil
 }
 
-func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []model2.Repo) error {
+func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error {
 	query := "INSERT INTO (service, repo_service_id, name, service_user_id) VALUES"
 	values := []interface{}{}
 	for i, repo := range repos {
@@ -283,7 +283,7 @@ func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, web
 	return err
 }
 
-func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *model2.Pipeline) error {
+func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error {
 	_, err := s.db.ExecContext(ctx, ""+
 		"INSERT INTO pipeline (commit_sha, clone_url, status, repo_id)"+
 		"VALUES ($1, $2, $3, $4)",

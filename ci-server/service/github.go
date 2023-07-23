@@ -9,8 +9,8 @@ import (
 	oauth2_github "golang.org/x/oauth2/github"
 
 	"github.com/FilipSolich/shark-ci/ci-server/config"
+	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/shared/model2"
 )
 
 type GitHubManager struct {
@@ -57,7 +57,7 @@ func (m *GitHubManager) OAuth2Config() *oauth2.Config {
 	return m.oauth2Config
 }
 
-func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error) {
+func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token) (*models.ServiceUser, error) {
 	client := m.clientWithToken(ctx, token)
 
 	user, _, err := client.Users.Get(ctx, "")
@@ -65,7 +65,7 @@ func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token)
 		return nil, err
 	}
 
-	serviceUser := &model2.ServiceUser{
+	serviceUser := &models.ServiceUser{
 		Username:     user.GetLogin(),
 		Email:        user.GetEmail(),
 		Service:      m.Name(),
@@ -77,19 +77,19 @@ func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token)
 	return serviceUser, nil
 }
 
-func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *model2.ServiceUser) ([]model2.Repo, error) {
+func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *models.ServiceUser) ([]models.Repo, error) {
 	client := m.clientForServiceUser(ctx, serviceUser)
 
 	// TODO: Experimenting feature - get all repos, not just owned by user.
 	// TODO: Add pagination.
 	r, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{})
 
-	repos := make([]model2.Repo, 0, len(r))
+	repos := make([]models.Repo, 0, len(r))
 	for _, repo := range r {
 		if repo.GetArchived() {
 			continue
 		}
-		repo := model2.Repo{
+		repo := models.Repo{
 			RepoServiceID: repo.GetID(),
 			Name:          repo.GetName(),
 			Service:       m.Name(),
@@ -101,7 +101,7 @@ func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *model2.S
 	return repos, err
 }
 
-func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string) (int64, error) {
+func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *models.ServiceUser, repoName string) (int64, error) {
 	client := m.clientForServiceUser(ctx, serviceUser)
 
 	hook := &github.Hook{
@@ -122,14 +122,14 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model2.S
 	return hook.GetID(), nil
 }
 
-func (m *GitHubManager) DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, webhookID int64) error {
+func (m *GitHubManager) DeleteWebhook(ctx context.Context, serviceUser *models.ServiceUser, repoName string, webhookID int64) error {
 	client := m.clientForServiceUser(ctx, serviceUser)
 
 	_, err := client.Repositories.DeleteHook(ctx, serviceUser.Username, repoName, webhookID)
 	return err
 }
 
-func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*model2.Pipeline, error) {
+func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*models.Pipeline, error) {
 	payload, err := github.ValidatePayload(r, []byte(m.config.SecretKey))
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*mode
 	}
 }
 
-func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*model2.Pipeline, error) {
+func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*models.Pipeline, error) {
 	commit := e.HeadCommit.GetSHA()
 
 	repoID, err := m.s.GetRepoIDByServiceRepoID(ctx, m.Name(), e.Repo.GetID())
@@ -157,7 +157,7 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 		return nil, err
 	}
 
-	pipeline := &model2.Pipeline{
+	pipeline := &models.Pipeline{
 		CommitSHA: commit,
 		CloneURL:  e.Repo.GetCloneURL(),
 		Status:    m.StatusName(StatusPending),
@@ -168,7 +168,7 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 	return pipeline, nil
 }
 
-func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, commit string, status Status) error {
+func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *models.ServiceUser, repoName string, commit string, status Status) error {
 	client := m.clientForServiceUser(ctx, serviceUser)
 
 	s := &github.RepoStatus{
@@ -187,7 +187,7 @@ func (m *GitHubManager) clientWithToken(ctx context.Context, token *oauth2.Token
 	return github.NewClient(client)
 }
 
-func (m *GitHubManager) clientForServiceUser(ctx context.Context, serviceUser *model2.ServiceUser) *github.Client {
+func (m *GitHubManager) clientForServiceUser(ctx context.Context, serviceUser *models.ServiceUser) *github.Client {
 	return m.clientWithToken(ctx, &oauth2.Token{
 		AccessToken:  serviceUser.AccessToken,
 		RefreshToken: serviceUser.RefreshToken,
