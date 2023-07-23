@@ -101,7 +101,7 @@ func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *model2.S
 	return repos, err
 }
 
-func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) (int64, error) {
+func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string) (int64, error) {
 	client := m.clientForServiceUser(ctx, serviceUser)
 
 	hook := &github.Hook{
@@ -114,7 +114,7 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model2.S
 		},
 	}
 
-	hook, _, err := client.Repositories.CreateHook(ctx, serviceUser.Username, repo.Name, hook)
+	hook, _, err := client.Repositories.CreateHook(ctx, serviceUser.Username, repoName, hook)
 	if err != nil {
 		return 0, err
 	}
@@ -122,10 +122,10 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *model2.S
 	return hook.GetID(), nil
 }
 
-func (m *GitHubManager) DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) error {
+func (m *GitHubManager) DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, webhookID int64) error {
 	client := m.clientForServiceUser(ctx, serviceUser)
 
-	_, err := client.Repositories.DeleteHook(ctx, serviceUser.Username, repo.Name, repo.WebhookID)
+	_, err := client.Repositories.DeleteHook(ctx, serviceUser.Username, repoName, webhookID)
 	return err
 }
 

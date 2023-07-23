@@ -50,8 +50,8 @@ type ServiceManager interface {
 	GetServiceUser(ctx context.Context, token *oauth2.Token) (*model2.ServiceUser, error)
 	GetUsersRepos(ctx context.Context, serviceUser *model2.ServiceUser) ([]model2.Repo, error)
 
-	CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) (int64, error)
-	DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repo *model2.Repo) error
+	CreateWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string) (int64, error)
+	DeleteWebhook(ctx context.Context, serviceUser *model2.ServiceUser, repoName string, webhookID int64) error
 
 	HandleEvent(ctx context.Context, r *http.Request) (*model2.Pipeline, error)
 

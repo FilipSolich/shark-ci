@@ -131,7 +131,7 @@ func (api *RepoAPI) CreateWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webhookID, err := srv.CreateWebhook(ctx, serviceUser, repo)
+	webhookID, err := srv.CreateWebhook(ctx, serviceUser, repo.Name)
 	if err != nil {
 		api.l.Error("service: cannot create webhook", "err", err, "repoID", repo.ID)
 		w.WriteHeader(http.StatusInternalServerError)
