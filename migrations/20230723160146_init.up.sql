@@ -1,10 +1,10 @@
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE "user" (
     id bigserial PRIMARY KEY,
     username text,
     email text NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "service_user" (
+CREATE TABLE "service_user" (
     id bigserial PRIMARY KEY,
     service text NOT NULL,
     username text NOT NULL ,
@@ -18,12 +18,12 @@ CREATE TABLE IF NOT EXISTS "service_user" (
     FOREIGN KEY (user_id) REFERENCES "user" (id)
 );
 
-CREATE TABLE IF NOT EXISTS "oauth2_state" (
+CREATE TABLE "oauth2_state" (
     state uuid PRIMARY KEY,
     expire timestamp NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "repo" (
+CREATE TABLE "repo" (
     id bigserial PRIMARY KEY,
     name text NOT NULL,
     service text NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS "repo" (
     FOREIGN KEY (service_user_id) REFERENCES "service_user" (id)
 );
 
-CREATE TABLE IF NOT EXISTS "pipeline" (
+CREATE TABLE "pipeline" (
     id bigserial PRIMARY KEY,
     commit_sha text NOT NULL,
     clone_url text NOT NULL,
@@ -47,16 +47,7 @@ CREATE TABLE IF NOT EXISTS "pipeline" (
     FOREIGN KEY (repo_id) REFERENCES "repo" (id)
 );
 
-CREATE TABLE IF NOT EXIST "pipeline_log_line" (
-    line bigint,
-    file text,
-    content text,
-    pipeline_log_id bigint,
-    UNIQUE (pipeline_log_id, line)
-    FOREIGN KEY (pipeline_log_id) REFERENCES "pipeline_log" (id)
-);
-
-CREATE TABLE IF NOT EXISTS "pipeline_log" (
+CREATE TABLE "pipeline_log" (
     id bigserial PRIMARY KEY,
     started_at timestamp,
     finished_at timestamp,
@@ -64,4 +55,13 @@ CREATE TABLE IF NOT EXISTS "pipeline_log" (
     return_code int,
     pipeline_id bigint,
     FOREIGN KEY (pipeline_id) REFERENCES "pipeline" (id)
+);
+
+CREATE TABLE "pipeline_log_line" (
+    line bigint,
+    file text,
+    content text,
+    pipeline_log_id bigint,
+    UNIQUE (pipeline_log_id, line),
+    FOREIGN KEY (pipeline_log_id) REFERENCES "pipeline_log" (id)
 );

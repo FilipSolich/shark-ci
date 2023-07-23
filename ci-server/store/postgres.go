@@ -16,6 +16,8 @@ type PostgresStore struct {
 	db *sql.DB
 }
 
+var _ Storer = &PostgresStore{}
+
 func NewPostgresStore(postgresURI string) (*PostgresStore, error) {
 	db, err := sql.Open("pgx", postgresURI)
 	if err != nil {
@@ -33,6 +35,10 @@ func (s *PostgresStore) Ping(ctx context.Context) error {
 
 func (s *PostgresStore) Close(_ context.Context) error {
 	return s.db.Close()
+}
+
+func (s *PostgresStore) Migrate(_ context.Context) error {
+	return nil
 }
 
 func (s *PostgresStore) Clean(ctx context.Context) error {
