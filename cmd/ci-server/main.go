@@ -12,6 +12,7 @@ import (
 	"golang.org/x/exp/slog"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
+	"github.com/FilipSolich/shark-ci/ci-server/api"
 	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/handler"
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
@@ -112,6 +113,17 @@ func main() {
 	repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
+
+	reposAPIHandler := api.NewRepoAPI(logger, pgStore, services)
+
+	api := r.PathPrefix("/api").Subrouter()
+	api.Use(middleware.AuthMiddleware(pgStore))
+
+	reposAPI := api.PathPrefix("/repos").Subrouter()
+	reposAPI.HandleFunc("", reposAPIHandler.GetRepos).Methods(http.MethodGet)
+	reposAPI.HandleFunc("/refresh", reposAPIHandler.RefreshRepos).Methods(http.MethodPost)
+	reposAPI.HandleFunc("/{repoID}/webhook", reposAPIHandler.CreateWebhook).Methods(http.MethodPost)
+	reposAPI.HandleFunc("/{repoID}/webhook", reposAPIHandler.DeleteWebhook).Methods(http.MethodDelete)
 
 	server := &http.Server{
 		Addr:         ":" + config.CIServer.Port,

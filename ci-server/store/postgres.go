@@ -151,8 +151,8 @@ func (s *PostgresStore) GetServiceUserByRepo(ctx context.Context, repoID int64) 
 
 func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) {
 	rows, err := s.db.QueryContext(ctx, ""+
-		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id"+
-		"FROM service_user"+
+		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id "+
+		"FROM service_user "+
 		"WHERE user_id = $1",
 		userID)
 	if err != nil {
@@ -256,16 +256,16 @@ func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]mod
 
 func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error {
 	query := "INSERT INTO repo (service, repo_service_id, name, service_user_id) VALUES"
-	values := []interface{}{}
+	values := []any{}
 	for i, repo := range repos {
-		if i > 1 {
+		if i > 0 {
 			query += ","
 		}
 
-		query += fmt.Sprintf(" ($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4)
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d) ", i*4+1, i*4+2, i*4+3, i*4+4)
 		values = append(values, repo.Service, repo.RepoServiceID, repo.Name, repo.ServiceUserID)
 	}
-	query += " ON CONFLICT (service, repo_service_id) DO UPDATE SET name = EXCLUDED.name"
+	query += "ON CONFLICT (service, repo_service_id) DO UPDATE SET name = EXCLUDED.name"
 
 	_, err := s.db.ExecContext(ctx, query, values...)
 	if err != nil {
