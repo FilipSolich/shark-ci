@@ -37,10 +37,6 @@ func (s *PostgresStore) Close(_ context.Context) error {
 	return s.db.Close()
 }
 
-func (s *PostgresStore) Migrate(_ context.Context) error {
-	return nil
-}
-
 func (s *PostgresStore) Clean(ctx context.Context) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM oauth2_state WHERE expire < NOW()")
 	return err

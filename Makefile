@@ -51,3 +51,7 @@ docker-build-worker:
 .PHONY: create-migration
 create-migration:
 	migrate create -ext sql -dir migrations -format 20060102150405 $(NAME)
+
+.PHONY: migrate-up
+migrate-up:
+	migrate -source file://./migrations -database ${DB_URI}?sslmode=disable up

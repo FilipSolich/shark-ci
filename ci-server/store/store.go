@@ -11,7 +11,6 @@ import (
 type Storer interface {
 	Ping(ctx context.Context) error
 	Close(ctx context.Context) error
-	Migrate(ctx context.Context) error
 
 	// Cleanup expired OAuth2 states.
 	Clean(ctx context.Context) error

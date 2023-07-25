@@ -13,7 +13,7 @@ CREATE TABLE "service_user" (
     refresh_token text,
     token_type text,
     token_expire timestamp,
-    user_id bigint NOT NULL ,
+    user_id bigint,
     UNIQUE (service, username),
     FOREIGN KEY (user_id) REFERENCES "user" (id)
 );
@@ -27,9 +27,9 @@ CREATE TABLE "repo" (
     id bigserial PRIMARY KEY,
     name text NOT NULL,
     service text NOT NULL,
-    repo_service_id bigint NOT NULL ,
+    repo_service_id bigint NOT NULL,
     webhook_id bigint,
-    service_user_id bigint NOT NULL ,
+    service_user_id bigint,
     UNIQUE (service, repo_service_id),
     UNIQUE (service, webhook_id),
     FOREIGN KEY (service_user_id) REFERENCES "service_user" (id)
@@ -43,7 +43,7 @@ CREATE TABLE "pipeline" (
     target_url text,
     started_at timestamp,
     finished_at timestamp,
-    repo_id bigint NOT NULL,
+    repo_id bigint,
     FOREIGN KEY (repo_id) REFERENCES "repo" (id)
 );
 
