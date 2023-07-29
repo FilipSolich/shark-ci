@@ -1,0 +1,77 @@
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  MODULE: github.com/FilipSolich/shark-ci
+
+tasks:
+  build:
+    deps:
+      - build-ci-server
+      - build-worker
+
+  build-ci-server:
+    cmds:
+      - go build -o bin/ci-server {{.MODULE}}/cmd/ci-server
+    sources:
+      - cmd/ci-server/*.go
+      - ci-server/**/*.go
+      - shared/**/*.go
+    generates:
+      - bin/ci-server
+    method: timestamp
+
+  build-worker:
+    cmds:
+      - go build -o bin/worker {{.MODULE}}/cmd/worker
+    sources:
+      - cmd/worker/*.go
+      - worker/**/*.go
+      - shared/**/*.go
+    generates:
+      - bin/worker
+    method: timestamp
+
+  run-ci-server:
+    deps:
+      - build-ci-server
+    cmds:
+      - bin/ci-server
+
+  run-worker:
+    deps:
+      - build-worker
+    cmds:
+      - bin/worker
+
+  clean:
+    cmds:
+      - go clean
+      - rm -rf bin
+      - rm -rf .task/timestamp
+
+  docker-build:
+    deps:
+      - docker-build-ci-server
+      - docker-build-worker
+
+  docker-build-ci-server:
+    cmds:
+      - docker build -f Dockerfile.ci-server -t shark-ci/ci-server .
+
+  docker-build-worker:
+    cmds:
+      - docker build -f Dockerfile.worker -t shark-ci/worker .
+
+  create-migration:
+    cmds:
+      - migrate create -ext sql -dir migrations -format 20060102150405 {{.CLI_ARGS}}
+
+  migrate-up:
+    cmds:
+      - migrate -path migrations -database ${DB_URI} -verbose up
+
+  migrate-down:
+    cmds:
+      - migrate -path migrations -database ${DB_URI} -verbose down

@@ -21,5 +21,8 @@ vendor/
 bin/
 __debug_bin
 
+# Taskfile
+.task/
+
 # Repos
 repos/
