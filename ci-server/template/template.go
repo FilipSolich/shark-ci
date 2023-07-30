@@ -6,6 +6,8 @@ import (
 	"path"
 )
 
+// TODO: Handle templates better and edit dockerfile program name
+
 var (
 	Templates = make(map[string]*template.Template)
 

@@ -11,6 +11,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/ci-server/main.go",
             "cwd": "${workspaceRoot}",
+            "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
         },
         {
@@ -20,6 +21,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/worker/main.go",
             "cwd": "${workspaceRoot}",
+            "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
         }
     ]
