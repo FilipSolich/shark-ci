@@ -108,7 +108,7 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *models.S
 		Active: github.Bool(true),
 		Events: []string{"push", "pull_request"},
 		Config: map[string]any{
-			"url":          m.config.WebhookEndpoint + "/" + m.Name(),
+			"url":          m.config.WebhookURL + "/" + m.Name(),
 			"content_type": "json",
 			"secret":       m.config.SecretKey,
 		},
@@ -163,7 +163,7 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 		Status:    m.StatusName(StatusPending),
 		RepoID:    repoID,
 	}
-	pipeline.CreateTargetURL()
+	pipeline.CreateTargetURL(m.config.PipelineURL)
 
 	return pipeline, nil
 }

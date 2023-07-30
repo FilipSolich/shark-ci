@@ -3,5 +3,6 @@ package ciserver
 const (
 	CIServer = "CI Server"
 
-	EventHandlerPath = "/event_handler"
+	EventPath    = "/event_handler"
+	PipelinePath = "/pipeline"
 )

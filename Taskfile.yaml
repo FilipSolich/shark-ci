@@ -33,6 +33,11 @@ tasks:
       - bin/worker
     method: timestamp
 
+  run:
+    deps:
+      - run-ci-server
+      - run-worker
+
   run-ci-server:
     deps:
       - build-ci-server
@@ -58,11 +63,11 @@ tasks:
 
   docker-build-ci-server:
     cmds:
-      - docker build -f Dockerfile.ci-server -t shark-ci/ci-server .
+      - docker build --pull -f Dockerfile.ci-server -t shark-ci/ci-server .
 
   docker-build-worker:
     cmds:
-      - docker build -f Dockerfile.worker -t shark-ci/worker .
+      - docker build --pull -f Dockerfile.worker -t shark-ci/worker .
 
   create-migration:
     cmds:

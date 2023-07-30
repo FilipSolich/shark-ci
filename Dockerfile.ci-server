@@ -15,6 +15,9 @@ FROM alpine:latest
 
 WORKDIR /
 
-COPY --from=builder /app/bin/ci-server /ci-server
+COPY --from=builder /app/bin/ci-server server
+COPY --from=builder /app/ci-server/templates ci-server/templates
 
-CMD ["/ci-server"]
+EXPOSE 8000
+
+CMD ["./server"]

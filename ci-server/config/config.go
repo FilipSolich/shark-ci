@@ -7,6 +7,14 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/env"
 )
 
+type CIServerConfig struct {
+	Host        string
+	Port        string
+	SecretKey   string
+	WebhookURL  string
+	PipelineURL string
+}
+
 type DatabaseConfig struct {
 	URI string
 }
@@ -30,18 +38,11 @@ type Config struct {
 	GitLab ServiceConfig
 }
 
-type CIServerConfig struct {
-	Host            string
-	Port            string
-	SecretKey       string
-	WebhookEndpoint string
-}
-
 func NewConfigFromEnv() (Config, error) {
 	config := Config{
 		CIServer: CIServerConfig{
 			Host:      env.StringEnv("HOST", ""),
-			Port:      env.StringEnv("PORT", "8080"),
+			Port:      env.StringEnv("PORT", "8000"),
 			SecretKey: env.StringEnv("SECRET_KEY", ""),
 		},
 		DB: DatabaseConfig{
@@ -64,7 +65,8 @@ func NewConfigFromEnv() (Config, error) {
 		return Config{}, err
 	}
 
-	config.CIServer.WebhookEndpoint = config.CIServer.Host + ciserver.EventHandlerPath
+	config.CIServer.WebhookURL = config.CIServer.Host + ciserver.EventPath
+	config.CIServer.PipelineURL = config.CIServer.Host + ciserver.PipelinePath
 
 	return config, err
 }

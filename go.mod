@@ -12,7 +12,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/jackc/pgx/v5 v5.4.2
-	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.8.1
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	golang.org/x/oauth2 v0.10.0

@@ -10,16 +10,9 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
 	"github.com/FilipSolich/shark-ci/worker"
 	"github.com/FilipSolich/shark-ci/worker/config"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	// TODO: Remove.
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	config, err := config.NewConfigFromEnv()
 	if err != nil {
 		log.Fatalln(err)

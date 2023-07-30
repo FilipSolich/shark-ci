@@ -8,7 +8,6 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"golang.org/x/exp/slog"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
@@ -39,13 +38,6 @@ func cleaner(s store.Storer, d time.Duration) {
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
-
-	// TODO: Remove godotenv.
-	err := godotenv.Load()
-	if err != nil {
-		logger.Error("loading environment failed", "err", err)
-		os.Exit(1)
-	}
 
 	config, err := config.NewConfigFromEnv()
 	if err != nil {
@@ -98,7 +90,7 @@ func main() {
 	r.Handle("/", middleware.AuthMiddleware(pgStore)(http.HandlerFunc(handler.IndexHandler)))
 	r.HandleFunc("/login", loginHandler.HandleLoginPage)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
-	r.HandleFunc(ciserver.EventHandlerPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
+	r.HandleFunc(ciserver.EventPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
 
 	// OAuth2 subrouter.
 	OAuth2 := r.PathPrefix("/oauth2").Subrouter()

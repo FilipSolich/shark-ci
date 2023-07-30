@@ -34,7 +34,7 @@ func NewConfigFromEnv() (Config, error) {
 			Port: env.StringEnv("CISERVER_PORT", "8080"),
 		},
 		MQ: MessageQueueConfig{
-			URI: env.StringEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/"),
+			URI: env.StringEnv("MQ_URI", "amqp://guest:guest@localhost:5672/"),
 		},
 	}
 

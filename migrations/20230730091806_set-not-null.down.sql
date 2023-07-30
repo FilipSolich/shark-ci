@@ -1,0 +1,2 @@
+ALTER TABLE "pipeline" ALTER COLUMN staus DROP NOT NULL;
+ALTER TABLE "pipeline" ALTER COLUMN target_url DROP NOT NULL;
