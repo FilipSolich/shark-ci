@@ -175,15 +175,15 @@ func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWri
 	return nil, nil, nil, nil
 }
 
-func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
-	registered := []*models.Repo{}
-	notRegistered := []*models.Repo{}
-	for _, repo := range repos {
-		if repo.WebhookID == 0 {
-			notRegistered = append(notRegistered, repo)
-		} else {
-			registered = append(registered, repo)
-		}
-	}
-	return registered, notRegistered
-}
+//func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
+//	registered := []*models.Repo{}
+//	notRegistered := []*models.Repo{}
+//	for _, repo := range repos {
+//		if repo.WebhookID == 0 {
+//			notRegistered = append(notRegistered, repo)
+//		} else {
+//			registered = append(registered, repo)
+//		}
+//	}
+//	return registered, notRegistered
+//}

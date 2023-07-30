@@ -145,6 +145,22 @@ func (s *PostgresStore) GetServiceUserByRepo(ctx context.Context, repoID int64) 
 	return su, nil
 }
 
+func (s *PostgresStore) GetServiceUserByUserAndService(ctx context.Context, userID int64, service string) (*models.ServiceUser, error) {
+	su := &models.ServiceUser{}
+	err := s.db.QueryRowContext(ctx, ""+
+		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id "+
+		"FROM service_user "+
+		"WHERE user_id = $1 AND service = $2",
+		userID, service).
+		Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken,
+			&su.RefreshToken, &su.TokenType, &su.TokenExpire, &su.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return su, nil
+}
+
 func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) {
 	rows, err := s.db.QueryContext(ctx, ""+
 		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id "+
@@ -271,13 +287,8 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.
 	return nil
 }
 
-func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID int64) error {
-	var value any = webhookID
-	if webhookID == 0 {
-		value = nil
-	}
-
-	_, err := s.db.ExecContext(ctx, "UPDATE repo SET webhook_id = $1 WHERE id = $2", value, repoID)
+func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE repo SET webhook_id = $1 WHERE id = $2", webhookID, repoID)
 	return err
 }
 

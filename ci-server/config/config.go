@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/shared/env"
@@ -65,8 +64,7 @@ func NewConfigFromEnv() (Config, error) {
 		return Config{}, err
 	}
 
-	config.CIServer.WebhookEndpoint = fmt.Sprintf("https://%s%s",
-		config.CIServer.Host, ciserver.EventHandlerPath)
+	config.CIServer.WebhookEndpoint = config.CIServer.Host + ciserver.EventHandlerPath
 
 	return config, err
 }

@@ -118,6 +118,7 @@ func main() {
 
 	api := r.PathPrefix("/api").Subrouter()
 	api.Use(middleware.AuthMiddleware(pgStore))
+	api.Use(middleware.ContentTypeMiddleware)
 
 	reposAPI := api.PathPrefix("/repos").Subrouter()
 	reposAPI.HandleFunc("", reposAPIHandler.GetRepos).Methods(http.MethodGet)
