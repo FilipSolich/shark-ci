@@ -56,6 +56,10 @@ tasks:
       - rm -rf bin
       - rm -rf .task/timestamp
 
+  test:
+    cmds:
+      - go test -v ./...
+
   docker-build:
     deps:
       - docker-build-ci-server
