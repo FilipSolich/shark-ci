@@ -9,6 +9,7 @@ import (
 	"golang.org/x/oauth2"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
+	"github.com/FilipSolich/shark-ci/ci-server/config"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
@@ -20,14 +21,16 @@ type EventHandler struct {
 	s        store.Storer
 	mq       message_queue.MessageQueuer
 	services service.Services
+	config   config.CIServerConfig
 }
 
-func NewEventHandler(l *slog.Logger, s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
+func NewEventHandler(l *slog.Logger, s store.Storer, mq message_queue.MessageQueuer, services service.Services, config config.CIServerConfig) *EventHandler {
 	return &EventHandler{
 		l:        l,
 		s:        s,
 		mq:       mq,
 		services: services,
+		config:   config,
 	}
 }
 
@@ -59,9 +62,18 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.s.CreatePipeline(ctx, pipeline)
+	pipelineID, err := h.s.CreatePipeline(ctx, pipeline)
 	if err != nil {
 		h.l.Error("store: cannot create pipeline", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	pipeline.ID = pipelineID
+
+	pipeline.CreateTargetURL(h.config.PipelineURL)
+	err = h.s.UpdatePipelineTartgetURL(ctx, pipeline.ID, pipeline.TargetURL)
+	if err != nil {
+		h.l.Error("store: cannot update pipeline target url", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -104,8 +116,10 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	err = srv.CreateStatus(ctx, serviceUser, repoName, pipeline.CommitSHA, status)
 	if err != nil {
-		h.l.Error("cannot create status", err)
+		h.l.Error("cannot create status", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

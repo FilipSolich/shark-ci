@@ -150,8 +150,7 @@ func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*mode
 }
 
 func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*models.Pipeline, error) {
-	commit := e.HeadCommit.GetSHA()
-
+	commit := e.HeadCommit.GetID()
 	repoID, err := m.s.GetRepoIDByServiceRepoID(ctx, m.Name(), e.Repo.GetID())
 	if err != nil {
 		return nil, err
@@ -163,7 +162,6 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 		Status:    m.StatusName(StatusPending),
 		RepoID:    repoID,
 	}
-	pipeline.CreateTargetURL(m.config.PipelineURL)
 
 	return pipeline, nil
 }

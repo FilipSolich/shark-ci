@@ -1,2 +1,1 @@
 ALTER TABLE "pipeline" ALTER COLUMN status SET NOT NULL;
-ALTER TABLE "pipeline" ALTER COLUMN target_url SET NOT NULL;

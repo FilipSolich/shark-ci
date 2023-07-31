@@ -35,5 +35,6 @@ type Storer interface {
 	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
 
-	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error
+	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
+	UpdatePipelineTartgetURL(ctx context.Context, pipelineID int64, url string) error
 }

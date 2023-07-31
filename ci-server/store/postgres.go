@@ -227,7 +227,7 @@ func (s *PostgresStore) GetRepoName(ctx context.Context, repoID int64) (string, 
 
 func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error) {
 	var repoID int64
-	err := s.db.QueryRowContext(ctx, "SELECT id FROM repo WHERE service = $1 AND service_repo_id = $2",
+	err := s.db.QueryRowContext(ctx, "SELECT id FROM repo WHERE service = $1 AND repo_service_id = $2",
 		service, serviceRepoID).
 		Scan(&repoID)
 	if err != nil {
@@ -292,10 +292,21 @@ func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, web
 	return err
 }
 
-func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error {
-	_, err := s.db.ExecContext(ctx, ""+
+func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
+	var pipelineID int64
+	err := s.db.QueryRowContext(ctx, ""+
 		"INSERT INTO pipeline (commit_sha, clone_url, status, repo_id) "+
-		"VALUES ($1, $2, $3, $4)",
-		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID)
+		"VALUES ($1, $2, $3, $4) "+
+		"RETURNING id",
+		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID).Scan(&pipelineID)
+	if err != nil {
+		return 0, err
+	}
+
+	return pipelineID, nil
+}
+
+func (s *PostgresStore) UpdatePipelineTartgetURL(ctx context.Context, pipelineID int64, url string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE pipeline SET target_url = $1 WHERE id = $2", url, pipelineID)
 	return err
 }

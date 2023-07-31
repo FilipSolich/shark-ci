@@ -81,7 +81,7 @@ func main() {
 
 	loginHandler := handler.NewLoginHandler(logger, pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services)
+	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services, config.CIServer)
 	oauth2Handler := handler.NewOAuth2Handler(logger, pgStore, services)
 	repoHandler := handler.NewRepoHandler(logger, pgStore, services)
 
