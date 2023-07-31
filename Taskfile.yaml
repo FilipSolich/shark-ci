@@ -60,6 +60,15 @@ tasks:
     cmds:
       - go test -v ./...
 
+  dev-up:
+    cmds:
+      - docker compose -f docker-compose.dev.yaml up -d
+      - ngrok http --domain {{.NGROK_DOMAIN}} 8000
+
+  dev-down:
+    cmds:
+      - docker compose -f docker-compose.dev.yaml down
+
   docker-build:
     deps:
       - docker-build-ci-server
