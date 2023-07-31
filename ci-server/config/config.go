@@ -46,10 +46,10 @@ func NewConfigFromEnv() (Config, error) {
 			SecretKey: env.StringEnv("SECRET_KEY", ""),
 		},
 		DB: DatabaseConfig{
-			URI: env.StringEnv("DB_URI", "postgres://localhost:5432/shark-ci"),
+			URI: env.StringEnv("DB_URI", "postgres://localhost/shark-ci"),
 		},
 		MQ: MessageQueueConfig{
-			URI: env.StringEnv("MQ_URI", "amqp://guest:guest@localhost:5672"),
+			URI: env.StringEnv("MQ_URI", "amqp://guest:guest@localhost"),
 		},
 		GitHub: ServiceConfig{
 			ClientID:     env.StringEnv("GITHUB_CLIENT_ID", ""),

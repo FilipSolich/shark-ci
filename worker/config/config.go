@@ -1,6 +1,10 @@
 package config
 
-import "github.com/FilipSolich/shark-ci/shared/env"
+import (
+	"runtime"
+
+	"github.com/FilipSolich/shark-ci/shared/env"
+)
 
 type WorkerConfig struct {
 	MaxWorkers int
@@ -26,7 +30,7 @@ type Config struct {
 func NewConfigFromEnv() (Config, error) {
 	config := Config{
 		Worker: WorkerConfig{
-			MaxWorkers: env.IntEnv("MAX_WORKERS", 4),
+			MaxWorkers: env.IntEnv("MAX_WORKERS", runtime.NumCPU()),
 			ReposPath:  env.StringEnv("REPOS_PATH", "./repos"),
 		},
 		CIServer: CIServerConfig{
@@ -34,7 +38,7 @@ func NewConfigFromEnv() (Config, error) {
 			Port: env.StringEnv("CISERVER_PORT", "8080"),
 		},
 		MQ: MessageQueueConfig{
-			URI: env.StringEnv("MQ_URI", "amqp://guest:guest@localhost:5672/"),
+			URI: env.StringEnv("MQ_URI", "amqp://guest:guest@localhost"),
 		},
 	}
 
