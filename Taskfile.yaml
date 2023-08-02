@@ -7,9 +7,9 @@ vars:
 
 tasks:
   build:
-    deps:
-      - build-ci-server
-      - build-worker
+    cmds:
+      - task: build-ci-server
+      - task: build-worker
 
   build-ci-server:
     cmds:
@@ -34,9 +34,9 @@ tasks:
     method: timestamp
 
   run:
-    deps:
-      - run-ci-server
-      - run-worker
+    cmds:
+      - task: run-ci-server
+      - task: run-worker
 
   run-ci-server:
     deps:

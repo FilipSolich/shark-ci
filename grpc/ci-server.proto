@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+service CIServer {
+    rpc PipelineStartR(PipelineStart) returns (int64) {}
+    rpc PipelineEndR(PipelineEnd) returns () {}
+    rpc PipelineCmdStart(CmdStart) returns (int64) {}
+    rpc PipelineCmdEnd(CmdEnd) returns () {}
+}
+
+message PipelineStart {
+    int64 pipeline_id = 1;
+    timestamp start_time = 1;
+    string cmd = 3;
+    int exit_code = 4;
+}
+
+message PipelineEnd {
+    int64 pipeline_id = 1;
+    timestamp end_time = 2;
+}
+
+message CmdStart {
+    int64 pipeline_id = 1;
+    timestamp start_time = 2;
+    string cmd = 3;
+}
+
+message CmdEnd {
+    int64 pipeline_id = 1;
+    timestamp end_time = 2;
+    int exit_code = 3;
+    string output = 4;
+}
