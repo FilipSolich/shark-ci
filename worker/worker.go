@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"golang.org/x/exp/slog"
 	"gopkg.in/yaml.v3"
 
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
@@ -29,15 +30,18 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compr
 	for i := 0; i < maxWorkers; i++ {
 		go func() {
 			for work := range workCh {
-				log.Printf("Processing job %d\n", work.Pipeline.ID)
-				ctx := context.TODO()
-				err := processJob(ctx, work, reposPath, compressedReposPath)
+				// Send start message.
+				slog.Info("start processing pipeline", "PipelineID", work.Pipeline.ID)
+
+				err := processWork(context.TODO(), work, reposPath, compressedReposPath)
 				if err != nil {
-					// TODO: Should be failed job returned to queue?
-					log.Printf("Job %d failed: %s\n", work.Pipeline.ID, err.Error())
+					// Send error message.
+					slog.Info("processing pipeline failed", "PipelineID", work.Pipeline.ID, "err", err)
 					continue
 				}
-				log.Printf("Job %d processed successfully\n", work.Pipeline.ID)
+
+				// Send end message.
+				slog.Info("finished processing pipeline successfully", "PipelineID", work.Pipeline.ID)
 			}
 		}()
 	}
@@ -45,7 +49,7 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compr
 	return nil
 }
 
-func processJob(ctx context.Context, work types.Work, reposPath string, compressedReposPath string) error {
+func processWork(ctx context.Context, work types.Work, reposPath string, compressedReposPath string) error {
 	// Update repository.
 	repoPath := path.Join(reposPath, "FIX this")
 	repo, err := updateRepo(ctx, repoPath, work.Pipeline.CloneURL, work.Token.AccessToken)

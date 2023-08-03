@@ -11,13 +11,14 @@ import (
 
 type RabbitMQ struct {
 	conn      *amqp.Connection
+	channel   *amqp.Channel
 	queueName string
 }
 
 var _ MessageQueuer = &RabbitMQ{}
 
 func NewRabbitMQ(rabbitMQURI string) (*RabbitMQ, error) {
-	mq := &RabbitMQ{queueName: "jobs"}
+	mq := &RabbitMQ{queueName: "work"}
 	var err error
 
 	mq.conn, err = amqp.Dial(rabbitMQURI)
@@ -25,15 +26,15 @@ func NewRabbitMQ(rabbitMQURI string) (*RabbitMQ, error) {
 		return nil, err
 	}
 
-	channel, err := mq.conn.Channel()
+	mq.channel, err = mq.conn.Channel()
 	if err != nil {
 		mq.conn.Close()
 		return nil, err
 	}
-	defer channel.Close()
 
-	_, err = channel.QueueDeclare(mq.queueName, true, false, false, false, nil)
+	_, err = mq.channel.QueueDeclare(mq.queueName, true, false, false, false, nil)
 	if err != nil {
+		mq.channel.Close()
 		mq.conn.Close()
 		return nil, err
 	}
@@ -51,27 +52,16 @@ func (mq *RabbitMQ) SendWork(ctx context.Context, work types.Work) error {
 		return err
 	}
 
-	channel, err := mq.conn.Channel()
-	if err != nil {
-		return err
-	}
-	defer channel.Close()
-
 	pub := amqp.Publishing{
 		DeliveryMode: amqp.Persistent,
 		ContentType:  "application/json",
 		Body:         data,
 	}
-	err = channel.PublishWithContext(ctx, "", mq.queueName, false, false, pub)
+	err = mq.channel.PublishWithContext(ctx, "", mq.queueName, false, false, pub)
 	return err
 }
 
 func (mq *RabbitMQ) WorkChannel() (chan types.Work, error) {
-	channel, err := mq.conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-
 	// TODO: Why this doesn't work?
 	// err = channel.Qos(1, 0, false)
 	// if err != nil {
@@ -79,26 +69,24 @@ func (mq *RabbitMQ) WorkChannel() (chan types.Work, error) {
 	// 	return nil, err
 	// }
 
-	msgChannel, err := channel.Consume(mq.queueName, "", false, false, false, false, nil)
+	msgChannel, err := mq.channel.Consume(mq.queueName, "", false, false, false, false, nil)
 	if err != nil {
-		channel.Close()
 		return nil, err
 	}
 
-	workCh := make(chan types.Work)
+	workCh := make(chan types.Work, 100)
 	go func() {
 		for msg := range msgChannel {
 			var work types.Work
 			err := json.Unmarshal(msg.Body, &work)
 			if err != nil {
 				slog.Error("cannot unmarshal job from message queue", "err", err)
-				msg.Nack(false, false)
+				// TODO: Send error to CI server. Reason 500 internal server error.
 				continue
 			}
 
 			workCh <- work
 		}
-		channel.Close()
 	}()
 
 	return workCh, nil

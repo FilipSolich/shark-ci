@@ -1,17 +1,20 @@
 version: '3'
 
-dotenv: ['.env']
+interval: '1s'
 
 vars:
   MODULE: github.com/FilipSolich/shark-ci
 
+dotenv:
+  - .env
+
 tasks:
   build:
     cmds:
-      - task: build-ci-server
-      - task: build-worker
+      - task: build:ci-server
+      - task: build:worker
 
-  build-ci-server:
+  build:ci-server:
     cmds:
       - go build -o bin/ci-server {{.MODULE}}/cmd/ci-server
     sources:
@@ -22,7 +25,7 @@ tasks:
       - bin/ci-server
     method: timestamp
 
-  build-worker:
+  build:worker:
     cmds:
       - go build -o bin/worker {{.MODULE}}/cmd/worker
     sources:
@@ -34,19 +37,19 @@ tasks:
     method: timestamp
 
   run:
-    cmds:
-      - task: run-ci-server
-      - task: run-worker
-
-  run-ci-server:
     deps:
-      - build-ci-server
+      - run:ci-server
+      - run:worker
+
+  run:ci-server:
+    deps:
+      - build:ci-server
     cmds:
       - bin/ci-server
 
-  run-worker:
+  run:worker:
     deps:
-      - build-worker
+      - build:worker
     cmds:
       - bin/worker
 
@@ -60,36 +63,31 @@ tasks:
     cmds:
       - go test -v ./...
 
-  dev-up:
+  ngrok:
     cmds:
-      - docker compose -f docker-compose.dev.yaml up -d
       - ngrok http --domain {{.NGROK_DOMAIN}} 8000
 
-  dev-down:
-    cmds:
-      - docker compose -f docker-compose.dev.yaml down
-
-  docker-build:
+  docker:build:
     deps:
-      - docker-build-ci-server
-      - docker-build-worker
+      - docker:build:ci-server
+      - docker:build:worker
 
-  docker-build-ci-server:
+  docker:build:ci-server:
     cmds:
       - docker build --pull -f Dockerfile.ci-server -t shark-ci/ci-server .
 
-  docker-build-worker:
+  docker:build:worker:
     cmds:
       - docker build --pull -f Dockerfile.worker -t shark-ci/worker .
 
-  create-migration:
+  migrate:create:
     cmds:
       - migrate create -ext sql -dir migrations -format 20060102150405 {{.CLI_ARGS}}
 
-  migrate-up:
+  migrate:up:
     cmds:
       - migrate -path migrations -database ${DB_URI} -verbose up
 
-  migrate-down:
+  migrate:down:
     cmds:
       - migrate -path migrations -database ${DB_URI} -verbose down
