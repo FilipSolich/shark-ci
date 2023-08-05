@@ -1,20 +1,25 @@
 version: '3'
 
-interval: '1s'
-
 vars:
   MODULE: github.com/FilipSolich/shark-ci
+  CI_SERVER_IMAGE: shark-ci/ci-server
+  WORKER_IMAGE: shark-ci/worker
 
-dotenv:
-  - .env
+dotenv: ['.env']
+
+interval: '1s'
 
 tasks:
   build:
+    desc: Build CI server and worker
+    aliases: ["b"]
     cmds:
       - task: build:ci-server
       - task: build:worker
 
   build:ci-server:
+    desc: Build CI server
+    aliases: ["b:ci-server"]
     cmds:
       - go build -o bin/ci-server {{.MODULE}}/cmd/ci-server
     sources:
@@ -26,6 +31,8 @@ tasks:
     method: timestamp
 
   build:worker:
+    aliases: ["b:worker"]
+    desc: Build worker
     cmds:
       - go build -o bin/worker {{.MODULE}}/cmd/worker
     sources:
@@ -37,57 +44,98 @@ tasks:
     method: timestamp
 
   run:
+    desc: Run CI server and worker
+    aliases: ["r"]
     deps:
       - run:ci-server
       - run:worker
 
   run:ci-server:
+    desc: Run CI server
+    aliases: ["r:ci-server"]
     deps:
       - build:ci-server
     cmds:
       - bin/ci-server
 
   run:worker:
+    desc: Run worker
+    aliases: ["r:worker"]
     deps:
       - build:worker
     cmds:
       - bin/worker
 
   clean:
+    desc: Clean build artifacts
+    aliases: ["c"]
     cmds:
       - go clean
       - rm -rf bin
       - rm -rf .task/timestamp
 
   test:
+    desc: Run tests
+    aliases: ["t"]
     cmds:
       - go test -v ./...
 
   ngrok:
+    desc: Startup Ngrok
     cmds:
       - ngrok http --domain {{.NGROK_DOMAIN}} 8000
 
+  docker:up:
+    desc: Start docker containers
+    cmds:
+      - docker-compose up
+
+  docker:dev:up:
+    desc: Start docker containers for development
+    aliases: ["d:dev:up"]
+    cmds:
+      - docker-compose -f docker-compose.dev.yaml up
+
   docker:build:
+    desc: Build docker images
+    aliases: ["d:b"]
     deps:
       - docker:build:ci-server
       - docker:build:worker
 
   docker:build:ci-server:
+    desc: Build CI server docker image
+    aliases: ["d:b:ci-server"]
     cmds:
-      - docker build --pull -f Dockerfile.ci-server -t shark-ci/ci-server .
+      - docker build --pull -f Dockerfile.ci-server -t {{.CI_SERVER_IMAGE}} .
 
   docker:build:worker:
+    desc: Build worker docker image
+    aliases: ["d:b:worker"]
     cmds:
-      - docker build --pull -f Dockerfile.worker -t shark-ci/worker .
+      - docker build --pull -f Dockerfile.worker -t {{.WORKER_IMAGE}} .
 
   migrate:create:
+    desc: Create new migration file
     cmds:
       - migrate create -ext sql -dir migrations -format 20060102150405 {{.CLI_ARGS}}
 
   migrate:up:
+    desc: Run migrations up
     cmds:
       - migrate -path migrations -database ${DB_URI} -verbose up
 
   migrate:down:
+    desc: Run migrations down
     cmds:
       - migrate -path migrations -database ${DB_URI} -verbose down
+
+  # TODO: Push to docker registry
+  release:
+    desc: Create new release
+    cmds:
+      - git tag -s {{.CLI_ARGS}} -m "Release {{.CLI_ARGS}}"
+      - git push origin {{.CLI_ARGS}}
+      - task: docker:build
+      - docker tag {{.CI_SERVER_IMAGE}} {{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
+      - docker tag {{.WORKER_IMAGE}} {{.WORKER_IMAGE}}:{{.CLI_ARGS}}
