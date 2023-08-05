@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -9,10 +10,12 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
+	"google.golang.org/grpc"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/api"
 	"github.com/FilipSolich/shark-ci/ci-server/config"
+	ciserverGrpc "github.com/FilipSolich/shark-ci/ci-server/grpc"
 	"github.com/FilipSolich/shark-ci/ci-server/handler"
 	"github.com/FilipSolich/shark-ci/ci-server/middleware"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
@@ -20,8 +23,10 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/FilipSolich/shark-ci/ci-server/template"
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
+	pb "github.com/FilipSolich/shark-ci/shared/proto"
 )
 
+// TODO: Move this to store
 func cleaner(s store.Storer, d time.Duration) {
 	ticker := time.NewTicker(d)
 	go func() {
@@ -76,6 +81,16 @@ func main() {
 	cleaner(pgStore, 24*time.Hour)
 
 	services := service.InitServices(pgStore, config)
+
+	lis, err := net.Listen("tcp", ":8010")
+	if err != nil {
+		logger.Error("failed to listen", "err", err)
+		os.Exit(1)
+	}
+	s := grpc.NewServer()
+	grpcServer := ciserverGrpc.NewGRPCServer(logger, pgStore, services)
+	pb.RegisterPipelineReporterServer(s, grpcServer)
+	go s.Serve(lis)
 
 	CSRF := csrf.Protect([]byte(config.CIServer.SecretKey))
 

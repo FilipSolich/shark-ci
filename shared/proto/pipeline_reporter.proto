@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/FilipSolich/shark-ci/shared/proto";
+
+
+service PipelineReporter{
+    rpc PipelineStart(PipelineStartRequest) returns (Void) {}
+
+    //rpc PipelineEndR(PipelineEnd) returns () {}
+    //rpc PipelineCmdStart(CmdStart) returns (int64) {}
+    //rpc PipelineCmdEnd(CmdEnd) returns () {}
+}
+
+message PipelineStartRequest {
+    int64 pipeline_id = 1;
+    google.protobuf.Timestamp start_time = 2;
+    string cmd = 3;
+    int64 exit_code = 4;
+}
+
+message Void {}
+
+//message PipelineEnd {
+//    int64 pipeline_id = 1;
+//    timestamp end_time = 2;
+//}
+//
+//message CmdStart {
+//    int64 pipeline_id = 1;
+//    timestamp start_time = 2;
+//    string cmd = 3;
+//}
+//
+//message CmdEnd {
+//    int64 pipeline_id = 1;
+//    timestamp end_time = 2;
+//    int exit_code = 3;
+//    string output = 4;
+//}

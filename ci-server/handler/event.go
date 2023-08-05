@@ -112,7 +112,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		State:       service.StatusPending,
 		TargetURL:   pipeline.TargetURL,
 		Context:     ciserver.CIServer,
-		Description: "Job in progress",
+		Description: "Pipeline is pending",
 	}
 	err = srv.CreateStatus(ctx, serviceUser, repoName, pipeline.CommitSHA, status)
 	if err != nil {

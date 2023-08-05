@@ -88,13 +88,13 @@ tasks:
   docker:up:
     desc: Start docker containers
     cmds:
-      - docker-compose up
+      - docker compose up
 
   docker:dev:up:
     desc: Start docker containers for development
     aliases: ["d:dev:up"]
     cmds:
-      - docker-compose -f docker-compose.dev.yaml up
+      - docker compose -f docker-compose.dev.yaml up
 
   docker:build:
     desc: Build docker images
@@ -139,3 +139,11 @@ tasks:
       - task: docker:build
       - docker tag {{.CI_SERVER_IMAGE}} {{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
       - docker tag {{.WORKER_IMAGE}} {{.WORKER_IMAGE}}:{{.CLI_ARGS}}
+
+  grpc:generate:
+    desc: Generate gRPC code
+    cmds:
+      - >
+        protoc --go_out=. --go_opt=paths=source_relative
+        --go-grpc_out=. --go-grpc_opt=paths=source_relative
+        shared/proto/pipeline_reporter.proto
