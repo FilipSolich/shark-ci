@@ -292,6 +292,21 @@ func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, web
 	return err
 }
 
+func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error) {
+	pipeline := &models.Pipeline{}
+	err := s.db.QueryRowContext(ctx, ""+
+		"SELECT id, commit_sha, clone_url, status, target_url, started_at, finished_at, repo_id "+
+		"FROM pipeline "+
+		"WHERE id = $1",
+		pipelineID).
+		Scan(&pipeline.ID, &pipeline.CommitSHA, &pipeline.CloneURL, &pipeline.Status, &pipeline.TargetURL, &pipeline.StartedAt, &pipeline.FinishedAt, &pipeline.RepoID)
+	if err != nil {
+		return nil, err
+	}
+
+	return pipeline, nil
+}
+
 func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
 	var pipelineID int64
 	err := s.db.QueryRowContext(ctx, ""+
@@ -306,7 +321,22 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 	return pipelineID, nil
 }
 
+func (s *PostgresStore) UpdatePipeline(ctx context.Context, pipeline *models.Pipeline) error {
+	_, err := s.db.ExecContext(ctx, ``+
+		`UPDATE public.pipeline `+
+		`SET commit_sha = $1, clone_url = $2, status = $3, target_url = $4, started_at = $5, finished_at = $6 `+
+		`WHERE id = $7`,
+		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.TargetURL,
+		pipeline.StartedAt, pipeline.FinishedAt, pipeline.ID)
+	return err
+}
+
 func (s *PostgresStore) UpdatePipelineTartgetURL(ctx context.Context, pipelineID int64, url string) error {
 	_, err := s.db.ExecContext(ctx, "UPDATE pipeline SET target_url = $1 WHERE id = $2", url, pipelineID)
 	return err
+}
+
+func (s *PostgresStore) CreatePipelineLog(ctx context.Context, log *models.PipelineLog) error {
+
+	return nil
 }

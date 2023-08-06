@@ -55,5 +55,5 @@ type ServiceManager interface {
 
 	HandleEvent(ctx context.Context, r *http.Request) (*models.Pipeline, error)
 
-	CreateStatus(ctx context.Context, serviceUser *models.ServiceUser, repoName string, commit string, status Status) error
+	CreateStatus(ctx context.Context, serviceUser *models.ServiceUser, owner string, repoName string, commit string, status Status) error
 }

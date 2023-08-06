@@ -43,7 +43,7 @@ services:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
 
   rabbitmq:
-    image: rabbitmq:3.10-management
+    image: rabbitmq:3.12-management
     restart: unless-stopped
     ports:
       - "15672:15672"

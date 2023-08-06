@@ -26,20 +26,6 @@ import (
 	pb "github.com/FilipSolich/shark-ci/shared/proto"
 )
 
-// TODO: Move this to store
-func cleaner(s store.Storer, d time.Duration) {
-	ticker := time.NewTicker(d)
-	go func() {
-		for {
-			<-ticker.C
-			err := s.Clean(context.TODO())
-			if err != nil {
-				slog.Error("store: databse cleanup failed", "err", err)
-			}
-		}
-	}()
-}
-
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
@@ -78,7 +64,7 @@ func main() {
 	defer rabbitMQ.Close(context.TODO())
 	logger.Info("RabbitMQ connected")
 
-	cleaner(pgStore, 24*time.Hour)
+	store.Cleaner(pgStore, 24*time.Hour)
 
 	services := service.InitServices(pgStore, config)
 

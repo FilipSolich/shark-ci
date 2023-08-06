@@ -2,9 +2,11 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/google/uuid"
+	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 )
 
@@ -35,6 +37,23 @@ type Storer interface {
 	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
 
+	GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
 	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
+	UpdatePipeline(ctx context.Context, pipeline *models.Pipeline) error
 	UpdatePipelineTartgetURL(ctx context.Context, pipelineID int64, url string) error
+
+	CreatePipelineLog(ctx context.Context, log *models.PipelineLog) error
+}
+
+func Cleaner(s Storer, d time.Duration) {
+	ticker := time.NewTicker(d)
+	go func() {
+		for {
+			<-ticker.C
+			err := s.Clean(context.TODO())
+			if err != nil {
+				slog.Error("store: databse cleanup failed", "err", err)
+			}
+		}
+	}()
 }

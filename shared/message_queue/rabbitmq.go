@@ -69,7 +69,7 @@ func (mq *RabbitMQ) WorkChannel() (chan types.Work, error) {
 	// 	return nil, err
 	// }
 
-	msgChannel, err := mq.channel.Consume(mq.queueName, "", false, false, false, false, nil)
+	msgChannel, err := mq.channel.Consume(mq.queueName, "", true, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ option go_package = "github.com/FilipSolich/shark-ci/shared/proto";
 
 service PipelineReporter{
     rpc PipelineStart(PipelineStartRequest) returns (Void) {}
+    rpc PipelineEnd(PipelineEndRequest) returns (Void) {}
 
     //rpc PipelineEndR(PipelineEnd) returns () {}
     //rpc PipelineCmdStart(CmdStart) returns (int64) {}
@@ -15,17 +16,16 @@ service PipelineReporter{
 
 message PipelineStartRequest {
     int64 pipeline_id = 1;
-    google.protobuf.Timestamp start_time = 2;
-    string cmd = 3;
-    int64 exit_code = 4;
+    google.protobuf.Timestamp started_at = 2;
+}
+
+message PipelineEndRequest {
+    int64 pipeline_id = 1;
+    google.protobuf.Timestamp finished_at = 2;
 }
 
 message Void {}
 
-//message PipelineEnd {
-//    int64 pipeline_id = 1;
-//    timestamp end_time = 2;
-//}
 //
 //message CmdStart {
 //    int64 pipeline_id = 1;

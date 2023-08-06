@@ -166,7 +166,7 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 	return pipeline, nil
 }
 
-func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *models.ServiceUser, repoName string, commit string, status Status) error {
+func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *models.ServiceUser, owner string, repoName string, commit string, status Status) error {
 	client := m.clientForServiceUser(ctx, serviceUser)
 
 	s := &github.RepoStatus{
@@ -175,7 +175,7 @@ func (m *GitHubManager) CreateStatus(ctx context.Context, serviceUser *models.Se
 		Context:     github.String(status.Context),
 		Description: github.String(status.Description),
 	}
-	_, _, err := client.Repositories.CreateStatus(ctx, serviceUser.Username, repoName, commit, s)
+	_, _, err := client.Repositories.CreateStatus(ctx, owner, repoName, commit, s)
 
 	return err
 }
@@ -186,10 +186,6 @@ func (m *GitHubManager) clientWithToken(ctx context.Context, token *oauth2.Token
 }
 
 func (m *GitHubManager) clientForServiceUser(ctx context.Context, serviceUser *models.ServiceUser) *github.Client {
-	return m.clientWithToken(ctx, &oauth2.Token{
-		AccessToken:  serviceUser.AccessToken,
-		RefreshToken: serviceUser.RefreshToken,
-		TokenType:    serviceUser.TokenType,
-		Expiry:       serviceUser.TokenExpire,
-	})
+	token := serviceUser.Token()
+	return m.clientWithToken(ctx, &token)
 }

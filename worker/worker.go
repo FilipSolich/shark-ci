@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
@@ -15,13 +16,15 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"golang.org/x/exp/slog"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v3"
 
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
+	pb "github.com/FilipSolich/shark-ci/shared/proto"
 	"github.com/FilipSolich/shark-ci/shared/types"
 )
 
-func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compressedReposPath string) error {
+func Run(mq message_queue.MessageQueuer, gRPCCLient pb.PipelineReporterClient, maxWorkers int, reposPath string, compressedReposPath string) error {
 	workCh, err := mq.WorkChannel()
 	if err != nil {
 		return err
@@ -30,18 +33,34 @@ func Run(mq message_queue.MessageQueuer, maxWorkers int, reposPath string, compr
 	for i := 0; i < maxWorkers; i++ {
 		go func() {
 			for work := range workCh {
-				// Send start message.
+				tStart := time.Now()
+				work.Pipeline.StartedAt = &tStart
 				slog.Info("start processing pipeline", "PipelineID", work.Pipeline.ID)
-
-				err := processWork(context.TODO(), work, reposPath, compressedReposPath)
+				_, err = gRPCCLient.PipelineStart(context.TODO(), &pb.PipelineStartRequest{
+					PipelineId: work.Pipeline.ID,
+					StartedAt:  timestamppb.New(*work.Pipeline.StartedAt),
+				})
 				if err != nil {
-					// Send error message.
-					slog.Info("processing pipeline failed", "PipelineID", work.Pipeline.ID, "err", err)
-					continue
+					slog.Warn("sending pipeline start message failed", "PipelineID", work.Pipeline.ID, "err", err)
 				}
 
-				// Send end message.
+				//err := processWork(context.TODO(), work, reposPath, compressedReposPath)
+				//if err != nil {
+				//	// Send error message.
+				//	slog.Info("processing pipeline failed", "PipelineID", work.Pipeline.ID, "err", err)
+				//	continue
+				//}
+
+				tEnd := time.Now()
+				work.Pipeline.FinishedAt = &tEnd
 				slog.Info("finished processing pipeline successfully", "PipelineID", work.Pipeline.ID)
+				_, err = gRPCCLient.PipelineEnd(context.TODO(), &pb.PipelineEndRequest{
+					PipelineId: work.Pipeline.ID,
+					FinishedAt: timestamppb.New(*work.Pipeline.FinishedAt),
+				})
+				if err != nil {
+					slog.Warn("sending pipeline end message failed", "PipelineID", work.Pipeline.ID, "err", err)
+				}
 			}
 		}()
 	}

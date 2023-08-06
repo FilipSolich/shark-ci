@@ -6,9 +6,12 @@ import (
 	"os/signal"
 
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
+	pb "github.com/FilipSolich/shark-ci/shared/proto"
 	"github.com/FilipSolich/shark-ci/worker"
 	"github.com/FilipSolich/shark-ci/worker/config"
 	"golang.org/x/exp/slog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -36,7 +39,17 @@ func main() {
 	defer rabbitMQ.Close(context.TODO())
 	slog.Info("RabbitMQ connected")
 
-	err = worker.Run(rabbitMQ, config.Worker.MaxWorkers, config.Worker.ReposPath, compressedReposPath)
+	slog.Info("creating gRPC client")
+	conn, err := grpc.Dial("localhost:8010", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		slog.Error("grpc: connecting to gRPC server failed", "err", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+	gRPCClient := pb.NewPipelineReporterClient(conn)
+	slog.Info("gRPC client created")
+
+	err = worker.Run(rabbitMQ, gRPCClient, config.Worker.MaxWorkers, config.Worker.ReposPath, compressedReposPath)
 	if err != nil {
 		slog.Error("worker: running worker failed", "err", err)
 		os.Exit(1)
