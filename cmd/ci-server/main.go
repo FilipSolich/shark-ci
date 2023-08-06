@@ -32,7 +32,7 @@ func main() {
 
 	conf, err := config.NewConfigFromEnv()
 	if err != nil {
-		logger.Error("creating config failed", "err", err)
+		slog.Error("creating config failed", "err", err)
 		os.Exit(1)
 	}
 	config.Conf = conf
@@ -41,51 +41,54 @@ func main() {
 
 	template.LoadTemplates()
 
-	logger.Info("connecting to PostgreSQL")
+	slog.Info("connecting to PostgreSQL")
 	pgStore, err := store.NewPostgresStore(conf.DB.URI)
 	if err != nil {
-		logger.Error("store: connecting to PostgreSQL failed", "err", err)
+		slog.Error("store: connecting to PostgreSQL failed", "err", err)
 		os.Exit(1)
 	}
 	defer pgStore.Close(context.TODO())
 
 	err = pgStore.Ping(context.TODO())
 	if err != nil {
-		logger.Error("store: pinging to PostgreSQL failed", "err", err)
+		slog.Error("store: pinging to PostgreSQL failed", "err", err)
 		os.Exit(1)
 	}
-	logger.Info("PostgreSQL connected")
+	slog.Info("PostgreSQL connected")
 
-	logger.Info("connecting to RabbitMQ")
+	slog.Info("connecting to RabbitMQ")
 	rabbitMQ, err := message_queue.NewRabbitMQ(conf.MQ.URI)
 	if err != nil {
-		logger.Error("mq: connecting to RabbitMQ failed", "err", err)
+		slog.Error("mq: connecting to RabbitMQ failed", "err", err)
 		os.Exit(1)
 	}
 	defer rabbitMQ.Close(context.TODO())
-	logger.Info("RabbitMQ connected")
+	slog.Info("RabbitMQ connected")
 
 	store.Cleaner(pgStore, 24*time.Hour)
 
 	services := service.InitServices(pgStore)
 
-	lis, err := net.Listen("tcp", ":8010")
+	slog.Info("starting gRPC server")
+	lis, err := net.Listen("tcp", ":"+conf.CIServer.GRPCPort)
 	if err != nil {
-		logger.Error("failed to listen", "err", err)
+		slog.Error("failed to listen", "err", err)
 		os.Exit(1)
 	}
 	s := grpc.NewServer()
-	grpcServer := ciserverGrpc.NewGRPCServer(logger, pgStore, services)
+	grpcServer := ciserverGrpc.NewGRPCServer(logger.With("servedBy", "gRPC"), pgStore, services)
 	pb.RegisterPipelineReporterServer(s, grpcServer)
 	go s.Serve(lis)
+	slog.Info("gRPC server running", "port", conf.CIServer.GRPCPort)
 
 	CSRF := csrf.Protect([]byte(conf.CIServer.SecretKey))
 
-	loginHandler := handler.NewLoginHandler(logger, pgStore, services)
+	handlerLogger := logger.With("servedBy", "handler")
+	loginHandler := handler.NewLoginHandler(handlerLogger, pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services)
-	oauth2Handler := handler.NewOAuth2Handler(logger, pgStore, services)
-	repoHandler := handler.NewRepoHandler(logger, pgStore, services)
+	eventHandler := handler.NewEventHandler(handlerLogger, pgStore, rabbitMQ, services)
+	oauth2Handler := handler.NewOAuth2Handler(handlerLogger, pgStore, services)
+	repoHandler := handler.NewRepoHandler(handlerLogger, pgStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
@@ -108,7 +111,8 @@ func main() {
 	repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
 
-	reposAPIHandler := api.NewRepoAPI(logger, pgStore, services)
+	apiLogger := logger.With("servedBy", "api")
+	reposAPIHandler := api.NewRepoAPI(apiLogger, pgStore, services)
 
 	api := r.PathPrefix("/api").Subrouter()
 	api.Use(middleware.AuthMiddleware(pgStore))
@@ -127,11 +131,11 @@ func main() {
 		WriteTimeout: 0,
 		IdleTimeout:  0,
 	}
-	logger.Info("server running on " + server.Addr)
+	slog.Info("server running", "addr", server.Addr)
 
 	err = server.ListenAndServe()
 	if err != nil {
-		logger.Error("server crashed", "err", err)
+		slog.Error("server crashed", "err", err)
 		os.Exit(1)
 	}
 }

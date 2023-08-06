@@ -41,7 +41,7 @@ func main() {
 	slog.Info("RabbitMQ connected")
 
 	slog.Info("creating gRPC client")
-	conn, err := grpc.Dial("localhost:8010", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(conf.CIServer.Host+":"+conf.CIServer.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		slog.Error("grpc: connecting to gRPC server failed", "err", err)
 		os.Exit(1)

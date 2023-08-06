@@ -14,8 +14,8 @@ type WorkerConfig struct {
 }
 
 type CIServerConfig struct {
-	Host string
-	Port string
+	Host     string
+	GRPCPort string
 }
 
 type MessageQueueConfig struct {
@@ -36,8 +36,8 @@ func NewConfigFromEnv() (Config, error) {
 			ReposPath:  env.StringEnv("REPOS_PATH", "./repos"),
 		},
 		CIServer: CIServerConfig{
-			Host: env.StringEnv("CISERVER_HOST", "localhost"),
-			Port: env.StringEnv("CISERVER_PORT", "8080"),
+			Host:     env.StringEnv("CISERVER_HOST", "localhost"),
+			GRPCPort: env.StringEnv("CISERVER_GRPC_PORT", "9000"),
 		},
 		MQ: MessageQueueConfig{
 			URI: env.StringEnv("MQ_URI", "amqp://guest:guest@localhost"),

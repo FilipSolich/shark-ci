@@ -12,6 +12,7 @@ var Conf Config
 type CIServerConfig struct {
 	Host        string
 	Port        string
+	GRPCPort    string
 	SecretKey   string
 	WebhookURL  string
 	PipelineURL string
@@ -45,6 +46,7 @@ func NewConfigFromEnv() (Config, error) {
 		CIServer: CIServerConfig{
 			Host:      env.StringEnv("HOST", ""),
 			Port:      env.StringEnv("PORT", "8000"),
+			GRPCPort:  env.StringEnv("GRPC_PORT", "9000"),
 			SecretKey: env.StringEnv("SECRET_KEY", ""),
 		},
 		DB: DatabaseConfig{
