@@ -1,6 +1,6 @@
 CREATE TABLE "user" (
     id bigserial PRIMARY KEY,
-    username text,
+    username text NOT NULL,
     email text NOT NULL
 );
 
@@ -26,12 +26,13 @@ CREATE TABLE "oauth2_state" (
 CREATE TABLE "repo" (
     id bigserial PRIMARY KEY,
     name text NOT NULL,
+    owner text NOT NULL,
     service text NOT NULL,
     repo_service_id bigint NOT NULL,
     webhook_id bigint,
     service_user_id bigint,
     UNIQUE (service, repo_service_id),
-    UNIQUE (service, webhook_id),
+    UNIQUE (service, owner, webhook_id),
     FOREIGN KEY (service_user_id) REFERENCES "service_user" (id)
 );
 
@@ -39,7 +40,7 @@ CREATE TABLE "pipeline" (
     id bigserial PRIMARY KEY,
     commit_sha text NOT NULL,
     clone_url text NOT NULL,
-    status text,
+    status text NOT NULL,
     target_url text,
     started_at timestamp,
     finished_at timestamp,

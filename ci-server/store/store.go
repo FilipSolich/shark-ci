@@ -38,11 +38,8 @@ type Storer interface {
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
 
 	GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
-	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
-	UpdatePipeline(ctx context.Context, pipeline *models.Pipeline) error
-	UpdatePipelineTartgetURL(ctx context.Context, pipelineID int64, url string) error
-
-	CreatePipelineLog(ctx context.Context, log *models.PipelineLog) error
+	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error
+	UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error
 }
 
 func Cleaner(s Storer, d time.Duration) {

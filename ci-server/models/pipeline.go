@@ -3,6 +3,8 @@ package models
 import (
 	"fmt"
 	"time"
+
+	"github.com/FilipSolich/shark-ci/ci-server/config"
 )
 
 type Pipeline struct {
@@ -16,6 +18,6 @@ type Pipeline struct {
 	RepoID     int64      `json:"repo_id"`
 }
 
-func (p *Pipeline) CreateTargetURL(url string) {
-	p.TargetURL = fmt.Sprintf("%s/%d", url, p.ID)
+func (p *Pipeline) CreateTargetURL() {
+	p.TargetURL = fmt.Sprintf("%s/%d", config.Conf.CIServer.PipelineURL, p.ID)
 }

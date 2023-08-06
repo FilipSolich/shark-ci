@@ -1,1 +1,0 @@
-ALTER TABLE "pipeline" ALTER COLUMN status SET NOT NULL;

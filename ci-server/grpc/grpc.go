@@ -68,7 +68,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 		pipeline.Status = srv.StatusName(statusState)
 		description = "Pipeline finished successfully"
 	}
-	err = s.s.UpdatePipeline(ctx, pipeline)
+	err = s.s.UpdatePipelineStatus(ctx, pipeline.ID, pipeline.Status, pipeline.StartedAt, pipeline.FinishedAt)
 	if err != nil {
 		s.l.Error("store: cannot update pipeline", "err", err)
 		return err

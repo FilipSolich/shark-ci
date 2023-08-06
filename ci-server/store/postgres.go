@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/google/uuid"
@@ -307,36 +308,51 @@ func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*mod
 	return pipeline, nil
 }
 
-func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
-	var pipelineID int64
-	err := s.db.QueryRowContext(ctx, ""+
+func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.QueryRowContext(ctx, ""+
 		"INSERT INTO pipeline (commit_sha, clone_url, status, repo_id) "+
 		"VALUES ($1, $2, $3, $4) "+
 		"RETURNING id",
-		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID).Scan(&pipelineID)
+		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID).Scan(&pipeline.ID)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	return pipelineID, nil
-}
+	pipeline.CreateTargetURL()
+	_, err = tx.ExecContext(ctx, "UPDATE pipeline SET target_url = $1 WHERE id = $2", pipeline.TargetURL, pipeline.ID)
+	if err != nil {
+		return err
+	}
 
-func (s *PostgresStore) UpdatePipeline(ctx context.Context, pipeline *models.Pipeline) error {
-	_, err := s.db.ExecContext(ctx, ``+
-		`UPDATE public.pipeline `+
-		`SET commit_sha = $1, clone_url = $2, status = $3, target_url = $4, started_at = $5, finished_at = $6 `+
-		`WHERE id = $7`,
-		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.TargetURL,
-		pipeline.StartedAt, pipeline.FinishedAt, pipeline.ID)
-	return err
-}
-
-func (s *PostgresStore) UpdatePipelineTartgetURL(ctx context.Context, pipelineID int64, url string) error {
-	_, err := s.db.ExecContext(ctx, "UPDATE pipeline SET target_url = $1 WHERE id = $2", url, pipelineID)
-	return err
-}
-
-func (s *PostgresStore) CreatePipelineLog(ctx context.Context, log *models.PipelineLog) error {
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func (s *PostgresStore) UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error {
+	var t time.Time
+	var set string
+	if started_at != nil {
+		t = *started_at
+		set = `started_at`
+	} else {
+		t = *finished_at
+		set = `finished_at`
+	}
+
+	_, err := s.db.ExecContext(ctx, ``+
+		`UPDATE public.pipeline `+
+		`SET status = $1, `+set+` = $2 `+
+		`WHERE id = $4`,
+		status, t, pipelineID)
+	return err
 }

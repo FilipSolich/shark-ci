@@ -1,1 +1,0 @@
-ALTER TABLE "pipeline" ALTER COLUMN staus DROP NOT NULL;

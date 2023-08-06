@@ -62,18 +62,9 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pipelineID, err := h.s.CreatePipeline(ctx, pipeline)
+	err = h.s.CreatePipeline(ctx, pipeline)
 	if err != nil {
 		h.l.Error("store: cannot create pipeline", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	pipeline.ID = pipelineID
-
-	pipeline.CreateTargetURL(h.config.PipelineURL)
-	err = h.s.UpdatePipelineTartgetURL(ctx, pipeline.ID, pipeline.TargetURL)
-	if err != nil {
-		h.l.Error("store: cannot update pipeline target url", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

@@ -30,18 +30,19 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	config, err := config.NewConfigFromEnv()
+	conf, err := config.NewConfigFromEnv()
 	if err != nil {
 		logger.Error("creating config failed", "err", err)
 		os.Exit(1)
 	}
+	config.Conf = conf
 
-	session.InitSessionStore(config.CIServer.SecretKey)
+	session.InitSessionStore(conf.CIServer.SecretKey)
 
 	template.LoadTemplates()
 
 	logger.Info("connecting to PostgreSQL")
-	pgStore, err := store.NewPostgresStore(config.DB.URI)
+	pgStore, err := store.NewPostgresStore(conf.DB.URI)
 	if err != nil {
 		logger.Error("store: connecting to PostgreSQL failed", "err", err)
 		os.Exit(1)
@@ -56,7 +57,7 @@ func main() {
 	logger.Info("PostgreSQL connected")
 
 	logger.Info("connecting to RabbitMQ")
-	rabbitMQ, err := message_queue.NewRabbitMQ(config.MQ.URI)
+	rabbitMQ, err := message_queue.NewRabbitMQ(conf.MQ.URI)
 	if err != nil {
 		logger.Error("mq: connecting to RabbitMQ failed", "err", err)
 		os.Exit(1)
@@ -66,7 +67,7 @@ func main() {
 
 	store.Cleaner(pgStore, 24*time.Hour)
 
-	services := service.InitServices(pgStore, config)
+	services := service.InitServices(pgStore, conf)
 
 	lis, err := net.Listen("tcp", ":8010")
 	if err != nil {
@@ -78,11 +79,11 @@ func main() {
 	pb.RegisterPipelineReporterServer(s, grpcServer)
 	go s.Serve(lis)
 
-	CSRF := csrf.Protect([]byte(config.CIServer.SecretKey))
+	CSRF := csrf.Protect([]byte(conf.CIServer.SecretKey))
 
 	loginHandler := handler.NewLoginHandler(logger, pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services, config.CIServer)
+	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services, conf.CIServer)
 	oauth2Handler := handler.NewOAuth2Handler(logger, pgStore, services)
 	repoHandler := handler.NewRepoHandler(logger, pgStore, services)
 
@@ -120,7 +121,7 @@ func main() {
 	reposAPI.HandleFunc("/{repoID}/webhook", reposAPIHandler.DeleteWebhook).Methods(http.MethodDelete)
 
 	server := &http.Server{
-		Addr:         ":" + config.CIServer.Port,
+		Addr:         ":" + conf.CIServer.Port,
 		Handler:      r,
 		ReadTimeout:  0,
 		WriteTimeout: 0,
