@@ -40,6 +40,8 @@ type Storer interface {
 	GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
 	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error
 	UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error
+
+	GetInfoForPipelineStateChange(ctx context.Context, pipelineID int64) (string, string, string, string, string, *oauth2.Token, error)
 }
 
 func Cleaner(s Storer, d time.Duration) {

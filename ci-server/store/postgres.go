@@ -338,7 +338,10 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 	return nil
 }
 
-func (s *PostgresStore) UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error {
+func (s *PostgresStore) UpdatePipelineStatus(
+	ctx context.Context, pipelineID int64, status string,
+	started_at *time.Time, finished_at *time.Time,
+) error {
 	var t time.Time
 	var set string
 	if started_at != nil {
@@ -352,7 +355,41 @@ func (s *PostgresStore) UpdatePipelineStatus(ctx context.Context, pipelineID int
 	_, err := s.db.ExecContext(ctx, ``+
 		`UPDATE public.pipeline `+
 		`SET status = $1, `+set+` = $2 `+
-		`WHERE id = $4`,
+		`WHERE id = $3`,
 		status, t, pipelineID)
 	return err
+}
+
+func (s *PostgresStore) GetInfoForPipelineStateChange(
+	ctx context.Context, pipelineID int64,
+) (string, string, string, string, string, *oauth2.Token, error) {
+	var (
+		commitSHA    string
+		targetURL    string
+		repoName     string
+		repoOwner    string
+		service      string
+		refreshToken sql.NullString
+		tokenExpire  sql.NullTime
+		token        oauth2.Token
+	)
+	err := s.db.QueryRowContext(ctx, ``+
+		`SELECT p.commit_sha, p.target_url, r.name, r.owner, r.service, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
+		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id) JOIN public.service_user su ON r.service_user_id = su.id `+
+		`WHERE p.id = $1`,
+		pipelineID).
+		Scan(&commitSHA, &targetURL, &repoName, &repoOwner, &service, &token.AccessToken,
+			&refreshToken, &token.TokenType, &tokenExpire)
+	if err != nil {
+		return "", "", "", "", "", nil, err
+	}
+
+	if refreshToken.Valid {
+		token.RefreshToken = refreshToken.String
+	}
+	if tokenExpire.Valid {
+		token.Expiry = tokenExpire.Time
+	}
+
+	return commitSHA, targetURL, repoName, repoOwner, service, &token, nil
 }

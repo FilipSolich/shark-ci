@@ -37,56 +37,43 @@ func (s *GRPCServer) PipelineEnd(ctx context.Context, in *pb.PipelineEndRequest)
 }
 
 func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, t time.Time, start bool) error {
-	pipeline, err := s.s.GetPipeline(ctx, pipelineID)
+	commitSHA, targetURL, repoName, repoOwner, srvName, token, err := s.s.GetInfoForPipelineStateChange(ctx, pipelineID)
 	if err != nil {
-		s.l.Error("store: cannot get pipeline", "err", err)
+		s.l.Error("store: cannot get info for pipeline state change", "err", err)
 		return err
 	}
 
-	repo, err := s.s.GetRepo(ctx, pipeline.RepoID)
-	if err != nil {
-		s.l.Error("store: cannot get repo", "err", err)
-		return err
-	}
-
-	srv, ok := s.services[repo.Service]
+	srv, ok := s.services[srvName]
 	if !ok {
-		s.l.Error("service: service not found", "service", repo.Service)
+		s.l.Error("service: service not found", "service", srvName)
 		return err
 	}
 
-	var statusState service.StatusState
-	var description string
-	if start {
-		statusState = service.StatusRunning
-		pipeline.StartedAt = &t
-		pipeline.Status = srv.StatusName(statusState)
-		description = "Pipeline is running"
-	} else {
+	statusState := service.StatusRunning
+	statusName := srv.StatusName(statusState)
+	desc := "Pipeline is running"
+	var startedAt *time.Time = &t
+	var finishedAt *time.Time = nil
+	if !start {
 		statusState = service.StatusSuccess
-		pipeline.FinishedAt = &t
-		pipeline.Status = srv.StatusName(statusState)
-		description = "Pipeline finished successfully"
+		statusName = srv.StatusName(statusState)
+		desc = "Pipeline finished successfully"
+		startedAt = nil
+		finishedAt = &t
 	}
-	err = s.s.UpdatePipelineStatus(ctx, pipeline.ID, pipeline.Status, pipeline.StartedAt, pipeline.FinishedAt)
+	err = s.s.UpdatePipelineStatus(ctx, pipelineID, statusName, startedAt, finishedAt)
 	if err != nil {
 		s.l.Error("store: cannot update pipeline", "err", err)
 		return err
 	}
 
-	serviceUser, err := s.s.GetServiceUserByRepo(ctx, repo.ID)
-	if err != nil {
-		s.l.Error("store: cannot get service user", "err", err)
-		return err
-	}
-
 	status := service.Status{
 		State:       statusState,
-		TargetURL:   pipeline.TargetURL,
+		TargetURL:   targetURL,
 		Context:     ciserver.CIServer,
-		Description: description,
+		Description: desc,
 	}
-	err = srv.CreateStatus(ctx, serviceUser, serviceUser.Username, repo.Name, pipeline.CommitSHA, status)
+	err = srv.CreateStatus(ctx, token, repoOwner, repoName, commitSHA, status)
 	if err != nil {
 		s.l.Error("service: cannot create status", "err", err)
 		return err

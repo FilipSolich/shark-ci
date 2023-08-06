@@ -2,8 +2,9 @@ version: '3'
 
 vars:
   MODULE: github.com/FilipSolich/shark-ci
-  CI_SERVER_IMAGE: shark-ci/ci-server
-  WORKER_IMAGE: shark-ci/worker
+  CI_SERVER_IMAGE: filipsolich/ci-server
+  WORKER_IMAGE: filipsolich/worker
+  DOCKER_REGISTRY: ghci.io
 
 dotenv: ['.env']
 
@@ -99,9 +100,9 @@ tasks:
   docker:build:
     desc: Build docker images
     aliases: ["d:b"]
-    deps:
-      - docker:build:ci-server
-      - docker:build:worker
+    cmds:
+      - task: docker:build:ci-server
+      - task: docker:build:worker
 
   docker:build:ci-server:
     desc: Build CI server docker image
@@ -130,15 +131,22 @@ tasks:
     cmds:
       - migrate -path migrations -database ${DB_URI} -verbose down
 
-  # TODO: Push to docker registry
   release:
     desc: Create new release
     cmds:
       - git tag -s {{.CLI_ARGS}} -m "Release {{.CLI_ARGS}}"
       - git push origin {{.CLI_ARGS}}
       - task: docker:build
-      - docker tag {{.CI_SERVER_IMAGE}} {{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
-      - docker tag {{.WORKER_IMAGE}} {{.WORKER_IMAGE}}:{{.CLI_ARGS}}
+      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
+      - docker tag {{.WORKER_IMAGE}}:latest {{.WORKER_IMAGE}}:{{.CLI_ARGS}}
+      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:latest
+      - docker tag {{.WORKER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:latest
+      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
+      - docker tag {{.WORKER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.CLI_ARGS}}
+      - docker push {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:latest
+      - docker push {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
+      - docker push {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:latest
+      - docker push {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.CLI_ARGS}}}
 
   grpc:generate:
     desc: Generate gRPC code

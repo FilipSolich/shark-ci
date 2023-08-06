@@ -105,7 +105,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		Context:     ciserver.CIServer,
 		Description: "Pipeline is pending",
 	}
-	err = srv.CreateStatus(ctx, serviceUser, serviceUser.Username, repoName, pipeline.CommitSHA, status)
+	err = srv.CreateStatus(ctx, serviceUser.Token(), serviceUser.Username, repoName, pipeline.CommitSHA, status)
 	if err != nil {
 		h.l.Error("cannot create status", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

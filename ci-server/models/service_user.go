@@ -18,9 +18,8 @@ type ServiceUser struct {
 	UserID       int64     `json:"user_id"`
 }
 
-// TODO: Use it in github.com service
-func (su ServiceUser) Token() oauth2.Token {
-	return oauth2.Token{
+func (su ServiceUser) Token() *oauth2.Token {
+	return &oauth2.Token{
 		AccessToken:  su.AccessToken,
 		RefreshToken: su.RefreshToken,
 		TokenType:    su.TokenType,

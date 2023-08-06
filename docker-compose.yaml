@@ -23,6 +23,8 @@ services:
     image: shark-ci/worker
     restart: unless-stopped
     depends_on:
+      ci-server:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     environment:
