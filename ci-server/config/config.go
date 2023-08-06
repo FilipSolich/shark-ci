@@ -7,7 +7,6 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/env"
 )
 
-// TODO: Remove config from others packages
 var Conf Config
 
 type CIServerConfig struct {

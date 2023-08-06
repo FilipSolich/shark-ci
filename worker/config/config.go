@@ -6,6 +6,8 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/env"
 )
 
+var Conf Config
+
 type WorkerConfig struct {
 	MaxWorkers int
 	ReposPath  string

@@ -16,12 +16,11 @@ import (
 type GitHubManager struct {
 	s            store.Storer
 	oauth2Config *oauth2.Config
-	config       config.CIServerConfig
 }
 
 var _ ServiceManager = &GitHubManager{}
 
-func NewGitHubManager(clientID string, clientSecret string, s store.Storer, config config.CIServerConfig) *GitHubManager {
+func NewGitHubManager(clientID string, clientSecret string, s store.Storer) *GitHubManager {
 	return &GitHubManager{
 		s: s,
 		oauth2Config: &oauth2.Config{
@@ -30,7 +29,6 @@ func NewGitHubManager(clientID string, clientSecret string, s store.Storer, conf
 			Scopes:       []string{"repo"},
 			Endpoint:     oauth2_github.Endpoint,
 		},
-		config: config,
 	}
 }
 
@@ -109,9 +107,9 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, token *oauth2.Token, 
 		Active: github.Bool(true),
 		Events: []string{"push", "pull_request"},
 		Config: map[string]any{
-			"url":          m.config.WebhookURL + "/" + m.Name(),
+			"url":          config.Conf.CIServer.WebhookURL + "/" + m.Name(),
 			"content_type": "json",
-			"secret":       m.config.SecretKey,
+			"secret":       config.Conf.CIServer.SecretKey,
 		},
 	}
 
@@ -131,7 +129,7 @@ func (m *GitHubManager) DeleteWebhook(ctx context.Context, token *oauth2.Token, 
 }
 
 func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*models.Pipeline, error) {
-	payload, err := github.ValidatePayload(r, []byte(m.config.SecretKey))
+	payload, err := github.ValidatePayload(r, []byte(config.Conf.CIServer.SecretKey))
 	if err != nil {
 		return nil, err
 	}

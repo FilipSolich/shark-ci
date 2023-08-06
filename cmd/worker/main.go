@@ -18,11 +18,12 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	config, err := config.NewConfigFromEnv()
+	conf, err := config.NewConfigFromEnv()
 	if err != nil {
 		slog.Error("creating config failed", "err", err)
 		os.Exit(1)
 	}
+	config.Conf = conf
 
 	compressedReposPath, err := worker.CreateTmpDir()
 	if err != nil {
@@ -31,7 +32,7 @@ func main() {
 	}
 
 	slog.Info("connecting to RabbitMQ")
-	rabbitMQ, err := message_queue.NewRabbitMQ(config.MQ.URI)
+	rabbitMQ, err := message_queue.NewRabbitMQ(conf.MQ.URI)
 	if err != nil {
 		slog.Error("mq: connecting to RabbitMQ failed", "err", err)
 		os.Exit(1)
@@ -49,7 +50,7 @@ func main() {
 	gRPCClient := pb.NewPipelineReporterClient(conn)
 	slog.Info("gRPC client created")
 
-	err = worker.Run(rabbitMQ, gRPCClient, config.Worker.MaxWorkers, config.Worker.ReposPath, compressedReposPath)
+	err = worker.Run(rabbitMQ, gRPCClient, compressedReposPath)
 	if err != nil {
 		slog.Error("worker: running worker failed", "err", err)
 		os.Exit(1)

@@ -22,15 +22,16 @@ import (
 	"github.com/FilipSolich/shark-ci/shared/message_queue"
 	pb "github.com/FilipSolich/shark-ci/shared/proto"
 	"github.com/FilipSolich/shark-ci/shared/types"
+	"github.com/FilipSolich/shark-ci/worker/config"
 )
 
-func Run(mq message_queue.MessageQueuer, gRPCCLient pb.PipelineReporterClient, maxWorkers int, reposPath string, compressedReposPath string) error {
+func Run(mq message_queue.MessageQueuer, gRPCCLient pb.PipelineReporterClient, compressedReposPath string) error {
 	workCh, err := mq.WorkChannel()
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < maxWorkers; i++ {
+	for i := 0; i < config.Conf.Worker.MaxWorkers; i++ {
 		go func() {
 			for work := range workCh {
 				tStart := time.Now()
@@ -44,7 +45,7 @@ func Run(mq message_queue.MessageQueuer, gRPCCLient pb.PipelineReporterClient, m
 					slog.Warn("sending pipeline start message failed", "PipelineID", work.Pipeline.ID, "err", err)
 				}
 
-				//err := processWork(context.TODO(), work, reposPath, compressedReposPath)
+				//err := processWork(context.TODO(), work, config.Conf.Worker.ReposPath, compressedReposPath)
 				//if err != nil {
 				//	// Send error message.
 				//	slog.Info("processing pipeline failed", "PipelineID", work.Pipeline.ID, "err", err)

@@ -67,7 +67,7 @@ func main() {
 
 	store.Cleaner(pgStore, 24*time.Hour)
 
-	services := service.InitServices(pgStore, conf)
+	services := service.InitServices(pgStore)
 
 	lis, err := net.Listen("tcp", ":8010")
 	if err != nil {
@@ -83,7 +83,7 @@ func main() {
 
 	loginHandler := handler.NewLoginHandler(logger, pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services, conf.CIServer)
+	eventHandler := handler.NewEventHandler(logger, pgStore, rabbitMQ, services)
 	oauth2Handler := handler.NewOAuth2Handler(logger, pgStore, services)
 	repoHandler := handler.NewRepoHandler(logger, pgStore, services)
 

@@ -32,10 +32,10 @@ type Status struct {
 
 type Services map[string]ServiceManager
 
-func InitServices(s store.Storer, config config.Config) Services {
+func InitServices(s store.Storer) Services {
 	services := Services{}
-	if config.GitHub.ClientID != "" && config.GitHub.ClientSecret != "" {
-		ghm := NewGitHubManager(config.GitHub.ClientID, config.GitHub.ClientSecret, s, config.CIServer)
+	if config.Conf.GitHub.ClientID != "" && config.Conf.GitHub.ClientSecret != "" {
+		ghm := NewGitHubManager(config.Conf.GitHub.ClientID, config.Conf.GitHub.ClientSecret, s)
 		services[ghm.Name()] = ghm
 	}
 	// TODO: Add GitLab.

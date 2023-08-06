@@ -40,7 +40,7 @@ func (s *GRPCServer) PipelineEnd(ctx context.Context, in *pb.PipelineEndRequest)
 func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, t time.Time, start bool) error {
 	info, err := s.s.GetPipelineStateChangeInfo(ctx, pipelineID)
 	if err != nil {
-		s.l.Error("store: cannot get info for pipeline state change", "err", err)
+		s.l.Error("store: cannot get info for pipeline state change", "pipelineID", pipelineID, "err", err)
 		return err
 	}
 
