@@ -98,7 +98,7 @@ func (api *RepoAPI) CreateWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webhookID, err := srv.CreateWebhook(ctx, serviceUser, repo.Name)
+	webhookID, err := srv.CreateWebhook(ctx, serviceUser.Token(), serviceUser.Username, repo.Name)
 	if err != nil {
 		api.l.Error("service: cannot create webhook", "err", err, "repoID", repo.ID)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -122,7 +122,7 @@ func (api *RepoAPI) DeleteWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := srv.DeleteWebhook(ctx, serviceUser, repo.Name, *repo.WebhookID)
+	err := srv.DeleteWebhook(ctx, serviceUser.Token(), serviceUser.Username, repo.Name, *repo.WebhookID)
 	if err != nil {
 		api.l.Error("service: cannot delete webhook", "err", err, "repoID", repo.ID)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -78,7 +78,7 @@ func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token)
 }
 
 func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *models.ServiceUser) ([]models.Repo, error) {
-	client := m.clientForServiceUser(ctx, serviceUser)
+	client := m.clientWithToken(ctx, serviceUser.Token())
 
 	// TODO: Experimenting feature - get all repos, not just owned by user.
 	// TODO: Add pagination.
@@ -92,6 +92,7 @@ func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *models.S
 		repo := models.Repo{
 			RepoServiceID: repo.GetID(),
 			Name:          repo.GetName(),
+			Owner:         repo.GetOwner().GetLogin(),
 			Service:       m.Name(),
 			ServiceUserID: serviceUser.ID,
 		}
@@ -101,8 +102,8 @@ func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *models.S
 	return repos, err
 }
 
-func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *models.ServiceUser, repoName string) (int64, error) {
-	client := m.clientForServiceUser(ctx, serviceUser)
+func (m *GitHubManager) CreateWebhook(ctx context.Context, token *oauth2.Token, owner string, repoName string) (int64, error) {
+	client := m.clientWithToken(ctx, token)
 
 	hook := &github.Hook{
 		Active: github.Bool(true),
@@ -114,7 +115,7 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *models.S
 		},
 	}
 
-	hook, _, err := client.Repositories.CreateHook(ctx, serviceUser.Username, repoName, hook)
+	hook, _, err := client.Repositories.CreateHook(ctx, owner, repoName, hook)
 	if err != nil {
 		return 0, err
 	}
@@ -122,10 +123,10 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, serviceUser *models.S
 	return hook.GetID(), nil
 }
 
-func (m *GitHubManager) DeleteWebhook(ctx context.Context, serviceUser *models.ServiceUser, repoName string, webhookID int64) error {
-	client := m.clientForServiceUser(ctx, serviceUser)
+func (m *GitHubManager) DeleteWebhook(ctx context.Context, token *oauth2.Token, owner string, repoName string, webhookID int64) error {
+	client := m.clientWithToken(ctx, token)
 
-	_, err := client.Repositories.DeleteHook(ctx, serviceUser.Username, repoName, webhookID)
+	_, err := client.Repositories.DeleteHook(ctx, owner, repoName, webhookID)
 	return err
 }
 
@@ -183,8 +184,4 @@ func (m *GitHubManager) CreateStatus(ctx context.Context, token *oauth2.Token, o
 func (m *GitHubManager) clientWithToken(ctx context.Context, token *oauth2.Token) *github.Client {
 	client := m.oauth2Config.Client(ctx, token)
 	return github.NewClient(client)
-}
-
-func (m *GitHubManager) clientForServiceUser(ctx context.Context, serviceUser *models.ServiceUser) *github.Client {
-	return m.clientWithToken(ctx, serviceUser.Token())
 }

@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
@@ -37,15 +38,15 @@ func (s *GRPCServer) PipelineEnd(ctx context.Context, in *pb.PipelineEndRequest)
 }
 
 func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, t time.Time, start bool) error {
-	commitSHA, targetURL, repoName, repoOwner, srvName, token, err := s.s.GetInfoForPipelineStateChange(ctx, pipelineID)
+	info, err := s.s.GetPipelineStateChangeInfo(ctx, pipelineID)
 	if err != nil {
 		s.l.Error("store: cannot get info for pipeline state change", "err", err)
 		return err
 	}
 
-	srv, ok := s.services[srvName]
+	srv, ok := s.services[info.Service]
 	if !ok {
-		s.l.Error("service: service not found", "service", srvName)
+		s.l.Error("service: service not found", "service", info.Service)
 		return err
 	}
 
@@ -57,7 +58,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 	if !start {
 		statusState = service.StatusSuccess
 		statusName = srv.StatusName(statusState)
-		desc = "Pipeline finished successfully"
+		desc = fmt.Sprintf("Pipeline finished successfully in %s", t.Sub(*info.StartedAt).Round(time.Second))
 		startedAt = nil
 		finishedAt = &t
 	}
@@ -69,11 +70,11 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 
 	status := service.Status{
 		State:       statusState,
-		TargetURL:   targetURL,
+		TargetURL:   info.TargetURL,
 		Context:     ciserver.CIServer,
 		Description: desc,
 	}
-	err = srv.CreateStatus(ctx, token, repoOwner, repoName, commitSHA, status)
+	err = srv.CreateStatus(ctx, info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
 	if err != nil {
 		s.l.Error("service: cannot create status", "err", err)
 		return err

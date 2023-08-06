@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/FilipSolich/shark-ci/ci-server/models"
+	"github.com/FilipSolich/shark-ci/ci-server/types"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
@@ -360,36 +361,38 @@ func (s *PostgresStore) UpdatePipelineStatus(
 	return err
 }
 
-func (s *PostgresStore) GetInfoForPipelineStateChange(
+func (s *PostgresStore) GetPipelineStateChangeInfo(
 	ctx context.Context, pipelineID int64,
-) (string, string, string, string, string, *oauth2.Token, error) {
+) (*types.PipilineStateChangeInfo, error) {
+	info := &types.PipilineStateChangeInfo{Token: &oauth2.Token{}}
 	var (
-		commitSHA    string
-		targetURL    string
-		repoName     string
-		repoOwner    string
-		service      string
 		refreshToken sql.NullString
 		tokenExpire  sql.NullTime
-		token        oauth2.Token
+		startedAt    sql.NullTime
 	)
 	err := s.db.QueryRowContext(ctx, ``+
-		`SELECT p.commit_sha, p.target_url, r.name, r.owner, r.service, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
-		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id) JOIN public.service_user su ON r.service_user_id = su.id `+
+		`SELECT p.commit_sha, p.target_url, p.started_at, r.service, r.owner,`+
+		` r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
+		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id)`+
+		` JOIN public.service_user su ON r.service_user_id = su.id `+
 		`WHERE p.id = $1`,
 		pipelineID).
-		Scan(&commitSHA, &targetURL, &repoName, &repoOwner, &service, &token.AccessToken,
-			&refreshToken, &token.TokenType, &tokenExpire)
+		Scan(&info.CommitSHA, &info.TargetURL, &startedAt, &info.Service,
+			&info.RepoOwner, &info.RepoName, &info.Token.AccessToken,
+			&refreshToken, &info.Token.TokenType, &tokenExpire)
 	if err != nil {
-		return "", "", "", "", "", nil, err
+		return nil, err
 	}
 
 	if refreshToken.Valid {
-		token.RefreshToken = refreshToken.String
+		info.Token.RefreshToken = refreshToken.String
 	}
 	if tokenExpire.Valid {
-		token.Expiry = tokenExpire.Time
+		info.Token.Expiry = tokenExpire.Time
+	}
+	if startedAt.Valid {
+		info.StartedAt = &startedAt.Time
 	}
 
-	return commitSHA, targetURL, repoName, repoOwner, service, &token, nil
+	return info, nil
 }

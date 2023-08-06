@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/FilipSolich/shark-ci/ci-server/models"
+	"github.com/FilipSolich/shark-ci/ci-server/types"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
@@ -41,7 +42,7 @@ type Storer interface {
 	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error
 	UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error
 
-	GetInfoForPipelineStateChange(ctx context.Context, pipelineID int64) (string, string, string, string, string, *oauth2.Token, error)
+	GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64) (*types.PipilineStateChangeInfo, error)
 }
 
 func Cleaner(s Storer, d time.Duration) {

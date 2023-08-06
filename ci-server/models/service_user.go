@@ -6,6 +6,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// TODO: All nullable fields should be pointers.
+// TODO: Tokens shouldn't be serialized to JSON.
 type ServiceUser struct {
 	ID           int64     `json:"id"`
 	Service      string    `json:"service"`
