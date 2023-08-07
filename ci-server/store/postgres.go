@@ -40,11 +40,13 @@ func (s *PostgresStore) Close(_ context.Context) error {
 }
 
 func (s *PostgresStore) Clean(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, "DELETE FROM oauth2_state WHERE expire < NOW()")
+	_, err := s.db.ExecContext(ctx, `DELETE FROM public.oauth2_state WHERE expire < NOW()`)
 	return err
 }
 
-func (s *PostgresStore) GetAndDeleteOAuth2State(ctx context.Context, state uuid.UUID) (*models.OAuth2State, error) {
+func (s *PostgresStore) GetAndDeleteOAuth2State(
+	ctx context.Context, state uuid.UUID,
+) (*models.OAuth2State, error) {
 	oauth2State := &models.OAuth2State{
 		State: state,
 	}
@@ -61,14 +63,14 @@ func (s *PostgresStore) GetAndDeleteOAuth2State(ctx context.Context, state uuid.
 
 func (s *PostgresStore) CreateOAuth2State(ctx context.Context, state *models.OAuth2State) error {
 	_, err := s.db.ExecContext(ctx,
-		"INSERT INTO oauth2_state (state, expire) VALUES ($1, $2)",
+		`INSERT INTO public.oauth2_state (state, expire) VALUES ($1, $2)`,
 		state.State.String(), state.Expire)
 	return err
 }
 
-func (s *PostgresStore) GetUser(ctx context.Context, id int64) (*models.User, error) {
+func (s *PostgresStore) GetUser(ctx context.Context, userID int64) (*models.User, error) {
 	u := &models.User{}
-	err := s.db.QueryRowContext(ctx, `SELECT id, username, email FROM "user" WHERE id = $1`, id).
+	err := s.db.QueryRowContext(ctx, `SELECT id, username, email FROM public.user WHERE id = $1`, userID).
 		Scan(&u.ID, &u.Username, &u.Email)
 	if err != nil {
 		return nil, err
@@ -77,10 +79,10 @@ func (s *PostgresStore) GetUser(ctx context.Context, id int64) (*models.User, er
 	return u, nil
 }
 
-func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, error) {
+func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, int64, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer tx.Rollback()
 
@@ -89,28 +91,33 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 		Email:    serviceUser.Email,
 	}
 	var userID int64
-	err = tx.QueryRowContext(ctx, `INSERT INTO "user" (username, email) VALUES ($1, $2) RETURNING id`,
+	err = tx.QueryRowContext(ctx, ``+
+		`INSERT INTO public.user (username, email) VALUES ($1, $2) RETURNING id`,
 		user.Username, user.Email).Scan(&userID)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	serviceUser.UserID = userID
-	_, err = tx.ExecContext(ctx, ""+
-		"INSERT INTO service_user (service, username, email, access_token, refresh_token, token_type, token_expire, user_id) "+
-		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+
+	var serviceUserID int64
+	err = tx.QueryRowContext(ctx, ``+
+		`INSERT INTO public.service_user`+
+		` (service, username, email, access_token, refresh_token, token_type, token_expire, user_id) `+
+		`VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
 		serviceUser.Service, serviceUser.Username, serviceUser.Email, serviceUser.AccessToken,
-		serviceUser.RefreshToken, serviceUser.TokenType, serviceUser.TokenExpire, serviceUser.UserID)
+		serviceUser.RefreshToken, serviceUser.TokenType, serviceUser.TokenExpire, serviceUser.UserID).
+		Scan(&serviceUserID)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
-	return userID, nil
+	return userID, serviceUserID, nil
 }
 
 func (s *PostgresStore) GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*models.ServiceUser, error) {
@@ -366,7 +373,6 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(
 	var (
 		refreshToken sql.NullString
 		tokenExpire  sql.NullTime
-		startedAt    sql.NullTime
 	)
 	err := s.db.QueryRowContext(ctx, ``+
 		`SELECT p.commit_sha, p.url, p.started_at, r.service, r.owner,`+
@@ -375,7 +381,7 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(
 		` JOIN public.service_user su ON r.service_user_id = su.id `+
 		`WHERE p.id = $1`,
 		pipelineID).
-		Scan(&info.CommitSHA, &info.TargetURL, &startedAt, &info.Service,
+		Scan(&info.CommitSHA, &info.TargetURL, &info.StartedAt, &info.Service,
 			&info.RepoOwner, &info.RepoName, &info.Token.AccessToken,
 			&refreshToken, &info.Token.TokenType, &tokenExpire)
 	if err != nil {
@@ -387,9 +393,6 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(
 	}
 	if tokenExpire.Valid {
 		info.Token.Expiry = tokenExpire.Time
-	}
-	if startedAt.Valid {
-		info.StartedAt = &startedAt.Time
 	}
 
 	return info, nil

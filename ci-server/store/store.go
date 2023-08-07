@@ -21,8 +21,8 @@ type Storer interface {
 	GetAndDeleteOAuth2State(ctx context.Context, state uuid.UUID) (*models.OAuth2State, error)
 	CreateOAuth2State(ctx context.Context, state *models.OAuth2State) error
 
-	GetUser(ctx context.Context, id int64) (*models.User, error)
-	CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, error)
+	GetUser(ctx context.Context, userID int64) (*models.User, error)
+	CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, int64, error)
 
 	GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*models.ServiceUser, error)
 	GetServiceUserByRepo(ctx context.Context, repoID int64) (*models.ServiceUser, error)

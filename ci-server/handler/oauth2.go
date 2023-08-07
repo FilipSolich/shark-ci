@@ -73,7 +73,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	var uID int64
 	su, err := h.s.GetServiceUserByUniqueName(ctx, serviceUser.Service, serviceUser.Username)
 	if err != nil {
-		uID, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
+		uID, _, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
 		if err != nil {
 			h.l.Error("store: cannot create user and service user", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
