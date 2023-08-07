@@ -74,7 +74,7 @@ func (api *RepoAPI) RefreshRepos(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		repos, err := srv.GetUsersRepos(ctx, &serviceUser)
+		repos, err := srv.GetUsersRepos(ctx, serviceUser.Token(), serviceUser.ID)
 		if err != nil {
 			api.l.Error("service: cannot get user repositories from service", "err", err, "service", srv.Name())
 			continue

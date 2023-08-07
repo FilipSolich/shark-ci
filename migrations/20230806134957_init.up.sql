@@ -1,68 +1,71 @@
-CREATE TABLE "user" (
+CREATE TYPE service AS ENUM ('GitHub', 'GitLab');
+
+CREATE TABLE public.user (
     id bigserial PRIMARY KEY,
     username text NOT NULL,
     email text NOT NULL
 );
 
-CREATE TABLE "service_user" (
+CREATE TABLE public.service_user (
     id bigserial PRIMARY KEY,
-    service text NOT NULL,
+    service service NOT NULL,
     username text NOT NULL ,
     email text NOT NULL,
     access_token text NOT NULL ,
     refresh_token text,
-    token_type text,
+    token_type text NOT NULL,
     token_expire timestamp,
     user_id bigint,
     UNIQUE (service, username),
-    FOREIGN KEY (user_id) REFERENCES "user" (id)
+    FOREIGN KEY (user_id) REFERENCES public.user (id)
 );
 
-CREATE TABLE "oauth2_state" (
+CREATE TABLE public.oauth2_state (
     state uuid PRIMARY KEY,
     expire timestamp NOT NULL
 );
 
-CREATE TABLE "repo" (
+CREATE TABLE public.repo (
     id bigserial PRIMARY KEY,
-    name text NOT NULL,
+    service service NOT NULL,
     owner text NOT NULL,
-    service text NOT NULL,
+    name text NOT NULL,
     repo_service_id bigint NOT NULL,
     webhook_id bigint,
     service_user_id bigint,
     UNIQUE (service, repo_service_id),
-    UNIQUE (service, owner, webhook_id),
-    FOREIGN KEY (service_user_id) REFERENCES "service_user" (id)
+    UNIQUE (service, webhook_id),
+    UNIQUE (service, owner, name),
+    FOREIGN KEY (service_user_id) REFERENCES public.service_user (id)
 );
 
-CREATE TABLE "pipeline" (
+CREATE TABLE public.pipeline (
     id bigserial PRIMARY KEY,
-    commit_sha text NOT NULL,
-    clone_url text NOT NULL,
+    url text UNIQUE,
     status text NOT NULL,
-    target_url text,
+    clone_url text NOT NULL,
+    commit_sha text NOT NULL,
     started_at timestamp,
     finished_at timestamp,
     repo_id bigint,
-    FOREIGN KEY (repo_id) REFERENCES "repo" (id)
+    FOREIGN KEY (repo_id) REFERENCES public.repo (id)
 );
 
-CREATE TABLE "pipeline_log" (
+CREATE TABLE public.pipeline_log (
     id bigserial PRIMARY KEY,
+    cmd text NOT NULL,
+    return_code int,
     started_at timestamp,
     finished_at timestamp,
-    cmd text,
-    return_code int,
     pipeline_id bigint,
-    FOREIGN KEY (pipeline_id) REFERENCES "pipeline" (id)
+    FOREIGN KEY (pipeline_id) REFERENCES public.pipeline (id)
 );
 
-CREATE TABLE "pipeline_log_line" (
-    line bigint,
-    file text,
-    content text,
+CREATE TABLE public.pipeline_log_line (
+    line bigint NOT NULL,
+    file text NOT NULL,
+    content text NOT NULL,
     pipeline_log_id bigint,
     UNIQUE (pipeline_log_id, line),
-    FOREIGN KEY (pipeline_log_id) REFERENCES "pipeline_log" (id)
+    FOREIGN KEY (pipeline_log_id) REFERENCES public.pipeline_log (id)
 );

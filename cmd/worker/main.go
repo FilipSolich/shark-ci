@@ -20,39 +20,39 @@ func main() {
 
 	conf, err := config.NewConfigFromEnv()
 	if err != nil {
-		slog.Error("creating config failed", "err", err)
+		slog.Error("Creating config from environment failed.", "err", err)
 		os.Exit(1)
 	}
 	config.Conf = conf
 
 	compressedReposPath, err := worker.CreateTmpDir()
 	if err != nil {
-		slog.Error("creating tmp dir failed", "err", err)
+		slog.Error("Creating TMP dir failed.", "err", err)
 		os.Exit(1)
 	}
 
-	slog.Info("connecting to RabbitMQ")
+	slog.Info("Connecting to RabbitMQ.")
 	rabbitMQ, err := message_queue.NewRabbitMQ(conf.MQ.URI)
 	if err != nil {
-		slog.Error("mq: connecting to RabbitMQ failed", "err", err)
+		slog.Error("Connecting to RabbitMQ failed", "err", err)
 		os.Exit(1)
 	}
 	defer rabbitMQ.Close(context.TODO())
-	slog.Info("RabbitMQ connected")
+	slog.Info("RabbitMQ connected.")
 
-	slog.Info("creating gRPC client")
+	slog.Info("Creating gRPC client.")
 	conn, err := grpc.Dial(conf.CIServer.Host+":"+conf.CIServer.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		slog.Error("grpc: connecting to gRPC server failed", "err", err)
+		slog.Error("Connecting to gRPC server failed.", "addr", conf.CIServer.Host+":"+conf.CIServer.GRPCPort, "err", err)
 		os.Exit(1)
 	}
 	defer conn.Close()
 	gRPCClient := pb.NewPipelineReporterClient(conn)
-	slog.Info("gRPC client created")
+	slog.Info("gRPC client created.")
 
 	err = worker.Run(rabbitMQ, gRPCClient, compressedReposPath)
 	if err != nil {
-		slog.Error("worker: running worker failed", "err", err)
+		slog.Error("Running worker failed", "err", err)
 		os.Exit(1)
 	}
 

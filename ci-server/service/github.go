@@ -64,19 +64,23 @@ func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token)
 	}
 
 	serviceUser := &models.ServiceUser{
-		Username:     user.GetLogin(),
-		Email:        user.GetEmail(),
-		Service:      m.Name(),
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		TokenType:    token.TokenType,
-		TokenExpire:  token.Expiry,
+		Username:    user.GetLogin(),
+		Email:       user.GetEmail(),
+		Service:     m.Name(),
+		AccessToken: token.AccessToken,
+		TokenType:   token.TokenType,
+	}
+	if token.RefreshToken != "" {
+		serviceUser.RefreshToken = &token.RefreshToken
+	}
+	if !token.Expiry.IsZero() {
+		serviceUser.TokenExpire = &token.Expiry
 	}
 	return serviceUser, nil
 }
 
-func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *models.ServiceUser) ([]models.Repo, error) {
-	client := m.clientWithToken(ctx, serviceUser.Token())
+func (m *GitHubManager) GetUsersRepos(ctx context.Context, token *oauth2.Token, serviceUserID int64) ([]models.Repo, error) {
+	client := m.clientWithToken(ctx, token)
 
 	// TODO: Experimenting feature - get all repos, not just owned by user.
 	// TODO: Add pagination.
@@ -92,7 +96,7 @@ func (m *GitHubManager) GetUsersRepos(ctx context.Context, serviceUser *models.S
 			Name:          repo.GetName(),
 			Owner:         repo.GetOwner().GetLogin(),
 			Service:       m.Name(),
-			ServiceUserID: serviceUser.ID,
+			ServiceUserID: serviceUserID,
 		}
 		repos = append(repos, repo)
 	}

@@ -42,15 +42,10 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauth2State, err := h.s.GetOAuth2State(ctx, uuid_state)
+	oauth2State, err := h.s.GetAndDeleteOAuth2State(ctx, uuid_state)
 	if err != nil {
 		http.Error(w, "incorrect state", http.StatusBadRequest)
 		return
-	}
-
-	err = h.s.DeleteOAuth2State(ctx, oauth2State) // TODO: What to do if delete fails
-	if err != nil {
-		h.l.Warn("store: cannot delete OAuth2 state", "err", err)
 	}
 
 	if !oauth2State.IsValid() {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
-	"golang.org/x/oauth2"
 
 	ciserver "github.com/FilipSolich/shark-ci/ci-server"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
@@ -75,12 +74,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	work := types.Work{
 		Pipeline: *pipeline,
-		Token: oauth2.Token{
-			AccessToken:  serviceUser.AccessToken,
-			TokenType:    serviceUser.TokenType,
-			RefreshToken: serviceUser.RefreshToken,
-			Expiry:       serviceUser.TokenExpire,
-		},
+		Token:    *serviceUser.Token(),
 	}
 	err = h.mq.SendWork(ctx, work)
 	if err != nil {
@@ -98,7 +92,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	status := service.Status{
 		State:       service.StatusPending,
-		TargetURL:   pipeline.TargetURL,
+		TargetURL:   pipeline.URL,
 		Context:     ciserver.CIServer,
 		Description: "Pipeline is pending",
 	}

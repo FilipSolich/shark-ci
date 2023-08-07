@@ -44,11 +44,14 @@ func (s *PostgresStore) Clean(ctx context.Context) error {
 	return err
 }
 
-func (s *PostgresStore) GetOAuth2State(ctx context.Context, state uuid.UUID) (*models.OAuth2State, error) {
-	oauth2State := &models.OAuth2State{}
-	err := s.db.QueryRowContext(ctx, "SELECT state, expire FROM oauth2_state WHERE state = $1",
+func (s *PostgresStore) GetAndDeleteOAuth2State(ctx context.Context, state uuid.UUID) (*models.OAuth2State, error) {
+	oauth2State := &models.OAuth2State{
+		State: state,
+	}
+	err := s.db.QueryRowContext(ctx, ``+
+		`DELETE FROM public.oauth2_state WHERE state = $1 RETURNING expire`,
 		state.String()).
-		Scan(&oauth2State.State, &oauth2State.Expire)
+		Scan(&oauth2State.Expire)
 	if err != nil {
 		return nil, err
 	}
@@ -60,11 +63,6 @@ func (s *PostgresStore) CreateOAuth2State(ctx context.Context, state *models.OAu
 	_, err := s.db.ExecContext(ctx,
 		"INSERT INTO oauth2_state (state, expire) VALUES ($1, $2)",
 		state.State.String(), state.Expire)
-	return err
-}
-
-func (s *PostgresStore) DeleteOAuth2State(ctx context.Context, state *models.OAuth2State) error {
-	_, err := s.db.ExecContext(ctx, "DELETE FROM oauth2_state WHERE state = $1", state.State.String())
 	return err
 }
 
@@ -297,11 +295,11 @@ func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, web
 func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error) {
 	pipeline := &models.Pipeline{}
 	err := s.db.QueryRowContext(ctx, ""+
-		"SELECT id, commit_sha, clone_url, status, target_url, started_at, finished_at, repo_id "+
+		"SELECT id, commit_sha, clone_url, status, url, started_at, finished_at, repo_id "+
 		"FROM pipeline "+
 		"WHERE id = $1",
 		pipelineID).
-		Scan(&pipeline.ID, &pipeline.CommitSHA, &pipeline.CloneURL, &pipeline.Status, &pipeline.TargetURL, &pipeline.StartedAt, &pipeline.FinishedAt, &pipeline.RepoID)
+		Scan(&pipeline.ID, &pipeline.CommitSHA, &pipeline.CloneURL, &pipeline.Status, &pipeline.URL, &pipeline.StartedAt, &pipeline.FinishedAt, &pipeline.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -325,8 +323,8 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 		return err
 	}
 
-	pipeline.CreateTargetURL()
-	_, err = tx.ExecContext(ctx, "UPDATE pipeline SET target_url = $1 WHERE id = $2", pipeline.TargetURL, pipeline.ID)
+	pipeline.CreateURL()
+	_, err = tx.ExecContext(ctx, "UPDATE pipeline SET url = $1 WHERE id = $2", pipeline.URL, pipeline.ID)
 	if err != nil {
 		return err
 	}
@@ -371,7 +369,7 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(
 		startedAt    sql.NullTime
 	)
 	err := s.db.QueryRowContext(ctx, ``+
-		`SELECT p.commit_sha, p.target_url, p.started_at, r.service, r.owner,`+
+		`SELECT p.commit_sha, p.url, p.started_at, r.service, r.owner,`+
 		` r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
 		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id)`+
 		` JOIN public.service_user su ON r.service_user_id = su.id `+
