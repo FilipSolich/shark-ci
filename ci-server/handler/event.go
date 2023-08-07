@@ -58,7 +58,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.s.CreatePipeline(ctx, pipeline)
+	_, err = h.s.CreatePipeline(ctx, pipeline)
 	if err != nil {
 		h.l.Error("store: cannot create pipeline", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

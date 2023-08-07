@@ -179,7 +179,7 @@ func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64)
 	}
 	defer rows.Close()
 
-	var serviceUsers []models.ServiceUser
+	serviceUsers := []models.ServiceUser{}
 	for rows.Next() {
 		su := models.ServiceUser{}
 		err := rows.Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken,
@@ -255,7 +255,7 @@ func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]mod
 	}
 	defer rows.Close()
 
-	var repos []models.Repo
+	repos := []models.Repo{}
 	for rows.Next() {
 		repo := models.Repo{}
 		err := rows.Scan(&repo.ID, &repo.Service, &repo.RepoServiceID, &repo.Name, &repo.WebhookID, &repo.ServiceUserID)
@@ -273,18 +273,21 @@ func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]mod
 	return repos, nil
 }
 
+// TODO: Create with existing webhook including update if webhook was manualy deleted
 func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error {
-	query := "INSERT INTO repo (service, repo_service_id, name, service_user_id) VALUES"
+	query := `INSERT INTO repo (service, owner, name, repo_service_id, webhook_id, service_user_id) VALUES `
 	values := []any{}
 	for i, repo := range repos {
 		if i > 0 {
 			query += ","
 		}
 
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d) ", i*4+1, i*4+2, i*4+3, i*4+4)
-		values = append(values, repo.Service, repo.RepoServiceID, repo.Name, repo.ServiceUserID)
+		query += fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d) `, i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6)
+		values = append(values, repo.Service, repo.Owner, repo.Name, repo.RepoServiceID, repo.WebhookID, repo.ServiceUserID)
 	}
-	query += "ON CONFLICT (service, repo_service_id) DO UPDATE SET name = EXCLUDED.name"
+	query += `` +
+		`ON CONFLICT (service, repo_service_id) DO UPDATE ` +
+		`SET name = EXCLUDED.name, owner = EXCLUDED.owner, webhook_id = EXCLUDED.webhook_id`
 
 	_, err := s.db.ExecContext(ctx, query, values...)
 	if err != nil {
@@ -295,53 +298,56 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.
 }
 
 func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error {
-	_, err := s.db.ExecContext(ctx, "UPDATE repo SET webhook_id = $1 WHERE id = $2", webhookID, repoID)
+	_, err := s.db.ExecContext(ctx, `UPDATE repo SET webhook_id = $1 WHERE id = $2`,
+		webhookID, repoID)
 	return err
 }
 
-func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error) {
-	pipeline := &models.Pipeline{}
-	err := s.db.QueryRowContext(ctx, ""+
-		"SELECT id, commit_sha, clone_url, status, url, started_at, finished_at, repo_id "+
-		"FROM pipeline "+
-		"WHERE id = $1",
-		pipelineID).
-		Scan(&pipeline.ID, &pipeline.CommitSHA, &pipeline.CloneURL, &pipeline.Status, &pipeline.URL, &pipeline.StartedAt, &pipeline.FinishedAt, &pipeline.RepoID)
-	if err != nil {
-		return nil, err
-	}
+//func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error) {
+//	pipeline := &models.Pipeline{}
+//	err := s.db.QueryRowContext(ctx, ""+
+//		"SELECT id, commit_sha, clone_url, status, url, started_at, finished_at, repo_id "+
+//		"FROM pipeline "+
+//		"WHERE id = $1",
+//		pipelineID).
+//		Scan(&pipeline.ID, &pipeline.CommitSHA, &pipeline.CloneURL, &pipeline.Status, &pipeline.URL, &pipeline.StartedAt, &pipeline.FinishedAt, &pipeline.RepoID)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return pipeline, nil
+//}
 
-	return pipeline, nil
-}
-
-func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error {
+func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer tx.Rollback()
 
-	err = tx.QueryRowContext(ctx, ""+
-		"INSERT INTO pipeline (commit_sha, clone_url, status, repo_id) "+
-		"VALUES ($1, $2, $3, $4) "+
-		"RETURNING id",
-		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID).Scan(&pipeline.ID)
+	err = tx.QueryRowContext(ctx, ``+
+		`INSERT INTO pipeline (commit_sha, clone_url, status, repo_id) `+
+		`VALUES ($1, $2, $3, $4) `+
+		`RETURNING id`,
+		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID).
+		Scan(&pipeline.ID)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	pipeline.CreateURL()
-	_, err = tx.ExecContext(ctx, "UPDATE pipeline SET url = $1 WHERE id = $2", pipeline.URL, pipeline.ID)
+	_, err = tx.ExecContext(ctx, `UPDATE pipeline SET url = $1 WHERE id = $2`,
+		pipeline.URL, pipeline.ID)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return pipeline.ID, nil
 }
 
 func (s *PostgresStore) UpdatePipelineStatus(
@@ -375,13 +381,13 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(
 		tokenExpire  sql.NullTime
 	)
 	err := s.db.QueryRowContext(ctx, ``+
-		`SELECT p.commit_sha, p.url, p.started_at, r.service, r.owner,`+
+		`SELECT p.url, p.commit_sha, p.started_at, r.service, r.owner,`+
 		` r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
 		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id)`+
 		` JOIN public.service_user su ON r.service_user_id = su.id `+
 		`WHERE p.id = $1`,
 		pipelineID).
-		Scan(&info.CommitSHA, &info.TargetURL, &info.StartedAt, &info.Service,
+		Scan(&info.URL, &info.CommitSHA, &info.StartedAt, &info.Service,
 			&info.RepoOwner, &info.RepoName, &info.Token.AccessToken,
 			&refreshToken, &info.Token.TokenType, &tokenExpire)
 	if err != nil {

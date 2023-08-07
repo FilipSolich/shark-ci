@@ -70,7 +70,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 
 	status := service.Status{
 		State:       statusState,
-		TargetURL:   info.TargetURL,
+		TargetURL:   info.URL,
 		Context:     ciserver.CIServer,
 		Description: desc,
 	}

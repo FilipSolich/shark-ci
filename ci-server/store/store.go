@@ -24,6 +24,7 @@ type Storer interface {
 	GetUser(ctx context.Context, userID int64) (*models.User, error)
 	CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, int64, error)
 
+	// --
 	GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*models.ServiceUser, error)
 	GetServiceUserByRepo(ctx context.Context, repoID int64) (*models.ServiceUser, error)
 	GetServiceUserByUserAndService(ctx context.Context, userID int64, service string) (*models.ServiceUser, error)
@@ -36,9 +37,10 @@ type Storer interface {
 	GetReposByUser(ctx context.Context, userID int64) ([]models.Repo, error)
 	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
+	// --
 
-	GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
-	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) error
+	//GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
+	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
 	UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error
 
 	GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64) (*types.PipilineStateChangeInfo, error)

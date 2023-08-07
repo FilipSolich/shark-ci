@@ -8,7 +8,7 @@ import (
 
 type PipilineStateChangeInfo struct {
 	CommitSHA string
-	TargetURL string
+	URL       string
 	Service   string
 	RepoOwner string
 	RepoName  string
