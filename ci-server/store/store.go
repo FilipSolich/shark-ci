@@ -34,10 +34,11 @@ type Storer interface {
 	GetRepo(ctx context.Context, repoID int64) (*models.Repo, error)
 	GetRepoName(ctx context.Context, repoID int64) (string, error)
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
+	// --
 	GetReposByUser(ctx context.Context, userID int64) ([]models.Repo, error)
+	GetRepoWebhookChangeInfo(ctx context.Context, repoID int64) (*types.RepoWebhookChangeInfo, error)
 	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
-	// --
 
 	//GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
 	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
@@ -53,7 +54,7 @@ func Cleaner(s Storer, d time.Duration) {
 			<-ticker.C
 			err := s.Clean(context.TODO())
 			if err != nil {
-				slog.Error("store: databse cleanup failed", "err", err)
+				slog.Warn("store: databse cleanup failed", "err", err)
 			}
 		}
 	}()

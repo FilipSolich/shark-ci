@@ -74,7 +74,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 		Context:     ciserver.CIServer,
 		Description: desc,
 	}
-	err = srv.CreateStatus(ctx, info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
+	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
 	if err != nil {
 		s.l.Error("service: cannot create status", "err", err)
 		return err

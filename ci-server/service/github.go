@@ -84,7 +84,7 @@ func (m *GitHubManager) GetUsersRepos(ctx context.Context, token *oauth2.Token, 
 
 	// TODO: Experimenting feature - get all repos, not just owned by user.
 	// TODO: Add pagination.
-	r, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{ListOptions: github.ListOptions{PerPage: 30}})
+	r, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{ListOptions: github.ListOptions{PerPage: 50}})
 
 	repos := make([]models.Repo, 0, len(r))
 	for _, repo := range r {

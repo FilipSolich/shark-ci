@@ -12,6 +12,6 @@ type PipilineStateChangeInfo struct {
 	Service   string
 	RepoOwner string
 	RepoName  string
-	Token     *oauth2.Token
+	Token     oauth2.Token
 	StartedAt *time.Time
 }

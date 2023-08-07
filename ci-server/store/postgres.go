@@ -245,10 +245,10 @@ func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service st
 }
 
 func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]models.Repo, error) {
-	rows, err := s.db.QueryContext(ctx, ""+
-		"SELECT id, service, repo_service_id, name, webhook_id, service_user_id "+
-		"FROM repo "+
-		"WHERE service_user_id in (SELECT id FROM service_user WHERE user_id = $1)",
+	rows, err := s.db.QueryContext(ctx, ``+
+		`SELECT r.id, r.service, r.owner, r.name, r.repo_service_id, r.webhook_id, r.service_user_id `+
+		`FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id `+
+		`WHERE su.user_id = $1`,
 		userID)
 	if err != nil {
 		return nil, err
@@ -258,7 +258,8 @@ func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]mod
 	repos := []models.Repo{}
 	for rows.Next() {
 		repo := models.Repo{}
-		err := rows.Scan(&repo.ID, &repo.Service, &repo.RepoServiceID, &repo.Name, &repo.WebhookID, &repo.ServiceUserID)
+		err := rows.Scan(&repo.ID, &repo.Service, &repo.Owner, &repo.Name, &repo.RepoServiceID,
+			&repo.WebhookID, &repo.ServiceUserID)
 		if err != nil {
 			return repos, err
 		}
@@ -273,9 +274,38 @@ func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]mod
 	return repos, nil
 }
 
+func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int64,
+) (*types.RepoWebhookChangeInfo, error) {
+	var (
+		info         = types.RepoWebhookChangeInfo{RepoID: repoID}
+		refreshToken sql.NullString
+		expire       sql.NullTime
+	)
+	err := s.db.QueryRowContext(ctx, ``+
+		`SELECT r.service, r.owner, r.name, r.webhook_id,su.access_token,`+
+		` su.refresh_token, su.token_type, su.token_expire, su.user_id `+
+		`FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id `+
+		`WHERE r.id = $1`,
+		repoID).
+		Scan(&info.Service, &info.RepoOwner, &info.RepoName, &info.WebhookID, &info.Token.AccessToken,
+			&refreshToken, &info.Token.TokenType, &expire, &info.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if refreshToken.Valid {
+		info.Token.RefreshToken = refreshToken.String
+	}
+	if expire.Valid {
+		info.Token.Expiry = expire.Time
+	}
+
+	return &info, nil
+}
+
 // TODO: Create with existing webhook including update if webhook was manualy deleted
 func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error {
-	query := `INSERT INTO repo (service, owner, name, repo_service_id, webhook_id, service_user_id) VALUES `
+	query := `INSERT INTO public.repo (service, owner, name, repo_service_id, webhook_id, service_user_id) VALUES `
 	values := []any{}
 	for i, repo := range repos {
 		if i > 0 {
@@ -298,7 +328,7 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.
 }
 
 func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE repo SET webhook_id = $1 WHERE id = $2`,
+	_, err := s.db.ExecContext(ctx, `UPDATE public.repo SET webhook_id = $1 WHERE id = $2`,
 		webhookID, repoID)
 	return err
 }
@@ -326,7 +356,7 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 	defer tx.Rollback()
 
 	err = tx.QueryRowContext(ctx, ``+
-		`INSERT INTO pipeline (commit_sha, clone_url, status, repo_id) `+
+		`INSERT INTO public.pipeline (commit_sha, clone_url, status, repo_id) `+
 		`VALUES ($1, $2, $3, $4) `+
 		`RETURNING id`,
 		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID).
@@ -336,7 +366,7 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 	}
 
 	pipeline.CreateURL()
-	_, err = tx.ExecContext(ctx, `UPDATE pipeline SET url = $1 WHERE id = $2`,
+	_, err = tx.ExecContext(ctx, `UPDATE public.pipeline SET url = $1 WHERE id = $2`,
 		pipeline.URL, pipeline.ID)
 	if err != nil {
 		return 0, err
@@ -372,11 +402,10 @@ func (s *PostgresStore) UpdatePipelineStatus(
 	return err
 }
 
-func (s *PostgresStore) GetPipelineStateChangeInfo(
-	ctx context.Context, pipelineID int64,
+func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64,
 ) (*types.PipilineStateChangeInfo, error) {
-	info := &types.PipilineStateChangeInfo{Token: &oauth2.Token{}}
 	var (
+		info         types.PipilineStateChangeInfo
 		refreshToken sql.NullString
 		tokenExpire  sql.NullTime
 	)
@@ -401,5 +430,5 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(
 		info.Token.Expiry = tokenExpire.Time
 	}
 
-	return info, nil
+	return &info, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/FilipSolich/shark-ci/ci-server/models"
 	"github.com/FilipSolich/shark-ci/ci-server/service"
 	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/FilipSolich/shark-ci/ci-server/types"
 	"github.com/gorilla/mux"
 )
 
@@ -89,25 +90,27 @@ func (api *RepoAPI) RefreshRepos(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (api *RepoAPI) CreateWebhook(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	repo, serviceUser, srv, ok := api.repositoryInfo(ctx, w, r)
+	info, srv, ok := api.repoWebhookChangeInfo(ctx, w, r)
 	if !ok {
 		return
 	}
 
-	webhookID, err := srv.CreateWebhook(ctx, serviceUser.Token(), serviceUser.Username, repo.Name)
+	webhookID, err := srv.CreateWebhook(ctx, &info.Token, info.RepoOwner, info.RepoName)
 	if err != nil {
-		api.l.Error("service: cannot create webhook", "err", err, "repoID", repo.ID)
+		api.l.Error("service: cannot create webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = api.s.UpdateRepoWebhook(ctx, repo.ID, &webhookID)
+	err = api.s.UpdateRepoWebhook(ctx, info.RepoID, &webhookID)
 	if err != nil {
-		api.l.Error("store: cannot update repo webhook", "err", err, "repoID", repo.ID)
+		api.l.Error("store: cannot update repo webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -117,21 +120,26 @@ func (api *RepoAPI) CreateWebhook(w http.ResponseWriter, r *http.Request) {
 
 func (api *RepoAPI) DeleteWebhook(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	repo, serviceUser, srv, ok := api.repositoryInfo(ctx, w, r)
+	info, srv, ok := api.repoWebhookChangeInfo(ctx, w, r)
 	if !ok {
 		return
 	}
 
-	err := srv.DeleteWebhook(ctx, serviceUser.Token(), serviceUser.Username, repo.Name, *repo.WebhookID)
+	if info.WebhookID == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err := srv.DeleteWebhook(ctx, &info.Token, info.RepoOwner, info.RepoName, *info.WebhookID)
 	if err != nil {
-		api.l.Error("service: cannot delete webhook", "err", err, "repoID", repo.ID)
+		api.l.Error("service: cannot delete webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = api.s.UpdateRepoWebhook(ctx, repo.ID, nil)
+	err = api.s.UpdateRepoWebhook(ctx, info.RepoID, nil)
 	if err != nil {
-		api.l.Error("store: cannot update repo webhook", "err", err, "repoID", repo.ID)
+		api.l.Error("store: cannot update repo webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -139,10 +147,11 @@ func (api *RepoAPI) DeleteWebhook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (api *RepoAPI) repositoryInfo(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Repo, *models.ServiceUser, service.ServiceManager, bool) {
+func (api *RepoAPI) repoWebhookChangeInfo(ctx context.Context, w http.ResponseWriter, r *http.Request,
+) (*types.RepoWebhookChangeInfo, service.ServiceManager, bool) {
 	user, ok := middleware.UserFromContext(ctx, w)
 	if !ok {
-		return nil, nil, nil, false
+		return nil, nil, false
 	}
 
 	vars := mux.Vars(r)
@@ -150,29 +159,22 @@ func (api *RepoAPI) repositoryInfo(ctx context.Context, w http.ResponseWriter, r
 	repoID, err := strconv.ParseInt(repoIDstring, 10, 64)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		return nil, nil, nil, false
+		return nil, nil, false
 	}
 
-	repo, err := api.s.GetRepo(ctx, repoID)
-	if err != nil {
-		api.l.Warn("store: cannot get repo", "err", err, "repoID", repoID)
+	info, err := api.s.GetRepoWebhookChangeInfo(ctx, repoID)
+
+	if info.UserID != user.ID {
 		w.WriteHeader(http.StatusNotFound)
-		return nil, nil, nil, false
+		return nil, nil, false
 	}
 
-	srv, ok := api.services[repo.Service]
+	srv, ok := api.services[info.Service]
 	if !ok {
-		api.l.Error("service: unknown service", "service", repo.Service)
+		api.l.Error("service: unknown service", "service", info.Service)
 		w.WriteHeader(http.StatusInternalServerError)
-		return nil, nil, nil, false
+		return nil, nil, false
 	}
 
-	serviceUser, err := api.s.GetServiceUserByUserAndService(ctx, user.ID, repo.Service)
-	if err != nil {
-		api.l.Error("store: cannot get service user by user and service", "err", err, "user", user.ID, "service", repo.Service)
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, nil, nil, false
-	}
-
-	return repo, serviceUser, srv, true
+	return info, srv, true
 }
