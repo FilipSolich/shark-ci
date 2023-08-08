@@ -3,19 +3,16 @@ package config
 import (
 	"errors"
 
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/shared/env"
 )
 
 var Conf Config
 
 type CIServerConfig struct {
-	Host        string
-	Port        string
-	GRPCPort    string
-	SecretKey   string
-	WebhookURL  string
-	PipelineURL string
+	Host      string
+	Port      string
+	GRPCPort  string
+	SecretKey string
 }
 
 type DatabaseConfig struct {
@@ -68,9 +65,6 @@ func NewConfigFromEnv() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-
-	config.CIServer.WebhookURL = config.CIServer.Host + ciserver.EventPath
-	config.CIServer.PipelineURL = config.CIServer.Host + ciserver.PipelinePath
 
 	return config, err
 }

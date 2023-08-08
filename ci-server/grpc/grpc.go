@@ -7,7 +7,6 @@ import (
 
 	"log/slog"
 
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/ci-server/service"
 	"github.com/shark-ci/shark-ci/ci-server/store"
 	pb "github.com/shark-ci/shark-ci/shared/proto"
@@ -72,7 +71,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 	status := service.Status{
 		State:       statusState,
 		TargetURL:   info.URL,
-		Context:     ciserver.CIServer,
+		Context:     "Shark CI",
 		Description: desc,
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)

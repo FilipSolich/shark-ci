@@ -111,7 +111,7 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, token *oauth2.Token, 
 		Active: github.Bool(true),
 		Events: []string{"push", "pull_request"},
 		Config: map[string]any{
-			"url":          config.Conf.CIServer.WebhookURL + "/" + m.Name(),
+			"url":          config.Conf.CIServer.Host + "/event_handler/" + m.Name(),
 			"content_type": "json",
 			"secret":       config.Conf.CIServer.SecretKey,
 		},

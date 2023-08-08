@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/ci-server/api"
 	"github.com/shark-ci/shark-ci/ci-server/config"
 	ciserverGrpc "github.com/shark-ci/shark-ci/ci-server/grpc"
@@ -95,7 +94,7 @@ func main() {
 	r.Handle("/", middleware.AuthMiddleware(pgStore)(http.HandlerFunc(handler.IndexHandler)))
 	r.HandleFunc("/login", loginHandler.HandleLoginPage)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
-	r.HandleFunc(ciserver.EventPath+"/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
+	r.HandleFunc("/event_handler/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
 
 	// OAuth2 subrouter.
 	OAuth2 := r.PathPrefix("/oauth2").Subrouter()

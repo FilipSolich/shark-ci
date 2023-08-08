@@ -72,7 +72,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var uID int64
-	su, err := h.s.GetServiceUserByUniqueName(ctx, serviceUser.Service, serviceUser.Username)
+	serviceUserID, userID, err := h.s.GetServiceUserIDsByServiceUsername(ctx, serviceUser.Service, serviceUser.Username)
 	if err != nil {
 		uID, _, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
 		if err != nil {
@@ -81,8 +81,8 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		uID = su.UserID
-		err = h.s.UpdateServiceUserToken(ctx, serviceUser, token)
+		uID = userID
+		err = h.s.UpdateServiceUserToken(ctx, serviceUserID, token)
 		if err != nil {
 			h.l.Warn("store: cannot update user OAuth2 token", "err", err)
 			// TODO: Is old token still usable? Or should handler return here?

@@ -8,7 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/ci-server/service"
 	"github.com/shark-ci/shark-ci/ci-server/store"
 	"github.com/shark-ci/shark-ci/shared/message_queue"
@@ -66,7 +65,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serviceUser, err := h.s.GetServiceUserByRepo(ctx, pipeline.RepoID)
+	info, err := h.s.GetPipelineCreationInfoByRepo(ctx, pipeline.RepoID)
 	if err != nil {
 		h.l.Error("store: cannot get service user", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -75,7 +74,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	work := types.Work{
 		Pipeline: *pipeline,
-		Token:    *serviceUser.Token(),
+		Token:    info.Token,
 	}
 	err = h.mq.SendWork(ctx, work)
 	if err != nil {
@@ -84,20 +83,13 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoName, err := h.s.GetRepoName(ctx, pipeline.RepoID)
-	if err != nil {
-		h.l.Error("store: cannot get repo name", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	status := service.Status{
 		State:       service.StatusPending,
 		TargetURL:   pipeline.URL,
-		Context:     ciserver.CIServer,
+		Context:     "Shark CI",
 		Description: "Pipeline is pending",
 	}
-	err = srv.CreateStatus(ctx, serviceUser.Token(), serviceUser.Username, repoName, pipeline.CommitSHA, status)
+	err = srv.CreateStatus(ctx, &info.Token, info.Username, info.RepoName, pipeline.CommitSHA, status)
 	if err != nil {
 		h.l.Error("cannot create status", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

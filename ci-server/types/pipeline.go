@@ -6,7 +6,13 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type PipilineStateChangeInfo struct {
+type PipelineCreationInfo struct {
+	RepoName string
+	Username string
+	Token    oauth2.Token
+}
+
+type PipelineStateChangeInfo struct {
 	CommitSHA string
 	URL       string
 	Service   string

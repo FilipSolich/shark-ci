@@ -120,59 +120,27 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 	return userID, serviceUserID, nil
 }
 
-func (s *PostgresStore) GetServiceUserByUniqueName(ctx context.Context, service string, username string) (*models.ServiceUser, error) {
-	su := &models.ServiceUser{}
-	err := s.db.QueryRowContext(ctx, ""+
-		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id "+
-		"FROM service_user "+
-		"WHERE username = $1 AND service = $2",
+func (s *PostgresStore) GetServiceUserIDsByServiceUsername(ctx context.Context, service string, username string) (int64, int64, error) {
+	var serviceUserID int64
+	var userID int64
+	err := s.db.QueryRowContext(ctx, ``+
+		`SELECT id, user_id `+
+		`FROM public.service_user `+
+		`WHERE username = $1 AND service = $2`,
 		username, service).
-		Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken,
-			&su.RefreshToken, &su.TokenType, &su.TokenExpire, &su.UserID)
+		Scan(&serviceUserID, &userID)
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
 
-	return su, nil
-}
-
-func (s *PostgresStore) GetServiceUserByRepo(ctx context.Context, repoID int64) (*models.ServiceUser, error) {
-	su := &models.ServiceUser{}
-	err := s.db.QueryRowContext(ctx, ""+
-		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id "+
-		"FROM service_user "+
-		"WHERE id = (SELECT service_user_id FROM repo WHERE id = $1)",
-		repoID).
-		Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken, &su.RefreshToken,
-			&su.TokenType, &su.TokenExpire, &su.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	return su, nil
-}
-
-func (s *PostgresStore) GetServiceUserByUserAndService(ctx context.Context, userID int64, service string) (*models.ServiceUser, error) {
-	su := &models.ServiceUser{}
-	err := s.db.QueryRowContext(ctx, ""+
-		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id "+
-		"FROM service_user "+
-		"WHERE user_id = $1 AND service = $2",
-		userID, service).
-		Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken,
-			&su.RefreshToken, &su.TokenType, &su.TokenExpire, &su.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	return su, nil
+	return serviceUserID, userID, nil
 }
 
 func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) {
-	rows, err := s.db.QueryContext(ctx, ""+
-		"SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id "+
-		"FROM service_user "+
-		"WHERE user_id = $1",
+	rows, err := s.db.QueryContext(ctx, ``+
+		`SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id `+
+		`FROM public.service_user `+
+		`WHERE user_id = $1`,
 		userID)
 	if err != nil {
 		return nil, err
@@ -198,43 +166,18 @@ func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64)
 	return serviceUsers, nil
 }
 
-func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUser *models.ServiceUser, token *oauth2.Token) error {
-	_, err := s.db.ExecContext(ctx, ""+
-		"UPDATE service_user "+
-		"SET access_token = $1, refresh_token = $2, token_type = $3, token_expire = $4 "+
-		"WHERE id = $5",
-		token.AccessToken, token.RefreshToken, token.TokenType, token.Expiry, serviceUser.ID)
+func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUserID int64, token *oauth2.Token) error {
+	_, err := s.db.ExecContext(ctx, ``+
+		`UPDATE public.service_user `+
+		`SET access_token = $1, refresh_token = $2, token_type = $3, token_expire = $4 `+
+		`WHERE id = $5`,
+		token.AccessToken, token.RefreshToken, token.TokenType, token.Expiry, serviceUserID)
 	return err
-}
-
-func (s *PostgresStore) GetRepo(ctx context.Context, repoID int64) (*models.Repo, error) {
-	repo := &models.Repo{}
-	err := s.db.QueryRowContext(ctx, ""+
-		"SELECT id, service, repo_service_id, name, webhook_id, service_user_id "+
-		"FROM repo "+
-		"WHERE id = $1",
-		repoID).
-		Scan(&repo.ID, &repo.Service, &repo.RepoServiceID, &repo.Name, &repo.WebhookID, &repo.ServiceUserID)
-	if err != nil {
-		return nil, err
-	}
-
-	return repo, nil
-}
-
-func (s *PostgresStore) GetRepoName(ctx context.Context, repoID int64) (string, error) {
-	var repoName string
-	err := s.db.QueryRowContext(ctx, "SELECT name FROM repo WHERE id = $1", repoID).Scan(&repoName)
-	if err != nil {
-		return "", err
-	}
-
-	return repoName, nil
 }
 
 func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error) {
 	var repoID int64
-	err := s.db.QueryRowContext(ctx, "SELECT id FROM repo WHERE service = $1 AND repo_service_id = $2",
+	err := s.db.QueryRowContext(ctx, `SELECT id FROM public.repo WHERE service = $1 AND repo_service_id = $2`,
 		service, serviceRepoID).
 		Scan(&repoID)
 	if err != nil {
@@ -348,6 +291,32 @@ func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, web
 //	return pipeline, nil
 //}
 
+func (s *PostgresStore) GetPipelineCreationInfoByRepo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error) {
+	var (
+		info         types.PipelineCreationInfo
+		refreshToken sql.NullString
+		tokenExpire  sql.NullTime
+	)
+	err := s.db.QueryRowContext(ctx, ``+
+		`SELECT su.username, su.access_token, su.refresh_token, su.token_type, su.token_expire, r.name `+
+		`FROM public.service_user su JOIN repo r ON su.id = r.service_user_id `+
+		`WHERE r.id = $1`,
+		repoID).
+		Scan(&info.Username, &info.Token.AccessToken, &refreshToken, &info.Token.TokenType, &tokenExpire)
+	if err != nil {
+		return nil, err
+	}
+
+	if refreshToken.Valid {
+		info.Token.RefreshToken = refreshToken.String
+	}
+	if tokenExpire.Valid {
+		info.Token.Expiry = tokenExpire.Time
+	}
+
+	return &info, nil
+}
+
 func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -403,9 +372,9 @@ func (s *PostgresStore) UpdatePipelineStatus(
 }
 
 func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64,
-) (*types.PipilineStateChangeInfo, error) {
+) (*types.PipelineStateChangeInfo, error) {
 	var (
-		info         types.PipilineStateChangeInfo
+		info         types.PipelineStateChangeInfo
 		refreshToken sql.NullString
 		tokenExpire  sql.NullTime
 	)
