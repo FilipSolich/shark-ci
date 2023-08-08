@@ -8,12 +8,12 @@ RUN go mod download
 
 COPY ./ ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/ci-server github.com/FilipSolich/shark-ci/cmd/ci-server
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/ci-server github.com/shark-ci/shark-ci/cmd/ci-server
 
 
 FROM alpine:latest
 
-LABEL org.opencontainers.image.source=https://github.com/filipsolich/shark-ci
+LABEL org.opencontainers.image.source=https://github.com/shark-ci/shark-ci
 
 WORKDIR /
 

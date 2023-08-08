@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/FilipSolich/shark-ci/shared/proto";
+option go_package = "github.com/shark-ci/shark-ci/shared/proto";
 
 
 service PipelineReporter{

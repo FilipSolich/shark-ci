@@ -3,7 +3,7 @@ package config
 import (
 	"runtime"
 
-	"github.com/FilipSolich/shark-ci/shared/env"
+	"github.com/shark-ci/shark-ci/shared/env"
 )
 
 var Conf Config

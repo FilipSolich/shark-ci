@@ -8,9 +8,9 @@ import (
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
-	"github.com/FilipSolich/shark-ci/ci-server/config"
-	"github.com/FilipSolich/shark-ci/ci-server/models"
-	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/ci-server/config"
+	"github.com/shark-ci/shark-ci/ci-server/models"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 )
 
 type GitHubManager struct {

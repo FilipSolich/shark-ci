@@ -3,7 +3,7 @@ package message_queue
 import (
 	"context"
 
-	"github.com/FilipSolich/shark-ci/shared/types"
+	"github.com/shark-ci/shark-ci/shared/types"
 )
 
 type MessageQueuer interface {

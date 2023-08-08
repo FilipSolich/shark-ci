@@ -19,10 +19,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v3"
 
-	"github.com/FilipSolich/shark-ci/shared/message_queue"
-	pb "github.com/FilipSolich/shark-ci/shared/proto"
-	"github.com/FilipSolich/shark-ci/shared/types"
-	"github.com/FilipSolich/shark-ci/worker/config"
+	"github.com/shark-ci/shark-ci/shared/message_queue"
+	pb "github.com/shark-ci/shark-ci/shared/proto"
+	"github.com/shark-ci/shark-ci/shared/types"
+	"github.com/shark-ci/shark-ci/worker/config"
 )
 
 func Run(mq message_queue.MessageQueuer, gRPCCLient pb.PipelineReporterClient, compressedReposPath string) error {

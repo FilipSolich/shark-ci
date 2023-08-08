@@ -3,10 +3,10 @@ package handler
 import (
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/service"
-	"github.com/FilipSolich/shark-ci/ci-server/session"
-	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/google/uuid"
+	"github.com/shark-ci/shark-ci/ci-server/service"
+	"github.com/shark-ci/shark-ci/ci-server/session"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 	"golang.org/x/exp/slog"
 )
 

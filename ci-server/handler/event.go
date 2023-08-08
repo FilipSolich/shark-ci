@@ -7,11 +7,11 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
 
-	ciserver "github.com/FilipSolich/shark-ci/ci-server"
-	"github.com/FilipSolich/shark-ci/ci-server/service"
-	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/shared/message_queue"
-	"github.com/FilipSolich/shark-ci/shared/types"
+	ciserver "github.com/shark-ci/shark-ci/ci-server"
+	"github.com/shark-ci/shark-ci/ci-server/service"
+	"github.com/shark-ci/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/shared/message_queue"
+	"github.com/shark-ci/shark-ci/shared/types"
 )
 
 type EventHandler struct {

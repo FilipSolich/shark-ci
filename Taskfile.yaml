@@ -1,9 +1,9 @@
 version: '3'
 
 vars:
-  MODULE: github.com/FilipSolich/shark-ci
-  CI_SERVER_IMAGE: filipsolich/ci-server
-  WORKER_IMAGE: filipsolich/worker
+  MODULE: github.com/shark-ci/shark-ci
+  CI_SERVER_IMAGE: shark-ci/ci-server
+  WORKER_IMAGE: shark-ci/worker
   DOCKER_REGISTRY: ghci.io
 
 dotenv: ['.env']

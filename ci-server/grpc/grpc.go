@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	ciserver "github.com/FilipSolich/shark-ci/ci-server"
-	"github.com/FilipSolich/shark-ci/ci-server/service"
-	"github.com/FilipSolich/shark-ci/ci-server/store"
-	pb "github.com/FilipSolich/shark-ci/shared/proto"
+	ciserver "github.com/shark-ci/shark-ci/ci-server"
+	"github.com/shark-ci/shark-ci/ci-server/service"
+	"github.com/shark-ci/shark-ci/ci-server/store"
+	pb "github.com/shark-ci/shark-ci/shared/proto"
 	"golang.org/x/exp/slog"
 )
 

@@ -3,9 +3,9 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/session"
-	"github.com/FilipSolich/shark-ci/ci-server/store"
 	"github.com/gorilla/mux"
+	"github.com/shark-ci/shark-ci/ci-server/session"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 )
 
 func AuthMiddleware(s store.Storer) mux.MiddlewareFunc {

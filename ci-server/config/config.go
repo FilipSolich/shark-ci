@@ -3,8 +3,8 @@ package config
 import (
 	"errors"
 
-	ciserver "github.com/FilipSolich/shark-ci/ci-server"
-	"github.com/FilipSolich/shark-ci/shared/env"
+	ciserver "github.com/shark-ci/shark-ci/ci-server"
+	"github.com/shark-ci/shark-ci/shared/env"
 )
 
 var Conf Config

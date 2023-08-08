@@ -8,12 +8,12 @@ import (
 
 	"golang.org/x/exp/slog"
 
-	"github.com/FilipSolich/shark-ci/ci-server/middleware"
-	"github.com/FilipSolich/shark-ci/ci-server/models"
-	"github.com/FilipSolich/shark-ci/ci-server/service"
-	"github.com/FilipSolich/shark-ci/ci-server/store"
-	"github.com/FilipSolich/shark-ci/ci-server/types"
 	"github.com/gorilla/mux"
+	"github.com/shark-ci/shark-ci/ci-server/middleware"
+	"github.com/shark-ci/shark-ci/ci-server/models"
+	"github.com/shark-ci/shark-ci/ci-server/service"
+	"github.com/shark-ci/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/ci-server/types"
 )
 
 type RepoAPI struct {

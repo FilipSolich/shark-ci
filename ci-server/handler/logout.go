@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/session"
+	"github.com/shark-ci/shark-ci/ci-server/session"
 )
 
 // TODO: Move under login handler with register.

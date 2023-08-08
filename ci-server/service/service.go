@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/FilipSolich/shark-ci/ci-server/config"
-	"github.com/FilipSolich/shark-ci/ci-server/models"
-	"github.com/FilipSolich/shark-ci/ci-server/store"
+	"github.com/shark-ci/shark-ci/ci-server/config"
+	"github.com/shark-ci/shark-ci/ci-server/models"
+	"github.com/shark-ci/shark-ci/ci-server/store"
 	"golang.org/x/oauth2"
 )
 

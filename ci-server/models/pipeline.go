@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/FilipSolich/shark-ci/ci-server/config"
+	"github.com/shark-ci/shark-ci/ci-server/config"
 )
 
 type Pipeline struct {

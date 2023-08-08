@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/FilipSolich/shark-ci/ci-server/models"
+	"github.com/shark-ci/shark-ci/ci-server/models"
 	"golang.org/x/oauth2"
 )
 

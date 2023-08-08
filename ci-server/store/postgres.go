@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/FilipSolich/shark-ci/ci-server/models"
-	"github.com/FilipSolich/shark-ci/ci-server/types"
 	"github.com/google/uuid"
+	"github.com/shark-ci/shark-ci/ci-server/models"
+	"github.com/shark-ci/shark-ci/ci-server/types"
 	"golang.org/x/oauth2"
 
 	_ "github.com/jackc/pgx/v5/stdlib"

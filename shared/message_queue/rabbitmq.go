@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/FilipSolich/shark-ci/shared/types"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/shark-ci/shark-ci/shared/types"
 	"golang.org/x/exp/slog"
 )
 
