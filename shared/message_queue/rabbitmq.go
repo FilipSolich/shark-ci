@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
+	"log/slog"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/shark-ci/shark-ci/shared/types"
-	"golang.org/x/exp/slog"
 )
 
 type RabbitMQ struct {

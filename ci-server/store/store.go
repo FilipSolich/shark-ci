@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
+	"log/slog"
+
 	"github.com/google/uuid"
 	"github.com/shark-ci/shark-ci/ci-server/models"
 	"github.com/shark-ci/shark-ci/ci-server/types"
-	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 )
 

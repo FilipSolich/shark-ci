@@ -4,8 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"log/slog"
+
 	"github.com/gorilla/mux"
-	"golang.org/x/exp/slog"
 
 	ciserver "github.com/shark-ci/shark-ci/ci-server"
 	"github.com/shark-ci/shark-ci/ci-server/service"

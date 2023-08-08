@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
+	"log/slog"
+
 	"github.com/google/uuid"
-	"golang.org/x/exp/slog"
 	"golang.org/x/oauth2"
 
 	"github.com/shark-ci/shark-ci/ci-server/models"

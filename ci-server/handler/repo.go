@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 
 	"github.com/shark-ci/shark-ci/ci-server/models"
 	"github.com/shark-ci/shark-ci/ci-server/service"

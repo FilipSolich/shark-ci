@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 
 	"github.com/gorilla/mux"
 	"github.com/shark-ci/shark-ci/ci-server/middleware"

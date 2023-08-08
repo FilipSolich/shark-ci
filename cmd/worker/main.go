@@ -5,11 +5,12 @@ import (
 	"os"
 	"os/signal"
 
+	"log/slog"
+
 	"github.com/shark-ci/shark-ci/shared/message_queue"
 	pb "github.com/shark-ci/shark-ci/shared/proto"
 	"github.com/shark-ci/shark-ci/worker"
 	"github.com/shark-ci/shark-ci/worker/config"
-	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

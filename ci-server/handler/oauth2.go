@@ -3,11 +3,12 @@ package handler
 import (
 	"net/http"
 
+	"log/slog"
+
 	"github.com/google/uuid"
 	"github.com/shark-ci/shark-ci/ci-server/service"
 	"github.com/shark-ci/shark-ci/ci-server/session"
 	"github.com/shark-ci/shark-ci/ci-server/store"
-	"golang.org/x/exp/slog"
 )
 
 type OAuth2Handler struct {

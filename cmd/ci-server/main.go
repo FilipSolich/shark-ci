@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
-	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 
 	ciserver "github.com/shark-ci/shark-ci/ci-server"
