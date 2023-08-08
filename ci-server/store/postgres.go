@@ -325,10 +325,10 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 	defer tx.Rollback()
 
 	err = tx.QueryRowContext(ctx, ``+
-		`INSERT INTO public.pipeline (commit_sha, clone_url, status, repo_id) `+
+		`INSERT INTO public.pipeline (status, context, clone_url, commit_sha, repo_id) `+
 		`VALUES ($1, $2, $3, $4) `+
 		`RETURNING id`,
-		pipeline.CommitSHA, pipeline.CloneURL, pipeline.Status, pipeline.RepoID).
+		pipeline.Status, pipeline.Context, pipeline.CloneURL, pipeline.CommitSHA, pipeline.RepoID).
 		Scan(&pipeline.ID)
 	if err != nil {
 		return 0, err
@@ -379,13 +379,13 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipeline
 		tokenExpire  sql.NullTime
 	)
 	err := s.db.QueryRowContext(ctx, ``+
-		`SELECT p.url, p.commit_sha, p.started_at, r.service, r.owner,`+
+		`SELECT p.url, p.commit_sha, p.context, p.started_at, r.service, r.owner,`+
 		` r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
 		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id)`+
 		` JOIN public.service_user su ON r.service_user_id = su.id `+
 		`WHERE p.id = $1`,
 		pipelineID).
-		Scan(&info.URL, &info.CommitSHA, &info.StartedAt, &info.Service,
+		Scan(&info.URL, &info.CommitSHA, &info.Context, &info.StartedAt, &info.Service,
 			&info.RepoOwner, &info.RepoName, &info.Token.AccessToken,
 			&refreshToken, &info.Token.TokenType, &tokenExpire)
 	if err != nil {

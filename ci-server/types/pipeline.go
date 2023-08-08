@@ -15,6 +15,7 @@ type PipelineCreationInfo struct {
 type PipelineStateChangeInfo struct {
 	CommitSHA string
 	URL       string
+	Context   string
 	Service   string
 	RepoOwner string
 	RepoName  string

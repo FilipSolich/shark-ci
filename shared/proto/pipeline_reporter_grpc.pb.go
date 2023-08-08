@@ -22,8 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PipelineReporterClient interface {
-	PipelineStart(ctx context.Context, in *PipelineStartRequest, opts ...grpc.CallOption) (*Void, error)
-	PipelineEnd(ctx context.Context, in *PipelineEndRequest, opts ...grpc.CallOption) (*Void, error)
+	PipelineStart(ctx context.Context, in *PipelineStartRequest, opts ...grpc.CallOption) (*Empty, error)
+	PipelineFinnishedSuccessfuly(ctx context.Context, in *PipelineEndRequest, opts ...grpc.CallOption) (*Empty, error)
+	PipelineFailed(ctx context.Context, in *PipelineEndRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type pipelineReporterClient struct {
@@ -34,8 +35,8 @@ func NewPipelineReporterClient(cc grpc.ClientConnInterface) PipelineReporterClie
 	return &pipelineReporterClient{cc}
 }
 
-func (c *pipelineReporterClient) PipelineStart(ctx context.Context, in *PipelineStartRequest, opts ...grpc.CallOption) (*Void, error) {
-	out := new(Void)
+func (c *pipelineReporterClient) PipelineStart(ctx context.Context, in *PipelineStartRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/PipelineReporter/PipelineStart", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -43,9 +44,18 @@ func (c *pipelineReporterClient) PipelineStart(ctx context.Context, in *Pipeline
 	return out, nil
 }
 
-func (c *pipelineReporterClient) PipelineEnd(ctx context.Context, in *PipelineEndRequest, opts ...grpc.CallOption) (*Void, error) {
-	out := new(Void)
-	err := c.cc.Invoke(ctx, "/PipelineReporter/PipelineEnd", in, out, opts...)
+func (c *pipelineReporterClient) PipelineFinnishedSuccessfuly(ctx context.Context, in *PipelineEndRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/PipelineReporter/PipelineFinnishedSuccessfuly", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pipelineReporterClient) PipelineFailed(ctx context.Context, in *PipelineEndRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/PipelineReporter/PipelineFailed", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +66,9 @@ func (c *pipelineReporterClient) PipelineEnd(ctx context.Context, in *PipelineEn
 // All implementations must embed UnimplementedPipelineReporterServer
 // for forward compatibility
 type PipelineReporterServer interface {
-	PipelineStart(context.Context, *PipelineStartRequest) (*Void, error)
-	PipelineEnd(context.Context, *PipelineEndRequest) (*Void, error)
+	PipelineStart(context.Context, *PipelineStartRequest) (*Empty, error)
+	PipelineFinnishedSuccessfuly(context.Context, *PipelineEndRequest) (*Empty, error)
+	PipelineFailed(context.Context, *PipelineEndRequest) (*Empty, error)
 	mustEmbedUnimplementedPipelineReporterServer()
 }
 
@@ -65,11 +76,14 @@ type PipelineReporterServer interface {
 type UnimplementedPipelineReporterServer struct {
 }
 
-func (UnimplementedPipelineReporterServer) PipelineStart(context.Context, *PipelineStartRequest) (*Void, error) {
+func (UnimplementedPipelineReporterServer) PipelineStart(context.Context, *PipelineStartRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PipelineStart not implemented")
 }
-func (UnimplementedPipelineReporterServer) PipelineEnd(context.Context, *PipelineEndRequest) (*Void, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PipelineEnd not implemented")
+func (UnimplementedPipelineReporterServer) PipelineFinnishedSuccessfuly(context.Context, *PipelineEndRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PipelineFinnishedSuccessfuly not implemented")
+}
+func (UnimplementedPipelineReporterServer) PipelineFailed(context.Context, *PipelineEndRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PipelineFailed not implemented")
 }
 func (UnimplementedPipelineReporterServer) mustEmbedUnimplementedPipelineReporterServer() {}
 
@@ -102,20 +116,38 @@ func _PipelineReporter_PipelineStart_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PipelineReporter_PipelineEnd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _PipelineReporter_PipelineFinnishedSuccessfuly_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PipelineEndRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PipelineReporterServer).PipelineEnd(ctx, in)
+		return srv.(PipelineReporterServer).PipelineFinnishedSuccessfuly(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/PipelineReporter/PipelineEnd",
+		FullMethod: "/PipelineReporter/PipelineFinnishedSuccessfuly",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PipelineReporterServer).PipelineEnd(ctx, req.(*PipelineEndRequest))
+		return srv.(PipelineReporterServer).PipelineFinnishedSuccessfuly(ctx, req.(*PipelineEndRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PipelineReporter_PipelineFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PipelineEndRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PipelineReporterServer).PipelineFailed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/PipelineReporter/PipelineFailed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PipelineReporterServer).PipelineFailed(ctx, req.(*PipelineEndRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -132,8 +164,12 @@ var PipelineReporter_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PipelineReporter_PipelineStart_Handler,
 		},
 		{
-			MethodName: "PipelineEnd",
-			Handler:    _PipelineReporter_PipelineEnd_Handler,
+			MethodName: "PipelineFinnishedSuccessfuly",
+			Handler:    _PipelineReporter_PipelineFinnishedSuccessfuly_Handler,
+		},
+		{
+			MethodName: "PipelineFailed",
+			Handler:    _PipelineReporter_PipelineFailed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

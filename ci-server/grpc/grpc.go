@@ -27,14 +27,20 @@ func NewGRPCServer(l *slog.Logger, s store.Storer, services service.Services) *G
 	}
 }
 
-func (s *GRPCServer) PipelineStart(ctx context.Context, in *pb.PipelineStartRequest) (*pb.Void, error) {
+func (s *GRPCServer) PipelineStart(ctx context.Context, in *pb.PipelineStartRequest) (*pb.Empty, error) {
 	err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetStartedAt().AsTime(), true)
-	return &pb.Void{}, err
+	return &pb.Empty{}, err
 }
 
-func (s *GRPCServer) PipelineEnd(ctx context.Context, in *pb.PipelineEndRequest) (*pb.Void, error) {
+func (s *GRPCServer) PipelineFinnishedSuccessfuly(ctx context.Context, in *pb.PipelineEndRequest) (*pb.Empty, error) {
 	err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetFinishedAt().AsTime(), false)
-	return &pb.Void{}, err
+	return &pb.Empty{}, err
+}
+
+func (s *GRPCServer) PipelineFailed(ctx context.Context, in *pb.PipelineEndRequest) (*pb.Empty, error) {
+	// TODO: Implement.
+	err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetFinishedAt().AsTime(), false)
+	return &pb.Empty{}, err
 }
 
 func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, t time.Time, start bool) error {
@@ -71,7 +77,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 	status := service.Status{
 		State:       statusState,
 		TargetURL:   info.URL,
-		Context:     "Shark CI",
+		Context:     info.Context,
 		Description: desc,
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)

@@ -33,41 +33,52 @@ func Run(mq message_queue.MessageQueuer, gRPCCLient pb.PipelineReporterClient, c
 	}
 
 	for i := 0; i < config.Conf.Worker.MaxWorkers; i++ {
-		go func() {
-			for work := range workCh {
-				tStart := time.Now()
-				work.Pipeline.StartedAt = &tStart
-				slog.Info("start processing pipeline", "PipelineID", work.Pipeline.ID)
-				_, err = gRPCCLient.PipelineStart(context.TODO(), &pb.PipelineStartRequest{
-					PipelineId: work.Pipeline.ID,
-					StartedAt:  timestamppb.New(*work.Pipeline.StartedAt),
-				})
-				if err != nil {
-					slog.Warn("sending pipeline start message failed", "PipelineID", work.Pipeline.ID, "err", err)
-				}
-
-				//err := processWork(context.TODO(), work, config.Conf.Worker.ReposPath, compressedReposPath)
-				//if err != nil {
-				//	// Send error message.
-				//	slog.Info("processing pipeline failed", "PipelineID", work.Pipeline.ID, "err", err)
-				//	continue
-				//}
-
-				tEnd := time.Now()
-				work.Pipeline.FinishedAt = &tEnd
-				slog.Info("finished processing pipeline successfully", "PipelineID", work.Pipeline.ID)
-				_, err = gRPCCLient.PipelineEnd(context.TODO(), &pb.PipelineEndRequest{
-					PipelineId: work.Pipeline.ID,
-					FinishedAt: timestamppb.New(*work.Pipeline.FinishedAt),
-				})
-				if err != nil {
-					slog.Warn("sending pipeline end message failed", "PipelineID", work.Pipeline.ID, "err", err)
-				}
-			}
-		}()
+		go runWorker(workCh, gRPCCLient, compressedReposPath)
 	}
 
 	return nil
+}
+
+func runWorker(workCh chan types.Work, gRPCCLient pb.PipelineReporterClient, compressedReposPath string) {
+	for work := range workCh {
+		logger := slog.With("PipelineID", work.Pipeline.ID)
+
+		tStart := time.Now()
+		work.Pipeline.StartedAt = &tStart
+		logger.Info("Start processing pipeline.")
+		_, err := gRPCCLient.PipelineStart(context.TODO(), &pb.PipelineStartRequest{
+			PipelineId: work.Pipeline.ID,
+			StartedAt:  timestamppb.New(*work.Pipeline.StartedAt),
+		})
+		if err != nil {
+			logger.Warn("Sending pipeline start message failed.", "err", err)
+		}
+
+		err = processWork(context.TODO(), work, config.Conf.Worker.ReposPath, compressedReposPath)
+		tEnd := time.Now()
+		work.Pipeline.FinishedAt = &tEnd
+		if err != nil {
+			_, err = gRPCCLient.PipelineFailed(context.TODO(), &pb.PipelineEndRequest{
+				PipelineId: work.Pipeline.ID,
+				FinishedAt: timestamppb.New(*work.Pipeline.FinishedAt),
+				Error:      err.Error(),
+			})
+			if err != nil {
+				slog.Warn("Sending pipeline end message failed.", "time", tEnd.Sub(tStart), "err", err)
+			}
+			logger.Info("Processing pipeline failed.", "err", err)
+			continue
+		}
+
+		logger.Info("Finished processing pipeline successfully.", "time", tEnd.Sub(tStart))
+		_, err = gRPCCLient.PipelineFinnishedSuccessfuly(context.TODO(), &pb.PipelineEndRequest{
+			PipelineId: work.Pipeline.ID,
+			FinishedAt: timestamppb.New(*work.Pipeline.FinishedAt),
+		})
+		if err != nil {
+			logger.Warn("Sending pipeline end message failed.", "err", err)
+		}
+	}
 }
 
 func processWork(ctx context.Context, work types.Work, reposPath string, compressedReposPath string) error {

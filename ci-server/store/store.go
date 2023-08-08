@@ -26,7 +26,7 @@ type Storer interface {
 	CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, int64, error)
 
 	GetServiceUserIDsByServiceUsername(ctx context.Context, service string, username string) (int64, int64, error)
-	GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) // TODO: Maybe simplify
+	GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) // TODO: Maybe simplify?
 	UpdateServiceUserToken(ctx context.Context, serviceUserID int64, token *oauth2.Token) error
 
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)

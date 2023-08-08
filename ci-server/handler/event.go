@@ -86,7 +86,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	status := service.Status{
 		State:       service.StatusPending,
 		TargetURL:   pipeline.URL,
-		Context:     "Shark CI",
+		Context:     pipeline.Context, // TODO: Get context from somewhere
 		Description: "Pipeline is pending",
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.Username, info.RepoName, pipeline.CommitSHA, status)
