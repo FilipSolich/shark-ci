@@ -4,7 +4,7 @@ vars:
   MODULE: github.com/shark-ci/shark-ci
   CI_SERVER_IMAGE: shark-ci/ci-server
   WORKER_IMAGE: shark-ci/worker
-  DOCKER_REGISTRY: ghci.io
+  DOCKER_REGISTRY: ghcr.io
 
 dotenv: ['.env']
 
@@ -100,9 +100,9 @@ tasks:
   docker:build:
     desc: Build docker images
     aliases: ["d:b"]
-    cmds:
-      - task: docker:build:ci-server
-      - task: docker:build:worker
+    deps:
+      - docker:build:ci-server
+      - docker:build:worker
 
   docker:build:ci-server:
     desc: Build CI server docker image
@@ -115,6 +115,60 @@ tasks:
     aliases: ["d:b:worker"]
     cmds:
       - docker build --pull -f Dockerfile.worker -t {{.WORKER_IMAGE}} .
+
+  docker:tag:
+    desc: Tag images
+    vars:
+      TAG: '{{default "latest" .TAG}}'
+    cmds:
+      - task: docker:tag:ci-server
+        vars:
+          TAG: "{{.TAG}}"
+      - task: docker:tag:worker
+        vars:
+          TAG: "{{.TAG}}"
+
+  docker:tag:ci-server:
+    desc: Tag CI server docker image
+    vars:
+      TAG: '{{default "latest" .TAG}}'
+    cmds:
+      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.CI_SERVER_IMAGE}}:{{.TAG}}
+      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.TAG}}
+
+  docker:tag:worker:
+    desc: Tag worker docker image
+    vars:
+      TAG: '{{default "latest" .TAG}}'
+    cmds:
+      - docker tag {{.WORKER_IMAGE}}:latest {{.WORKER_IMAGE}}:{{.TAG}}
+      - docker tag {{.WORKER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.TAG}}
+
+  docker:push:
+    desc: Push images to container registry
+    vars:
+      TAG: '{{default "latest" .TAG}}'
+    cmds:
+      - task: docker:push:ci-server
+        vars:
+          TAG: "{{.TAG}}"
+      - task: docker:push:worker
+        vars:
+          TAG: "{{.TAG}}"
+
+  docker:push:ci-server:
+    desc: Push CI server to container registry
+    vars:
+      TAG: '{{default "latest" .TAG}}'
+    cmds:
+      - docker push {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.TAG}}
+
+  docker:push:worker:
+    desc: Push worker to container registry
+    vars:
+      TAG: '{{default "latest" .TAG}}'
+    cmds:
+      - docker push {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.TAG}}
 
   migrate:create:
     desc: Create new migration file
@@ -133,20 +187,22 @@ tasks:
 
   release:
     desc: Create new release
+    prompt: Do you want to create a new release?
+    deps:
+      - docker:build
     cmds:
-      - git tag -s {{.CLI_ARGS}} -m "Release {{.CLI_ARGS}}"
-      - git push origin {{.CLI_ARGS}}
-      - task: docker:build
-      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
-      - docker tag {{.WORKER_IMAGE}}:latest {{.WORKER_IMAGE}}:{{.CLI_ARGS}}
-      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:latest
-      - docker tag {{.WORKER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:latest
-      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
-      - docker tag {{.WORKER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.CLI_ARGS}}
-      - docker push {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:latest
-      - docker push {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.CLI_ARGS}}
-      - docker push {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:latest
-      - docker push {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.CLI_ARGS}}}
+      - git tag -s v{{.VERSION}} -m "Release v{{.VERSION}}"
+      - git push origin v{{.VERSION}}
+      - task: docker:tag
+      - task: docker:tag
+        vars:
+          TAG: "{{.VERSION}}"
+      - task: docker:push
+      - task: docker:push
+        vars:
+          TAG: "{{.VERSION}}"
+    requires:
+      vars: ["VERSION"]
 
   grpc:generate:
     desc: Generate gRPC code
