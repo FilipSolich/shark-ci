@@ -75,7 +75,7 @@ func (mq *RabbitMQ) WorkChannel() (chan types.Work, error) {
 		return nil, err
 	}
 
-	workCh := make(chan types.Work, 100)
+	workCh := make(chan types.Work, 100) // TODO: Should be buffered?
 	go func() {
 		for msg := range msgChannel {
 			var work types.Work

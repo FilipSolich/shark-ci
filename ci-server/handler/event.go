@@ -4,9 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"log/slog"
-
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/slog"
 
 	"github.com/shark-ci/shark-ci/ci-server/service"
 	"github.com/shark-ci/shark-ci/ci-server/store"
@@ -15,15 +14,13 @@ import (
 )
 
 type EventHandler struct {
-	l        *slog.Logger
 	s        store.Storer
 	mq       message_queue.MessageQueuer
 	services service.Services
 }
 
-func NewEventHandler(l *slog.Logger, s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
+func NewEventHandler(s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
 	return &EventHandler{
-		l:        l,
 		s:        s,
 		mq:       mq,
 		services: services,
@@ -52,7 +49,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		} else if errors.Is(err, service.ErrEventNotSupported) {
 			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
 		} else {
-			h.l.Error("service: cannot hadle event", "err", err)
+			slog.Error("service: cannot hadle event", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
@@ -60,14 +57,14 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.s.CreatePipeline(ctx, pipeline)
 	if err != nil {
-		h.l.Error("store: cannot create pipeline", "err", err)
+		slog.Error("store: cannot create pipeline", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	info, err := h.s.GetPipelineCreationInfoByRepo(ctx, pipeline.RepoID)
+	info, err := h.s.GetPipelineCreationInfo(ctx, pipeline.RepoID)
 	if err != nil {
-		h.l.Error("store: cannot get service user", "err", err)
+		slog.Error("store: cannot get service user", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -78,7 +75,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.mq.SendWork(ctx, work)
 	if err != nil {
-		h.l.Error("message queue: cannot send work", "err", err)
+		slog.Error("message queue: cannot send work", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -91,7 +88,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.Username, info.RepoName, pipeline.CommitSHA, status)
 	if err != nil {
-		h.l.Error("cannot create status", "err", err)
+		slog.Error("cannot create status", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

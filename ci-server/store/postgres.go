@@ -136,9 +136,9 @@ func (s *PostgresStore) GetServiceUserIDsByServiceUsername(ctx context.Context, 
 	return serviceUserID, userID, nil
 }
 
-func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) {
+func (s *PostgresStore) GetServiceUsersRepoFetchInfo(ctx context.Context, userID int64) ([]*types.ServiceUserRepoFetchInfo, error) {
 	rows, err := s.db.QueryContext(ctx, ``+
-		`SELECT id, service, username, email, access_token, refresh_token, token_type, token_expire, user_id `+
+		`SELECT id, service, access_token, refresh_token, token_type, token_expire `+
 		`FROM public.service_user `+
 		`WHERE user_id = $1`,
 		userID)
@@ -147,23 +147,34 @@ func (s *PostgresStore) GetServiceUsersByUser(ctx context.Context, userID int64)
 	}
 	defer rows.Close()
 
-	serviceUsers := []models.ServiceUser{}
+	serviceUsersInfo := []*types.ServiceUserRepoFetchInfo{}
 	for rows.Next() {
-		su := models.ServiceUser{}
-		err := rows.Scan(&su.ID, &su.Service, &su.Username, &su.Email, &su.AccessToken,
-			&su.RefreshToken, &su.TokenType, &su.TokenExpire, &su.UserID)
+		var (
+			info         types.ServiceUserRepoFetchInfo
+			refreshToken sql.NullString
+			tokenExpire  sql.NullTime
+		)
+		err := rows.Scan(&info.ID, &info.Service, &info.Token.AccessToken, &refreshToken,
+			&info.Token.TokenType, &tokenExpire)
 		if err != nil {
-			return serviceUsers, err
+			return serviceUsersInfo, err
 		}
-		serviceUsers = append(serviceUsers, su)
+		if refreshToken.Valid {
+			info.Token.RefreshToken = refreshToken.String
+		}
+		if tokenExpire.Valid {
+			info.Token.Expiry = tokenExpire.Time
+		}
+
+		serviceUsersInfo = append(serviceUsersInfo, &info)
 	}
 
 	err = rows.Err()
 	if err != nil {
-		return serviceUsers, err
+		return serviceUsersInfo, err
 	}
 
-	return serviceUsers, nil
+	return serviceUsersInfo, nil
 }
 
 func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUserID int64, token *oauth2.Token) error {
@@ -291,7 +302,7 @@ func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, web
 //	return pipeline, nil
 //}
 
-func (s *PostgresStore) GetPipelineCreationInfoByRepo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error) {
+func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error) {
 	var (
 		info         types.PipelineCreationInfo
 		refreshToken sql.NullString

@@ -75,19 +75,18 @@ func main() {
 		os.Exit(1)
 	}
 	s := grpc.NewServer()
-	grpcServer := ciserverGrpc.NewGRPCServer(logger.With("servedBy", "gRPC"), pgStore, services)
+	grpcServer := ciserverGrpc.NewGRPCServer(pgStore, services)
 	pb.RegisterPipelineReporterServer(s, grpcServer)
 	go s.Serve(lis)
 	slog.Info("gRPC server running", "port", conf.CIServer.GRPCPort)
 
 	CSRF := csrf.Protect([]byte(conf.CIServer.SecretKey))
 
-	handlerLogger := logger.With("servedBy", "handler")
-	loginHandler := handler.NewLoginHandler(handlerLogger, pgStore, services)
+	loginHandler := handler.NewLoginHandler(pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(handlerLogger, pgStore, rabbitMQ, services)
-	oauth2Handler := handler.NewOAuth2Handler(handlerLogger, pgStore, services)
-	repoHandler := handler.NewRepoHandler(handlerLogger, pgStore, services)
+	eventHandler := handler.NewEventHandler(pgStore, rabbitMQ, services)
+	oauth2Handler := handler.NewOAuth2Handler(pgStore, services)
+	repoHandler := handler.NewRepoHandler(pgStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
@@ -110,8 +109,7 @@ func main() {
 	repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
 
-	apiLogger := logger.With("servedBy", "api")
-	reposAPIHandler := api.NewRepoAPI(apiLogger, pgStore, services)
+	reposAPIHandler := api.NewRepoAPI(pgStore, services)
 
 	api := r.PathPrefix("/api").Subrouter()
 	api.Use(middleware.AuthMiddleware(pgStore))

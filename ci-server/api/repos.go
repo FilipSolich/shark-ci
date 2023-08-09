@@ -17,14 +17,12 @@ import (
 )
 
 type RepoAPI struct {
-	l        *slog.Logger
 	s        store.Storer
 	services service.Services
 }
 
-func NewRepoAPI(l *slog.Logger, s store.Storer, services service.Services) *RepoAPI {
+func NewRepoAPI(s store.Storer, services service.Services) *RepoAPI {
 	return &RepoAPI{
-		l:        l,
 		s:        s,
 		services: services,
 	}
@@ -40,11 +38,11 @@ func (api *RepoAPI) GetRepos(w http.ResponseWriter, r *http.Request) {
 	repos, err := api.s.GetReposByUser(ctx, user.ID)
 	if err != nil {
 		if repos == nil {
-			api.l.Error("store: cannot get user repos", "err", err, "userID", user.ID)
+			slog.Error("store: cannot get user repos", "err", err, "userID", user.ID)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		api.l.Warn("store: cannot get all user repos", "err", err, "userID", user.ID)
+		slog.Warn("store: cannot get all user repos", "err", err, "userID", user.ID)
 	}
 
 	json.NewEncoder(w).Encode(repos)
@@ -57,27 +55,27 @@ func (api *RepoAPI) RefreshRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serviceUsers, err := api.s.GetServiceUsersByUser(ctx, user.ID)
+	serviceUsersInfo, err := api.s.GetServiceUsersRepoFetchInfo(ctx, user.ID)
 	if err != nil {
-		if serviceUsers == nil {
-			api.l.Error("store: cannot get service users", "err", err, "userID", user.ID)
+		if serviceUsersInfo == nil {
+			slog.Error("store: cannot get service users", "err", err, "userID", user.ID)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		api.l.Warn("store: cannot get all service users", "err", err, "userID", user.ID)
+		slog.Warn("store: cannot get all service users", "err", err, "userID", user.ID)
 	}
 
 	allRepos := []models.Repo{}
-	for _, serviceUser := range serviceUsers {
-		srv, ok := api.services[serviceUser.Service]
+	for _, serviceUserInfo := range serviceUsersInfo {
+		srv, ok := api.services[serviceUserInfo.Service]
 		if !ok {
-			api.l.Error("service: unknown service", "service", serviceUser.Service)
+			slog.Error("service: unknown service", "service", serviceUserInfo.Service)
 			continue
 		}
 
-		repos, err := srv.GetUsersRepos(ctx, serviceUser.Token(), serviceUser.ID)
+		repos, err := srv.GetUsersRepos(ctx, &serviceUserInfo.Token, serviceUserInfo.ID)
 		if err != nil {
-			api.l.Error("service: cannot get user repositories from service", "err", err, "service", srv.Name())
+			slog.Error("service: cannot get user repositories from service", "err", err, "service", srv.Name())
 			continue
 		}
 
@@ -86,7 +84,7 @@ func (api *RepoAPI) RefreshRepos(w http.ResponseWriter, r *http.Request) {
 
 	err = api.s.CreateOrUpdateRepos(ctx, allRepos)
 	if err != nil {
-		api.l.Error("store: cannot create or update repos", "err", err)
+		slog.Error("store: cannot create or update repos", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -103,14 +101,14 @@ func (api *RepoAPI) CreateWebhook(w http.ResponseWriter, r *http.Request) {
 
 	webhookID, err := srv.CreateWebhook(ctx, &info.Token, info.RepoOwner, info.RepoName)
 	if err != nil {
-		api.l.Error("service: cannot create webhook", "err", err, "repoID", info.RepoID)
+		slog.Error("service: cannot create webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = api.s.UpdateRepoWebhook(ctx, info.RepoID, &webhookID)
 	if err != nil {
-		api.l.Error("store: cannot update repo webhook", "err", err, "repoID", info.RepoID)
+		slog.Error("store: cannot update repo webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -132,14 +130,14 @@ func (api *RepoAPI) DeleteWebhook(w http.ResponseWriter, r *http.Request) {
 
 	err := srv.DeleteWebhook(ctx, &info.Token, info.RepoOwner, info.RepoName, *info.WebhookID)
 	if err != nil {
-		api.l.Error("service: cannot delete webhook", "err", err, "repoID", info.RepoID)
+		slog.Error("service: cannot delete webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = api.s.UpdateRepoWebhook(ctx, info.RepoID, nil)
 	if err != nil {
-		api.l.Error("store: cannot update repo webhook", "err", err, "repoID", info.RepoID)
+		slog.Error("store: cannot update repo webhook", "err", err, "repoID", info.RepoID)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -171,7 +169,7 @@ func (api *RepoAPI) repoWebhookChangeInfo(ctx context.Context, w http.ResponseWr
 
 	srv, ok := api.services[info.Service]
 	if !ok {
-		api.l.Error("service: unknown service", "service", info.Service)
+		slog.Error("service: unknown service", "service", info.Service)
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil, nil, false
 	}

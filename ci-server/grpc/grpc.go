@@ -14,14 +14,12 @@ import (
 
 type GRPCServer struct {
 	pb.UnimplementedPipelineReporterServer
-	l        *slog.Logger
 	s        store.Storer
 	services service.Services
 }
 
-func NewGRPCServer(l *slog.Logger, s store.Storer, services service.Services) *GRPCServer {
+func NewGRPCServer(s store.Storer, services service.Services) *GRPCServer {
 	return &GRPCServer{
-		l:        l,
 		s:        s,
 		services: services,
 	}
@@ -46,13 +44,13 @@ func (s *GRPCServer) PipelineFailed(ctx context.Context, in *pb.PipelineEndReque
 func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, t time.Time, start bool) error {
 	info, err := s.s.GetPipelineStateChangeInfo(ctx, pipelineID)
 	if err != nil {
-		s.l.Error("store: cannot get info for pipeline state change", "pipelineID", pipelineID, "err", err)
+		slog.Error("store: cannot get info for pipeline state change", "pipelineID", pipelineID, "err", err)
 		return err
 	}
 
 	srv, ok := s.services[info.Service]
 	if !ok {
-		s.l.Error("service: service not found", "service", info.Service)
+		slog.Error("service: service not found", "service", info.Service)
 		return err
 	}
 
@@ -70,7 +68,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 	}
 	err = s.s.UpdatePipelineStatus(ctx, pipelineID, statusName, startedAt, finishedAt)
 	if err != nil {
-		s.l.Error("store: cannot update pipeline", "err", err)
+		slog.Error("store: cannot update pipeline", "err", err)
 		return err
 	}
 
@@ -82,7 +80,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
 	if err != nil {
-		s.l.Error("service: cannot create status", "err", err)
+		slog.Error("service: cannot create status", "err", err)
 		return err
 	}
 

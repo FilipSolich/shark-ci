@@ -16,14 +16,12 @@ import (
 )
 
 type LoginHandler struct {
-	l        *slog.Logger
 	s        store.Storer
 	services service.Services
 }
 
-func NewLoginHandler(l *slog.Logger, s store.Storer, services service.Services) *LoginHandler {
+func NewLoginHandler(s store.Storer, services service.Services) *LoginHandler {
 	return &LoginHandler{
-		l:        l,
 		s:        s,
 		services: services,
 	}
@@ -32,7 +30,7 @@ func NewLoginHandler(l *slog.Logger, s store.Storer, services service.Services) 
 func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 	state, err := uuid.NewRandom()
 	if err != nil {
-		h.l.Error("cannot generate UUID", "err", err)
+		slog.Error("cannot generate UUID", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -43,7 +41,7 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.s.CreateOAuth2State(r.Context(), oauth2State)
 	if err != nil {
-		h.l.Error("store: cannot create OAuth2 state", "err", err)
+		slog.Error("store: cannot create OAuth2 state", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

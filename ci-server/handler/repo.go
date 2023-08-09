@@ -4,22 +4,18 @@ import (
 	"context"
 	"net/http"
 
-	"log/slog"
-
 	"github.com/shark-ci/shark-ci/ci-server/models"
 	"github.com/shark-ci/shark-ci/ci-server/service"
 	"github.com/shark-ci/shark-ci/ci-server/store"
 )
 
 type RepoHandler struct {
-	l        *slog.Logger
 	s        store.Storer
 	services service.Services
 }
 
-func NewRepoHandler(l *slog.Logger, s store.Storer, services service.Services) *RepoHandler {
+func NewRepoHandler(s store.Storer, services service.Services) *RepoHandler {
 	return &RepoHandler{
-		l:        l,
 		s:        s,
 		services: services,
 	}
@@ -36,14 +32,14 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 	//for serviceName, srv := range h.services {
 	//	serviceUser, err := h.s.GetServiceUserByUser(ctx, user, serviceName)
 	//	if err != nil {
-	//		h.l.Error("store: cannot get service user", "err", err)
+	//		slog.Error("store: cannot get service user", "err", err)
 	//		continue
 	//	}
 
 	//	// TODO: Bundle into repo finder and updater
 	//	repos, err := srv.GetUsersRepos(r.Context(), serviceUser)
 	//	if err != nil {
-	//		h.l.Error("service: cannot get user repositories from service", "err", err)
+	//		slog.Error("service: cannot get user repositories from service", "err", err)
 	//		continue
 	//	}
 
@@ -67,21 +63,21 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 	//ctx := r.Context()
 	//serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
 	//if err != nil {
-	//	h.l.Error("cannot get info from request", "err", err)
+	//	slog.Error("cannot get info from request", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}
 
 	//repo, err = srv.CreateWebhook(ctx, serviceUser, repo)
 	//if err != nil {
-	//	h.l.Error("service: cannot create a webhook", "err", err)
+	//	slog.Error("service: cannot create a webhook", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}
 
 	//err = h.s.UpdateRepoWebhook(ctx, repo)
 	//if err != nil {
-	//	h.l.Error("store: cannot update a webhook", "err", err)
+	//	slog.Error("store: cannot update a webhook", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}
@@ -93,21 +89,21 @@ func (h *RepoHandler) HandleUnregisterRepo(w http.ResponseWriter, r *http.Reques
 	//ctx := r.Context()
 	//serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
 	//if err != nil {
-	//	h.l.Error("cannot get info from request", "err", err)
+	//	slog.Error("cannot get info from request", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}
 
 	//err = srv.DeleteWebhook(ctx, serviceUser, repo)
 	//if err != nil {
-	//	h.l.Error("service: cannot delete webhook", "err", err)
+	//	slog.Error("service: cannot delete webhook", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}
 
 	//err = h.s.UpdateRepoWebhook(ctx, repo)
 	//if err != nil {
-	//	h.l.Error("store: cannot update webhook", "err", err)
+	//	slog.Error("store: cannot update webhook", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}
@@ -127,21 +123,21 @@ func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, ac
 	//ctx := r.Context()
 	//serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
 	//if err != nil {
-	//	h.l.Error("cannot get infor from request", "err", err)
+	//	slog.Error("cannot get infor from request", "err", err)
 	//	http.Error(w, err.Error(), http.StatusBadRequest)
 	//	return
 	//}
 
 	//repo, err = srv.ChangeWebhookState(ctx, serviceUser, repo, active)
 	//if err != nil {
-	//	h.l.Error("service: cannot change a webhook state", "err", err)
+	//	slog.Error("service: cannot change a webhook state", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}
 
 	//err = h.s.UpdateRepoWebhook(ctx, repo)
 	//if err != nil {
-	//	h.l.Error("store: cannot update a webhook", "err", err)
+	//	slog.Error("store: cannot update a webhook", "err", err)
 	//	w.WriteHeader(http.StatusInternalServerError)
 	//	return
 	//}

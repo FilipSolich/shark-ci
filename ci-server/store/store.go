@@ -26,7 +26,7 @@ type Storer interface {
 	CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, int64, error)
 
 	GetServiceUserIDsByServiceUsername(ctx context.Context, service string, username string) (int64, int64, error)
-	GetServiceUsersByUser(ctx context.Context, userID int64) ([]models.ServiceUser, error) // TODO: Maybe simplify?
+	GetServiceUsersRepoFetchInfo(ctx context.Context, userID int64) ([]*types.ServiceUserRepoFetchInfo, error)
 	UpdateServiceUserToken(ctx context.Context, serviceUserID int64, token *oauth2.Token) error
 
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
@@ -36,7 +36,7 @@ type Storer interface {
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
 
 	//GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
-	GetPipelineCreationInfoByRepo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)
+	GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)
 	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
 	UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error
 

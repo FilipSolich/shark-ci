@@ -12,14 +12,12 @@ import (
 )
 
 type OAuth2Handler struct {
-	l        *slog.Logger
 	s        store.Storer
 	services service.Services
 }
 
-func NewOAuth2Handler(l *slog.Logger, s store.Storer, services service.Services) *OAuth2Handler {
+func NewOAuth2Handler(s store.Storer, services service.Services) *OAuth2Handler {
 	return &OAuth2Handler{
-		l:        l,
 		s:        s,
 		services: services,
 	}
@@ -58,7 +56,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	config := srv.OAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
-		h.l.Error("cannot get OAuth2 token", "err", err, "service", srv.Name(), "code", code)
+		slog.Error("cannot get OAuth2 token", "err", err, "service", srv.Name(), "code", code)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -66,7 +64,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	// Get or create new ServiceUser and new User if needed.
 	serviceUser, err := srv.GetServiceUser(ctx, token)
 	if err != nil {
-		h.l.Error("service: cannot get service user", "err", err)
+		slog.Error("service: cannot get service user", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -76,7 +74,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		uID, _, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
 		if err != nil {
-			h.l.Error("store: cannot create user and service user", "err", err)
+			slog.Error("store: cannot create user and service user", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -84,7 +82,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		uID = userID
 		err = h.s.UpdateServiceUserToken(ctx, serviceUserID, token)
 		if err != nil {
-			h.l.Warn("store: cannot update user OAuth2 token", "err", err)
+			slog.Warn("store: cannot update user OAuth2 token", "err", err)
 			// TODO: Is old token still usable? Or should handler return here?
 		}
 	}
@@ -94,7 +92,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	s.Values[session.SessionKey] = uID
 	err = s.Save(r, w)
 	if err != nil {
-		h.l.Error("cannot save session", "err", err)
+		slog.Error("cannot save session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
