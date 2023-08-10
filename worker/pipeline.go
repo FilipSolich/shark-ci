@@ -1,16 +1,16 @@
 package worker
 
 type Pipeline struct {
-	Name      string
-	BaseImage string `yaml:"base_image"`
-	Jobs      map[string]Job
+	Name  string         `yaml:"name"`
+	Image string         `yaml:"image"`
+	Jobs  map[string]Job `yaml:"jobs"`
 }
 
 type Job struct {
-	Steps []Step
+	Steps []Step `yaml:"steps"`
 }
 
 type Step struct {
-	Name string
-	Run  string
+	Name string   `yaml:"name"`
+	Cmds []string `yaml:"cmds"`
 }

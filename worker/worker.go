@@ -121,7 +121,7 @@ func processWork(ctx context.Context, work types.Work, reposPath string, compres
 	}
 	defer cli.Close()
 
-	out, err := cli.ImagePull(ctx, pipeline.BaseImage, dockertypes.ImagePullOptions{})
+	out, err := cli.ImagePull(ctx, pipeline.Image, dockertypes.ImagePullOptions{})
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func processWork(ctx context.Context, work types.Work, reposPath string, compres
 
 	// Create container.
 	container, err := cli.ContainerCreate(ctx, &containertypes.Config{
-		Image:      pipeline.BaseImage,
+		Image:      pipeline.Image,
 		Cmd:        []string{"sh"},
 		Tty:        true,
 		WorkingDir: "/repo",
@@ -166,13 +166,13 @@ func processWork(ctx context.Context, work types.Work, reposPath string, compres
 	}
 
 	for name, j := range pipeline.Jobs {
-		log.Printf("Pipelin %d runs %s\n", work.Pipeline.ID, name)
+		log.Printf("Pipeline %d runs %s\n", work.Pipeline.ID, name)
 		for _, step := range j.Steps {
 			log.Printf("Pipeline %d runs %s step %s\n", work.Pipeline.ID, name, step.Name)
 			exec, err := cli.ContainerExecCreate(ctx, container.ID, dockertypes.ExecConfig{
 				AttachStdout: true,
 				AttachStderr: true,
-				Cmd:          strings.Split(step.Run, " "),
+				Cmd:          strings.Split(step.Cmds[0], " "),
 			})
 			if err != nil {
 				return err
