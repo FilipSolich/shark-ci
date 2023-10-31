@@ -3,7 +3,7 @@ module github.com/shark-ci/shark-ci
 go 1.21
 
 require (
-	github.com/docker/docker v24.0.4+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/go-git/go-git/v5 v5.8.0
 	github.com/google/go-github/v53 v53.2.0
 	github.com/google/uuid v1.3.0
