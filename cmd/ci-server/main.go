@@ -12,36 +12,35 @@ import (
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 
-	"github.com/shark-ci/shark-ci/ci-server/api"
-	"github.com/shark-ci/shark-ci/ci-server/config"
-	ciserverGrpc "github.com/shark-ci/shark-ci/ci-server/grpc"
-	"github.com/shark-ci/shark-ci/ci-server/handler"
-	"github.com/shark-ci/shark-ci/ci-server/middleware"
-	"github.com/shark-ci/shark-ci/ci-server/service"
-	"github.com/shark-ci/shark-ci/ci-server/session"
-	"github.com/shark-ci/shark-ci/ci-server/store"
-	"github.com/shark-ci/shark-ci/ci-server/template"
-	"github.com/shark-ci/shark-ci/shared/message_queue"
-	pb "github.com/shark-ci/shark-ci/shared/proto"
+	"github.com/shark-ci/shark-ci/internal/ci-server/api"
+	ciserverGrpc "github.com/shark-ci/shark-ci/internal/ci-server/grpc"
+	"github.com/shark-ci/shark-ci/internal/ci-server/handler"
+	"github.com/shark-ci/shark-ci/internal/ci-server/middleware"
+	"github.com/shark-ci/shark-ci/internal/ci-server/service"
+	"github.com/shark-ci/shark-ci/internal/ci-server/session"
+	"github.com/shark-ci/shark-ci/internal/ci-server/store"
+	"github.com/shark-ci/shark-ci/internal/ci-server/template"
+	"github.com/shark-ci/shark-ci/internal/config"
+	"github.com/shark-ci/shark-ci/internal/message_queue"
+	pb "github.com/shark-ci/shark-ci/internal/proto"
 )
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	conf, err := config.NewConfigFromEnv()
+	err := config.LoadCIServerConfigFromEnv()
 	if err != nil {
-		slog.Error("creating config failed", "err", err)
+		slog.Error("Loading config from environment failed.", "err", err)
 		os.Exit(1)
 	}
-	config.Conf = conf
 
-	session.InitSessionStore(conf.CIServer.SecretKey)
+	session.InitSessionStore(config.CIServerConf.SecretKey)
 
 	template.LoadTemplates()
 
 	slog.Info("connecting to PostgreSQL")
-	pgStore, err := store.NewPostgresStore(conf.DB.URI)
+	pgStore, err := store.NewPostgresStore(config.CIServerConf.DB.URI)
 	if err != nil {
 		slog.Error("store: connecting to PostgreSQL failed", "err", err)
 		os.Exit(1)
@@ -56,7 +55,7 @@ func main() {
 	slog.Info("PostgreSQL connected")
 
 	slog.Info("connecting to RabbitMQ")
-	rabbitMQ, err := message_queue.NewRabbitMQ(conf.MQ.URI)
+	rabbitMQ, err := message_queue.NewRabbitMQ(config.CIServerConf.MQ.URI)
 	if err != nil {
 		slog.Error("mq: connecting to RabbitMQ failed", "err", err)
 		os.Exit(1)
@@ -69,7 +68,7 @@ func main() {
 	services := service.InitServices(pgStore)
 
 	slog.Info("starting gRPC server")
-	lis, err := net.Listen("tcp", ":"+conf.CIServer.GRPCPort)
+	lis, err := net.Listen("tcp", ":"+config.CIServerConf.GRPCPort)
 	if err != nil {
 		slog.Error("failed to listen", "err", err)
 		os.Exit(1)
@@ -78,9 +77,9 @@ func main() {
 	grpcServer := ciserverGrpc.NewGRPCServer(pgStore, services)
 	pb.RegisterPipelineReporterServer(s, grpcServer)
 	go s.Serve(lis)
-	slog.Info("gRPC server running", "port", conf.CIServer.GRPCPort)
+	slog.Info("gRPC server running", "port", config.CIServerConf.GRPCPort)
 
-	CSRF := csrf.Protect([]byte(conf.CIServer.SecretKey))
+	CSRF := csrf.Protect([]byte(config.CIServerConf.SecretKey))
 
 	loginHandler := handler.NewLoginHandler(pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
@@ -122,7 +121,7 @@ func main() {
 	reposAPI.HandleFunc("/{repoID}/webhook", reposAPIHandler.DeleteWebhook).Methods(http.MethodDelete)
 
 	server := &http.Server{
-		Addr:         ":" + conf.CIServer.Port,
+		Addr:         ":" + config.CIServerConf.Port,
 		Handler:      r,
 		ReadTimeout:  0,
 		WriteTimeout: 0,
