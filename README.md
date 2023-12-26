@@ -2,6 +2,9 @@
 
 CI server written in Go.
 
+> [!IMPORTANT]
+> This project is under development and is not in working state yet.
+
 ## Download
 
 ### Go install
