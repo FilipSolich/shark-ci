@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-var CIServerConf CIServerConfig
+var ServerConf ServerConfig
 var WorkerConf WorkerConfig
 
-type CIServerConfig struct {
+type ServerConfig struct {
 	Host      string
 	Port      string
 	GRPCPort  string
@@ -47,9 +47,9 @@ type WorkerConfig struct {
 	CIServerGRPCPort string
 }
 
-func LoadCIServerConfigFromEnv() error {
-	config := CIServerConfig{
-		Host:      stringEnv("HOST", ""),
+func LoadServerConfigFromEnv() error {
+	config := ServerConfig{
+		Host:      stringEnv("HOST", "localhost"),
 		Port:      stringEnv("PORT", "8000"),
 		GRPCPort:  stringEnv("GRPC_PORT", "9000"),
 		SecretKey: stringEnv("SECRET_KEY", ""),
@@ -73,14 +73,11 @@ func LoadCIServerConfigFromEnv() error {
 		return err
 	}
 
-	CIServerConf = config
+	ServerConf = config
 	return nil
 }
 
-func (c CIServerConfig) validate() error {
-	if c.Host == "" {
-		return errors.New("config: HOST is required")
-	}
+func (c ServerConfig) validate() error {
 	if c.SecretKey == "" {
 		return errors.New("config: SECRET_KEY is required")
 	}

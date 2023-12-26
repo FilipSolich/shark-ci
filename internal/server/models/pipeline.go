@@ -20,5 +20,5 @@ type Pipeline struct {
 }
 
 func (p *Pipeline) CreateURL() {
-	p.URL = fmt.Sprintf("%s/repos/%d/pipelines/%d", config.CIServerConf.Host, p.RepoID, p.ID)
+	p.URL = fmt.Sprintf("%s/repos/%d/pipelines/%d", config.ServerConf.Host, p.RepoID, p.ID)
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/internal/server/template"
+	"github.com/shark-ci/shark-ci/internal/server/templates"
 )
 
 type LoginHandler struct {
@@ -53,7 +53,10 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 		data[s.Name()+"URL"] = url
 	}
 
-	template.RenderTemplate(w, "login.html", map[string]any{
+	templates.LoginTmpl.Execute(w, map[string]any{
 		"URLs": data,
 	})
+	//templates.RenderTemplate(w, "login.html", map[string]any{
+	//	"URLs": data,
+	//})
 }

@@ -34,8 +34,8 @@ type Services map[string]ServiceManager
 
 func InitServices(s store.Storer) Services {
 	services := Services{}
-	if config.CIServerConf.GitHub.ClientID != "" && config.CIServerConf.GitHub.ClientSecret != "" {
-		ghm := NewGitHubManager(config.CIServerConf.GitHub.ClientID, config.CIServerConf.GitHub.ClientSecret, s)
+	if config.ServerConf.GitHub.ClientID != "" && config.ServerConf.GitHub.ClientSecret != "" {
+		ghm := NewGitHubManager(config.ServerConf.GitHub.ClientID, config.ServerConf.GitHub.ClientSecret, s)
 		services[ghm.Name()] = ghm
 	}
 	// TODO: Add GitLab.

@@ -22,25 +22,25 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/session"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/internal/server/template"
+	"github.com/shark-ci/shark-ci/internal/server/templates"
 )
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	err := config.LoadCIServerConfigFromEnv()
+	err := config.LoadServerConfigFromEnv()
 	if err != nil {
 		slog.Error("Loading config from environment failed.", "err", err)
 		os.Exit(1)
 	}
 
-	session.InitSessionStore(config.CIServerConf.SecretKey)
+	session.InitSessionStore(config.ServerConf.SecretKey)
 
-	template.LoadTemplates()
+	templates.ParseTemplates()
 
 	slog.Info("connecting to PostgreSQL")
-	pgStore, err := store.NewPostgresStore(config.CIServerConf.DB.URI)
+	pgStore, err := store.NewPostgresStore(config.ServerConf.DB.URI)
 	if err != nil {
 		slog.Error("store: connecting to PostgreSQL failed", "err", err)
 		os.Exit(1)
@@ -55,7 +55,7 @@ func main() {
 	slog.Info("PostgreSQL connected")
 
 	slog.Info("connecting to RabbitMQ")
-	rabbitMQ, err := message_queue.NewRabbitMQ(config.CIServerConf.MQ.URI)
+	rabbitMQ, err := message_queue.NewRabbitMQ(config.ServerConf.MQ.URI)
 	if err != nil {
 		slog.Error("mq: connecting to RabbitMQ failed", "err", err)
 		os.Exit(1)
@@ -68,7 +68,7 @@ func main() {
 	services := service.InitServices(pgStore)
 
 	slog.Info("starting gRPC server")
-	lis, err := net.Listen("tcp", ":"+config.CIServerConf.GRPCPort)
+	lis, err := net.Listen("tcp", ":"+config.ServerConf.GRPCPort)
 	if err != nil {
 		slog.Error("failed to listen", "err", err)
 		os.Exit(1)
@@ -77,9 +77,9 @@ func main() {
 	grpcServer := ciserverGrpc.NewGRPCServer(pgStore, services)
 	pb.RegisterPipelineReporterServer(s, grpcServer)
 	go s.Serve(lis)
-	slog.Info("gRPC server running", "port", config.CIServerConf.GRPCPort)
+	slog.Info("gRPC server running", "port", config.ServerConf.GRPCPort)
 
-	CSRF := csrf.Protect([]byte(config.CIServerConf.SecretKey))
+	CSRF := csrf.Protect([]byte(config.ServerConf.SecretKey))
 
 	loginHandler := handler.NewLoginHandler(pgStore, services)
 	logoutHandler := handler.NewLogoutHandler()
@@ -121,7 +121,7 @@ func main() {
 	reposAPI.HandleFunc("/{repoID}/webhook", reposAPIHandler.DeleteWebhook).Methods(http.MethodDelete)
 
 	server := &http.Server{
-		Addr:         ":" + config.CIServerConf.Port,
+		Addr:         ":" + config.ServerConf.Port,
 		Handler:      r,
 		ReadTimeout:  0,
 		WriteTimeout: 0,

@@ -29,7 +29,7 @@ docker pull ghcr.io/shark-ci/shark-ci-worker:latest # Download CI runner
 
 | Key                    | Default                         | Description               |
 |------------------------|---------------------------------|---------------------------|
-| `HOST`                 |                                 | Hostname                  |
+| `HOST`                 | `localhost`                     | Hostname                  |
 | `PORT`                 | `8000`                          | Port                      |
 | `SECRET_KEY`           |                                 | Random key for encryption |
 | `DB_URI`               | `postgres://localhost/shark-ci` | Postgres URI              |

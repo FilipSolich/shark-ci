@@ -106,7 +106,7 @@ tasks:
       - docker:build:server
       - docker:build:worker
 
-  docker:build:erver:
+  docker:build:server:
     desc: Build CI server docker image
     aliases: ["d:b:server"]
     cmds:

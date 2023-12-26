@@ -111,9 +111,9 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, token *oauth2.Token, 
 		Active: github.Bool(true),
 		Events: []string{"push", "pull_request"},
 		Config: map[string]any{
-			"url":          config.CIServerConf.Host + "/event_handler/" + m.Name(),
+			"url":          config.ServerConf.Host + "/event_handler/" + m.Name(),
 			"content_type": "json",
-			"secret":       config.CIServerConf.SecretKey,
+			"secret":       config.ServerConf.SecretKey,
 		},
 	}
 
@@ -133,7 +133,7 @@ func (m *GitHubManager) DeleteWebhook(ctx context.Context, token *oauth2.Token, 
 }
 
 func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*models.Pipeline, error) {
-	payload, err := github.ValidatePayload(r, []byte(config.CIServerConf.SecretKey))
+	payload, err := github.ValidatePayload(r, []byte(config.ServerConf.SecretKey))
 	if err != nil {
 		return nil, err
 	}
