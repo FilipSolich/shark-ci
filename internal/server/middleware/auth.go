@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/shark-ci/shark-ci/internal/ci-server/session"
-	"github.com/shark-ci/shark-ci/internal/ci-server/store"
+	"github.com/shark-ci/shark-ci/internal/server/session"
+	"github.com/shark-ci/shark-ci/internal/server/store"
 )
 
 func AuthMiddleware(s store.Storer) mux.MiddlewareFunc {

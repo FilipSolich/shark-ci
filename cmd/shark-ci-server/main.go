@@ -12,17 +12,17 @@ import (
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 
-	"github.com/shark-ci/shark-ci/internal/ci-server/api"
-	ciserverGrpc "github.com/shark-ci/shark-ci/internal/ci-server/grpc"
-	"github.com/shark-ci/shark-ci/internal/ci-server/handler"
-	"github.com/shark-ci/shark-ci/internal/ci-server/middleware"
-	"github.com/shark-ci/shark-ci/internal/ci-server/service"
-	"github.com/shark-ci/shark-ci/internal/ci-server/session"
-	"github.com/shark-ci/shark-ci/internal/ci-server/store"
-	"github.com/shark-ci/shark-ci/internal/ci-server/template"
 	"github.com/shark-ci/shark-ci/internal/config"
 	"github.com/shark-ci/shark-ci/internal/message_queue"
 	pb "github.com/shark-ci/shark-ci/internal/proto"
+	"github.com/shark-ci/shark-ci/internal/server/api"
+	ciserverGrpc "github.com/shark-ci/shark-ci/internal/server/grpc"
+	"github.com/shark-ci/shark-ci/internal/server/handler"
+	"github.com/shark-ci/shark-ci/internal/server/middleware"
+	"github.com/shark-ci/shark-ci/internal/server/service"
+	"github.com/shark-ci/shark-ci/internal/server/session"
+	"github.com/shark-ci/shark-ci/internal/server/store"
+	"github.com/shark-ci/shark-ci/internal/server/template"
 )
 
 func main() {

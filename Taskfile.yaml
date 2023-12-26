@@ -2,7 +2,9 @@ version: '3'
 
 vars:
   MODULE: github.com/shark-ci/shark-ci
-  CI_SERVER_IMAGE: shark-ci/ci-server
+  SERVER_BIN: shark-ci-server
+  WORKER_BIN: shark-ci-worker
+  SERVER_IMAGE: shark-ci/server
   WORKER_IMAGE: shark-ci/worker
   DOCKER_REGISTRY: ghcr.io
 
@@ -15,49 +17,49 @@ tasks:
     desc: Build CI server and worker
     aliases: ["b"]
     cmds:
-      - task: build:ci-server
+      - task: build:server
       - task: build:worker
 
-  build:ci-server:
+  build:server:
     desc: Build CI server
-    aliases: ["b:ci-server"]
+    aliases: ["b:server"]
     cmds:
-      - go build -o bin/ci-server {{.MODULE}}/cmd/ci-server
+      - go build -o bin/shark-ci-server {{.MODULE}}/cmd/shark-ci-server
     sources:
-      - cmd/ci-server/*.go
-      - ci-server/**/*.go
-      - shared/**/*.go
+      - cmd/shark-ci-server/*.go
+      - internal/**/*.go
+      - exclude: internal/worker/*
     generates:
-      - bin/ci-server
+      - bin/shark-ci-server
     method: timestamp
 
   build:worker:
     aliases: ["b:worker"]
     desc: Build worker
     cmds:
-      - go build -o bin/worker {{.MODULE}}/cmd/worker
+      - go build -o bin/shark-ci-worker {{.MODULE}}/cmd/shark-ci-worker
     sources:
-      - cmd/worker/*.go
-      - worker/**/*.go
-      - shared/**/*.go
+      - cmd/shark-ci-worker/*.go
+      - internal/**/*.go
+      - exclude: internal/server/*
     generates:
-      - bin/worker
+      - bin/shark-ci-worker
     method: timestamp
 
   run:
     desc: Run CI server and worker
     aliases: ["r"]
     deps:
-      - run:ci-server
+      - run:server
       - run:worker
 
-  run:ci-server:
-    desc: Run CI server
-    aliases: ["r:ci-server"]
+  run:server:
+    desc: Run server
+    aliases: ["r:server"]
     deps:
-      - build:ci-server
+      - build:server
     cmds:
-      - bin/ci-server
+      - bin/shark-ci-server
 
   run:worker:
     desc: Run worker
@@ -65,7 +67,7 @@ tasks:
     deps:
       - build:worker
     cmds:
-      - bin/worker
+      - bin/shark-ci-worker
 
   clean:
     desc: Clean build artifacts
@@ -73,7 +75,7 @@ tasks:
     cmds:
       - go clean
       - rm -rf bin
-      - rm -rf .task/timestamp
+      - rm -rf .task
 
   test:
     desc: Run tests
@@ -101,14 +103,14 @@ tasks:
     desc: Build docker images
     aliases: ["d:b"]
     deps:
-      - docker:build:ci-server
+      - docker:build:server
       - docker:build:worker
 
-  docker:build:ci-server:
+  docker:build:erver:
     desc: Build CI server docker image
-    aliases: ["d:b:ci-server"]
+    aliases: ["d:b:server"]
     cmds:
-      - docker build --pull -f Dockerfile.ci-server -t {{.CI_SERVER_IMAGE}} .
+      - docker build --pull -f Dockerfile.server -t {{.SERVER_IMAGE}} .
 
   docker:build:worker:
     desc: Build worker docker image
@@ -121,20 +123,20 @@ tasks:
     vars:
       TAG: '{{default "latest" .TAG}}'
     cmds:
-      - task: docker:tag:ci-server
+      - task: docker:tag:server
         vars:
           TAG: "{{.TAG}}"
       - task: docker:tag:worker
         vars:
           TAG: "{{.TAG}}"
 
-  docker:tag:ci-server:
+  docker:tag:server:
     desc: Tag CI server docker image
     vars:
       TAG: '{{default "latest" .TAG}}'
     cmds:
-      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.CI_SERVER_IMAGE}}:{{.TAG}}
-      - docker tag {{.CI_SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.TAG}}
+      - docker tag {{.SERVER_IMAGE}}:latest {{.SERVER_IMAGE}}:{{.TAG}}
+      - docker tag {{.SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.SERVER_IMAGE}}:{{.TAG}}
 
   docker:tag:worker:
     desc: Tag worker docker image
@@ -149,19 +151,19 @@ tasks:
     vars:
       TAG: '{{default "latest" .TAG}}'
     cmds:
-      - task: docker:push:ci-server
+      - task: docker:push:server
         vars:
           TAG: "{{.TAG}}"
       - task: docker:push:worker
         vars:
           TAG: "{{.TAG}}"
 
-  docker:push:ci-server:
+  docker:push:server:
     desc: Push CI server to container registry
     vars:
       TAG: '{{default "latest" .TAG}}'
     cmds:
-      - docker push {{.DOCKER_REGISTRY}}/{{.CI_SERVER_IMAGE}}:{{.TAG}}
+      - docker push {{.DOCKER_REGISTRY}}/{{.SERVER_IMAGE}}:{{.TAG}}
 
   docker:push:worker:
     desc: Push worker to container registry
@@ -210,4 +212,4 @@ tasks:
       - >
         protoc --go_out=. --go_opt=paths=source_relative
         --go-grpc_out=. --go-grpc_opt=paths=source_relative
-        shared/proto/pipeline_reporter.proto
+        internal/proto/pipeline_reporter.proto

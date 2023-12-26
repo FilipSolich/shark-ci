@@ -6,9 +6,9 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/shark-ci/shark-ci/internal/ci-server/service"
-	"github.com/shark-ci/shark-ci/internal/ci-server/session"
-	"github.com/shark-ci/shark-ci/internal/ci-server/store"
+	"github.com/shark-ci/shark-ci/internal/server/service"
+	"github.com/shark-ci/shark-ci/internal/server/session"
+	"github.com/shark-ci/shark-ci/internal/server/store"
 )
 
 type OAuth2Handler struct {

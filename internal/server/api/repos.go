@@ -9,11 +9,11 @@ import (
 	"log/slog"
 
 	"github.com/gorilla/mux"
-	"github.com/shark-ci/shark-ci/internal/ci-server/middleware"
-	"github.com/shark-ci/shark-ci/internal/ci-server/models"
-	"github.com/shark-ci/shark-ci/internal/ci-server/service"
-	"github.com/shark-ci/shark-ci/internal/ci-server/store"
-	"github.com/shark-ci/shark-ci/internal/ci-server/types"
+	"github.com/shark-ci/shark-ci/internal/server/middleware"
+	"github.com/shark-ci/shark-ci/internal/server/models"
+	"github.com/shark-ci/shark-ci/internal/server/service"
+	"github.com/shark-ci/shark-ci/internal/server/store"
+	"github.com/shark-ci/shark-ci/internal/server/types"
 )
 
 type RepoAPI struct {

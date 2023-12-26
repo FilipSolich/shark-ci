@@ -1,6 +1,6 @@
 services:
-  ci-server:
-    image: shark-ci/ci-server
+  server:
+    image: shark-ci/server
     restart: unless-stopped
     depends_on:
       postgres:
@@ -15,15 +15,16 @@ services:
       - DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}?sslmode=disable
       - MQ_URI=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq
     ports:
-      - "8000:8000"
+      - 8000:8000
+      - 9000:9000
     volumes:
-      - ci-server:/var/lib/shark-ci
+      - server:/var/lib/shark-ci
 
   worker:
     image: shark-ci/worker
     restart: unless-stopped
     depends_on:
-      ci-server:
+      server:
         condition: service_started
       rabbitmq:
         condition: service_healthy
@@ -57,4 +58,4 @@ services:
 
 volumes:
   pgdata:
-  ci-server:
+  server:

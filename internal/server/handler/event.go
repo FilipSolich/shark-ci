@@ -7,9 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
 
-	"github.com/shark-ci/shark-ci/internal/ci-server/service"
-	"github.com/shark-ci/shark-ci/internal/ci-server/store"
 	"github.com/shark-ci/shark-ci/internal/message_queue"
+	"github.com/shark-ci/shark-ci/internal/server/service"
+	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/internal/types"
 )
 

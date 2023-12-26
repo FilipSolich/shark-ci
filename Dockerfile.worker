@@ -8,15 +8,19 @@ RUN go mod download
 
 COPY ./ ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/worker github.com/shark-ci/shark-ci/cmd/worker
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/shark-ci-worker github.com/shark-ci/shark-ci/cmd/shark-ci-worker
 
 
 FROM alpine:latest
 
+LABEL org.opencontainers.image.title="Shark CI worker"
+LABEL org.opencontainers.image.description="Worker running CI pipelines in Docker"
 LABEL org.opencontainers.image.source=https://github.com/shark-ci/shark-ci
+LABEL org.opencontainers.image.license=Apache-2.0
+LABEL org.opencontainers.image.base.name=docker.io/alpine:latest
 
 WORKDIR /
 
-COPY --from=builder /app/bin/worker worker
+COPY --from=builder /app/bin/shark-ci-worker shark-ci-worker
 
-CMD ["./worker"]
+CMD ["./shark-ci-worker"]

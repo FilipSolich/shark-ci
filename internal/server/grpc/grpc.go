@@ -7,9 +7,9 @@ import (
 
 	"log/slog"
 
-	"github.com/shark-ci/shark-ci/internal/ci-server/service"
-	"github.com/shark-ci/shark-ci/internal/ci-server/store"
 	pb "github.com/shark-ci/shark-ci/internal/proto"
+	"github.com/shark-ci/shark-ci/internal/server/service"
+	"github.com/shark-ci/shark-ci/internal/server/store"
 )
 
 type GRPCServer struct {

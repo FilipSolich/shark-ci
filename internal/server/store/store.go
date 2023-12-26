@@ -7,8 +7,8 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/shark-ci/shark-ci/internal/ci-server/models"
-	"github.com/shark-ci/shark-ci/internal/ci-server/types"
+	"github.com/shark-ci/shark-ci/internal/server/models"
+	"github.com/shark-ci/shark-ci/internal/server/types"
 	"golang.org/x/oauth2"
 )
 

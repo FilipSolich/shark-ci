@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/shark-ci/shark-ci/internal/ci-server/models"
-	"github.com/shark-ci/shark-ci/internal/ci-server/service"
-	"github.com/shark-ci/shark-ci/internal/ci-server/store"
+	"github.com/shark-ci/shark-ci/internal/server/models"
+	"github.com/shark-ci/shark-ci/internal/server/service"
+	"github.com/shark-ci/shark-ci/internal/server/store"
 )
 
 type RepoHandler struct {
