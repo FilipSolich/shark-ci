@@ -1,5 +1,5 @@
 name: workflow1
-base_image: ubuntu:18.04
+base_image: go:1.21
 jobs:
   build:
     steps:
