@@ -7,6 +7,12 @@ vars:
   SERVER_IMAGE: shark-ci/server
   WORKER_IMAGE: shark-ci/worker
   DOCKER_REGISTRY: ghcr.io
+  DATETIME:
+    sh: date --utc --rfc-3339=seconds
+  VERSION:
+    sh: git describe --tags --match 'v*' --abbrev=0 --always | sed 's/^v//'
+  REVISION:
+    sh: git rev-parse HEAD
 
 dotenv: ['.env']
 
@@ -102,21 +108,27 @@ tasks:
   docker:build:
     desc: Build docker images
     aliases: ["d:b"]
-    deps:
-      - docker:build:server
-      - docker:build:worker
+    cmds:
+      - task: docker:build:server
+      - task: docker:build:worker
 
   docker:build:server:
     desc: Build CI server docker image
     aliases: ["d:b:server"]
     cmds:
-      - docker build --pull -f Dockerfile.server -t {{.SERVER_IMAGE}} .
+      - docker build --pull -f Dockerfile.server -t {{.SERVER_IMAGE}}
+        --build-arg CREATED="{{.DATETIME}}"
+        --build-arg VERSION={{.VERSION}}
+        --build-arg REVISION={{.REVISION}} .
 
   docker:build:worker:
     desc: Build worker docker image
     aliases: ["d:b:worker"]
     cmds:
-      - docker build --pull -f Dockerfile.worker -t {{.WORKER_IMAGE}} .
+      - docker build --pull -f Dockerfile.worker -t {{.WORKER_IMAGE}}
+        --build-arg CREATED="{{.DATETIME}}"
+        --build-arg VERSION={{.VERSION}}
+        --build-arg REVISION={{.REVISION}} .
 
   docker:tag:
     desc: Tag images

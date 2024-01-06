@@ -13,10 +13,17 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o bin/shark-ci-worker github.com/shark-ci
 
 FROM alpine:latest
 
+ARG CREATED
+ARG VERSION
+ARG REVISION
+
 LABEL org.opencontainers.image.title="Shark CI worker"
 LABEL org.opencontainers.image.description="Worker running CI pipelines in Docker"
-LABEL org.opencontainers.image.source=https://github.com/shark-ci/shark-ci
+LABEL org.opencontainers.image.version=$VERSION
 LABEL org.opencontainers.image.license=Apache-2.0
+LABEL org.opencontainers.image.created=$CREATED
+LABEL org.opencontainers.image.source=https://github.com/shark-ci/shark-ci
+LABEL org.opencontainers.image.revision=$REVISION
 LABEL org.opencontainers.image.base.name=docker.io/alpine:latest
 
 WORKDIR /
