@@ -46,7 +46,7 @@ func runWorker(workCh chan types.Work, gRPCCLient pb.PipelineReporterClient, com
 		tStart := time.Now()
 		work.Pipeline.StartedAt = &tStart
 		logger.Info("Start processing pipeline.")
-		_, err := gRPCCLient.PipelineStart(context.TODO(), &pb.PipelineStartRequest{
+		_, err := gRPCCLient.PipelineStarted(context.TODO(), &pb.PipelineStartedRequest{
 			PipelineId: work.Pipeline.ID,
 			StartedAt:  timestamppb.New(*work.Pipeline.StartedAt),
 		})
@@ -58,10 +58,11 @@ func runWorker(workCh chan types.Work, gRPCCLient pb.PipelineReporterClient, com
 		tEnd := time.Now()
 		work.Pipeline.FinishedAt = &tEnd
 		if err != nil {
-			_, err = gRPCCLient.PipelineFailed(context.TODO(), &pb.PipelineEndRequest{
+			e := err.Error()
+			_, err = gRPCCLient.PipelineFinnished(context.TODO(), &pb.PipelineFinnishedRequest{
 				PipelineId: work.Pipeline.ID,
 				FinishedAt: timestamppb.New(*work.Pipeline.FinishedAt),
-				Error:      err.Error(),
+				Error:      &e,
 			})
 			if err != nil {
 				slog.Warn("Sending pipeline end message failed.", "time", tEnd.Sub(tStart), "err", err)
@@ -71,7 +72,7 @@ func runWorker(workCh chan types.Work, gRPCCLient pb.PipelineReporterClient, com
 		}
 
 		logger.Info("Finished processing pipeline successfully.", "time", tEnd.Sub(tStart))
-		_, err = gRPCCLient.PipelineFinnishedSuccessfuly(context.TODO(), &pb.PipelineEndRequest{
+		_, err = gRPCCLient.PipelineFinnished(context.TODO(), &pb.PipelineFinnishedRequest{
 			PipelineId: work.Pipeline.ID,
 			FinishedAt: timestamppb.New(*work.Pipeline.FinishedAt),
 		})

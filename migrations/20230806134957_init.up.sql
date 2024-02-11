@@ -42,30 +42,11 @@ CREATE TABLE public.repo (
 CREATE TABLE public.pipeline (
     id bigserial PRIMARY KEY,
     url text UNIQUE,
-    status text NOT NULL,
+    status text NOT NULL, -- TODO: Should be an enum
     clone_url text NOT NULL,
     commit_sha text NOT NULL,
     started_at timestamp,
     finished_at timestamp,
     repo_id bigint,
     FOREIGN KEY (repo_id) REFERENCES public.repo (id)
-);
-
-CREATE TABLE public.pipeline_log (
-    id bigserial PRIMARY KEY,
-    cmd text NOT NULL,
-    return_code int,
-    started_at timestamp,
-    finished_at timestamp,
-    pipeline_id bigint,
-    FOREIGN KEY (pipeline_id) REFERENCES public.pipeline (id)
-);
-
-CREATE TABLE public.pipeline_log_line (
-    line bigint NOT NULL,
-    file text NOT NULL,
-    content text NOT NULL,
-    pipeline_log_id bigint,
-    UNIQUE (pipeline_log_id, line),
-    FOREIGN KEY (pipeline_log_id) REFERENCES public.pipeline_log (id)
 );

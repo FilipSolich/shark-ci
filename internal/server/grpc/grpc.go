@@ -25,18 +25,13 @@ func NewGRPCServer(s store.Storer, services service.Services) *GRPCServer {
 	}
 }
 
-func (s *GRPCServer) PipelineStart(ctx context.Context, in *pb.PipelineStartRequest) (*pb.Empty, error) {
+func (s *GRPCServer) PipelineStart(ctx context.Context, in *pb.PipelineStartedRequest) (*pb.Empty, error) {
 	err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetStartedAt().AsTime(), true)
 	return &pb.Empty{}, err
 }
 
-func (s *GRPCServer) PipelineFinnishedSuccessfuly(ctx context.Context, in *pb.PipelineEndRequest) (*pb.Empty, error) {
-	err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetFinishedAt().AsTime(), false)
-	return &pb.Empty{}, err
-}
-
-func (s *GRPCServer) PipelineFailed(ctx context.Context, in *pb.PipelineEndRequest) (*pb.Empty, error) {
-	// TODO: Implement.
+// TODO: Update this implementation
+func (s *GRPCServer) PipelineFinnished(ctx context.Context, in *pb.PipelineFinnishedRequest) (*pb.Empty, error) {
 	err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetFinishedAt().AsTime(), false)
 	return &pb.Empty{}, err
 }

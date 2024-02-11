@@ -10,15 +10,15 @@ CI server written in Go.
 ### Go install
 
 ```
-go install github.com/shark-ci/shark-ci/cmd/shark-ci-server # Download CI server
-go install github.com/shark-ci/shark-ci/cmd/shark-ci-worker # Download CI runner
+go install github.com/shark-ci/shark-ci/cmd/server # Download CI server
+go install github.com/shark-ci/shark-ci/cmd/worker # Download CI runner
 ```
 
 ### Docker
 
 ```
-docker pull ghcr.io/shark-ci/shark-ci-server:latest # Download CI server
-docker pull ghcr.io/shark-ci/shark-ci-worker:latest # Download CI runner
+docker pull ghcr.io/shark-ci/server:latest # Download CI server
+docker pull ghcr.io/shark-ci/worker:latest # Download CI runner
 ```
 
 ## Architecture

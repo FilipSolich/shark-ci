@@ -17,7 +17,7 @@ import (
 	pb "github.com/shark-ci/shark-ci/internal/proto"
 	"github.com/shark-ci/shark-ci/internal/server/api"
 	ciserverGrpc "github.com/shark-ci/shark-ci/internal/server/grpc"
-	"github.com/shark-ci/shark-ci/internal/server/handler"
+	"github.com/shark-ci/shark-ci/internal/server/handlers"
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/session"
@@ -81,15 +81,15 @@ func main() {
 
 	CSRF := csrf.Protect([]byte(config.ServerConf.SecretKey))
 
-	loginHandler := handler.NewLoginHandler(pgStore, services)
-	logoutHandler := handler.NewLogoutHandler()
-	eventHandler := handler.NewEventHandler(pgStore, rabbitMQ, services)
-	oauth2Handler := handler.NewOAuth2Handler(pgStore, services)
-	repoHandler := handler.NewRepoHandler(pgStore, services)
+	loginHandler := handlers.NewLoginHandler(pgStore, services)
+	logoutHandler := handlers.NewLogoutHandler()
+	eventHandler := handlers.NewEventHandler(pgStore, rabbitMQ, services)
+	oauth2Handler := handlers.NewOAuth2Handler(pgStore, services)
+	repoHandler := handlers.NewRepoHandler(pgStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
-	r.Handle("/", middleware.AuthMiddleware(pgStore)(http.HandlerFunc(handler.IndexHandler)))
+	r.Handle("/", middleware.AuthMiddleware(pgStore)(http.HandlerFunc(handlers.IndexHandler)))
 	r.HandleFunc("/login", loginHandler.HandleLoginPage)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
 	r.HandleFunc("/event_handler/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)

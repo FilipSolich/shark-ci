@@ -2,8 +2,8 @@ version: '3'
 
 vars:
   MODULE: github.com/shark-ci/shark-ci
-  SERVER_BIN: shark-ci-server
-  WORKER_BIN: shark-ci-worker
+  SERVER_BIN: server
+  WORKER_BIN: worker
   SERVER_IMAGE: shark-ci/server
   WORKER_IMAGE: shark-ci/worker
   DOCKER_REGISTRY: ghcr.io
@@ -30,26 +30,26 @@ tasks:
     desc: Build CI server
     aliases: ["b:server"]
     cmds:
-      - go build -o bin/shark-ci-server {{.MODULE}}/cmd/shark-ci-server
+      - go build -o bin/server {{.MODULE}}/cmd/server
     sources:
-      - cmd/shark-ci-server/*.go
+      - cmd/server/*.go
       - internal/**/*.go
       - exclude: internal/worker/*
     generates:
-      - bin/shark-ci-server
+      - bin/server
     method: timestamp
 
   build:worker:
     aliases: ["b:worker"]
     desc: Build worker
     cmds:
-      - go build -o bin/shark-ci-worker {{.MODULE}}/cmd/shark-ci-worker
+      - go build -o bin/worker {{.MODULE}}/cmd/worker
     sources:
-      - cmd/shark-ci-worker/*.go
+      - cmd/worker/*.go
       - internal/**/*.go
       - exclude: internal/server/*
     generates:
-      - bin/shark-ci-worker
+      - bin/worker
     method: timestamp
 
   run:
@@ -65,7 +65,7 @@ tasks:
     deps:
       - build:server
     cmds:
-      - bin/shark-ci-server
+      - bin/server
 
   run:worker:
     desc: Run worker
@@ -73,7 +73,7 @@ tasks:
     deps:
       - build:worker
     cmds:
-      - bin/shark-ci-worker
+      - bin/worker
 
   clean:
     desc: Clean build artifacts
@@ -218,10 +218,10 @@ tasks:
     requires:
       vars: ["VERSION"]
 
-  grpc:generate:
-    desc: Generate gRPC code
+  generate:
+    desc: Generate code
     cmds:
-      - >
-        protoc --go_out=. --go_opt=paths=source_relative
+      - sqlc generate
+      - protoc --go_out=. --go_opt=paths=source_relative
         --go-grpc_out=. --go-grpc_opt=paths=source_relative
         internal/proto/pipeline_reporter.proto
