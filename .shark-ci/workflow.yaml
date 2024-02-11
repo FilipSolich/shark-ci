@@ -1,5 +1,5 @@
 name: workflow1
-base_image: go:1.21
+base_image: go:1.22
 jobs:
   build:
     steps:
