@@ -8,6 +8,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -54,7 +55,7 @@ func (ns NullService) Value() (driver.Value, error) {
 }
 
 type Oauth2State struct {
-	State  pgtype.UUID
+	State  uuid.UUID
 	Expire pgtype.Timestamp
 }
 
@@ -62,11 +63,12 @@ type Pipeline struct {
 	ID         int64
 	Url        pgtype.Text
 	Status     string
+	Context    string
 	CloneUrl   string
 	CommitSha  string
 	StartedAt  pgtype.Timestamp
 	FinishedAt pgtype.Timestamp
-	RepoID     pgtype.Int8
+	RepoID     int64
 }
 
 type Repo struct {
@@ -76,7 +78,7 @@ type Repo struct {
 	Name          string
 	RepoServiceID int64
 	WebhookID     pgtype.Int8
-	ServiceUserID pgtype.Int8
+	ServiceUserID int64
 }
 
 type ServiceUser struct {
@@ -88,7 +90,7 @@ type ServiceUser struct {
 	RefreshToken pgtype.Text
 	TokenType    string
 	TokenExpire  pgtype.Timestamp
-	UserID       pgtype.Int8
+	UserID       int64
 }
 
 type User struct {

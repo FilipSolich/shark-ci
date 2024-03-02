@@ -1,0 +1,29 @@
+{{define "main"}}
+<h2>Repositories</h2>
+<table>
+  <tr>
+    <th>Active</th>
+    <th>Name</th>
+    <th>Register/Unregister</th>
+  </tr>
+  {{range .Repos}}
+    <tr>
+      <td>
+        {{if .WebhookID.Valid}}
+          <i class="bi bi-check-lg text-success"></i>
+        {{else}}
+          <i class="bi bi-x-lg text-danger"></i>
+        {{end}}
+      </td>
+      <td>{{.Name}}</td>
+      <td>
+        <form method="POST" action="/repositories/{{if .WebhookID.Valid}}register{{else}}unregister{{end}}">
+          {{$.CSRFField}}
+          <input type="hidden" name="repo_id" value="{{.ID}}" />
+          <input type="submit" value="{{if .WebhookID.Valid}}Register{{else}}Unregister{{end}}" />
+        </form>
+      </td>
+    </tr>
+  {{end}}
+</table>
+{{end}}

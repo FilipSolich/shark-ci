@@ -7,70 +7,65 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/shark-ci/shark-ci/internal/server/models"
-	"github.com/shark-ci/shark-ci/internal/server/types"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/oauth2"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/shark-ci/shark-ci/internal/server/db"
+	"github.com/shark-ci/shark-ci/internal/server/models"
+	"github.com/shark-ci/shark-ci/internal/server/types"
 )
 
 type PostgresStore struct {
-	db *sql.DB
+	conn    *pgx.Conn
+	queries *db.Queries
 }
 
 var _ Storer = &PostgresStore{}
 
-func NewPostgresStore(postgresURI string) (*PostgresStore, error) {
-	db, err := sql.Open("pgx", postgresURI)
+func NewPostgresStore(ctx context.Context, postgresURI string) (*PostgresStore, error) {
+	conn, err := pgx.Connect(ctx, postgresURI)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PostgresStore{
-		db: db,
+		conn:    conn,
+		queries: db.New(conn),
 	}, nil
 }
 
 func (s *PostgresStore) Ping(ctx context.Context) error {
-	return s.db.PingContext(ctx)
+	return s.conn.Ping(ctx)
 }
 
-func (s *PostgresStore) Close(_ context.Context) error {
-	return s.db.Close()
+func (s *PostgresStore) Close(ctx context.Context) error {
+	return s.conn.Close(ctx)
 }
 
 func (s *PostgresStore) Clean(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM public.oauth2_state WHERE expire < NOW()`)
-	return err
+	return s.queries.CleanOAuth2State(ctx)
 }
 
-func (s *PostgresStore) GetAndDeleteOAuth2State(
-	ctx context.Context, state uuid.UUID,
-) (*models.OAuth2State, error) {
-	oauth2State := &models.OAuth2State{
-		State: state,
-	}
-	err := s.db.QueryRowContext(ctx, ``+
-		`DELETE FROM public.oauth2_state WHERE state = $1 RETURNING expire`,
-		state.String()).
-		Scan(&oauth2State.Expire)
+func (s *PostgresStore) GetAndDeleteOAuth2State(ctx context.Context, state uuid.UUID) (types.OAuth2State, error) {
+	expire, err := s.queries.GetOAuth2StateExpiration(ctx, state)
 	if err != nil {
-		return nil, err
+		return types.OAuth2State{}, err
 	}
 
-	return oauth2State, nil
+	return types.OAuth2State{State: state, Expire: expire.Time}, s.queries.DeleteOAuth2State(ctx, state)
 }
 
-func (s *PostgresStore) CreateOAuth2State(ctx context.Context, state *models.OAuth2State) error {
-	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO public.oauth2_state (state, expire) VALUES ($1, $2)`,
-		state.State.String(), state.Expire)
-	return err
+func (s *PostgresStore) CreateOAuth2State(ctx context.Context, state types.OAuth2State) error {
+	return s.queries.CreateOAuth2State(ctx, db.CreateOAuth2StateParams{
+		State:  state.State,
+		Expire: pgtype.Timestamp{Time: state.Expire, Valid: true},
+	})
 }
 
 func (s *PostgresStore) GetUser(ctx context.Context, userID int64) (*models.User, error) {
 	u := &models.User{}
-	err := s.db.QueryRowContext(ctx, `SELECT id, username, email FROM public.user WHERE id = $1`, userID).
+	err := s.conn.QueryRow(ctx, `SELECT id, username, email FROM public.user WHERE id = $1`, userID).
 		Scan(&u.ID, &u.Username, &u.Email)
 	if err != nil {
 		return nil, err
@@ -80,18 +75,18 @@ func (s *PostgresStore) GetUser(ctx context.Context, userID int64) (*models.User
 }
 
 func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, int64, error) {
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.conn.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return 0, 0, err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
 	user := models.User{
 		Username: serviceUser.Username,
 		Email:    serviceUser.Email,
 	}
 	var userID int64
-	err = tx.QueryRowContext(ctx, ``+
+	err = tx.QueryRow(ctx, ``+
 		`INSERT INTO public.user (username, email) VALUES ($1, $2) RETURNING id`,
 		user.Username, user.Email).Scan(&userID)
 	if err != nil {
@@ -101,7 +96,7 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 	serviceUser.UserID = userID
 
 	var serviceUserID int64
-	err = tx.QueryRowContext(ctx, ``+
+	err = tx.QueryRow(ctx, ``+
 		`INSERT INTO public.service_user`+
 		` (service, username, email, access_token, refresh_token, token_type, token_expire, user_id) `+
 		`VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
@@ -112,7 +107,7 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 		return 0, 0, err
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -121,23 +116,19 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 }
 
 func (s *PostgresStore) GetServiceUserIDsByServiceUsername(ctx context.Context, service string, username string) (int64, int64, error) {
-	var serviceUserID int64
-	var userID int64
-	err := s.db.QueryRowContext(ctx, ``+
-		`SELECT id, user_id `+
-		`FROM public.service_user `+
-		`WHERE username = $1 AND service = $2`,
-		username, service).
-		Scan(&serviceUserID, &userID)
+	res, err := s.queries.GetServiceUserIDsByServiceUsername(ctx, db.GetServiceUserIDsByServiceUsernameParams{
+		Service:  db.Service(service),
+		Username: username,
+	})
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return serviceUserID, userID, nil
+	return res.ID, res.UserID, nil
 }
 
 func (s *PostgresStore) GetServiceUsersRepoFetchInfo(ctx context.Context, userID int64) ([]*types.ServiceUserRepoFetchInfo, error) {
-	rows, err := s.db.QueryContext(ctx, ``+
+	rows, err := s.conn.Query(ctx, ``+
 		`SELECT id, service, access_token, refresh_token, token_type, token_expire `+
 		`FROM public.service_user `+
 		`WHERE user_id = $1`,
@@ -178,7 +169,7 @@ func (s *PostgresStore) GetServiceUsersRepoFetchInfo(ctx context.Context, userID
 }
 
 func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUserID int64, token *oauth2.Token) error {
-	_, err := s.db.ExecContext(ctx, ``+
+	_, err := s.conn.Exec(ctx, ``+
 		`UPDATE public.service_user `+
 		`SET access_token = $1, refresh_token = $2, token_type = $3, token_expire = $4 `+
 		`WHERE id = $5`,
@@ -188,7 +179,7 @@ func (s *PostgresStore) UpdateServiceUserToken(ctx context.Context, serviceUserI
 
 func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error) {
 	var repoID int64
-	err := s.db.QueryRowContext(ctx, `SELECT id FROM public.repo WHERE service = $1 AND repo_service_id = $2`,
+	err := s.conn.QueryRow(ctx, `SELECT id FROM public.repo WHERE service = $1 AND repo_service_id = $2`,
 		service, serviceRepoID).
 		Scan(&repoID)
 	if err != nil {
@@ -198,34 +189,8 @@ func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service st
 	return repoID, nil
 }
 
-func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]models.Repo, error) {
-	rows, err := s.db.QueryContext(ctx, ``+
-		`SELECT r.id, r.service, r.owner, r.name, r.repo_service_id, r.webhook_id, r.service_user_id `+
-		`FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id `+
-		`WHERE su.user_id = $1`,
-		userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	repos := []models.Repo{}
-	for rows.Next() {
-		repo := models.Repo{}
-		err := rows.Scan(&repo.ID, &repo.Service, &repo.Owner, &repo.Name, &repo.RepoServiceID,
-			&repo.WebhookID, &repo.ServiceUserID)
-		if err != nil {
-			return repos, err
-		}
-		repos = append(repos, repo)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		return repos, err
-	}
-
-	return repos, nil
+func (s *PostgresStore) GetReposByUser(ctx context.Context, userID int64) ([]db.Repo, error) {
+	return s.queries.GetReposByUser(ctx, userID)
 }
 
 func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int64,
@@ -235,7 +200,7 @@ func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int
 		refreshToken sql.NullString
 		expire       sql.NullTime
 	)
-	err := s.db.QueryRowContext(ctx, ``+
+	err := s.conn.QueryRow(ctx, ``+
 		`SELECT r.service, r.owner, r.name, r.webhook_id,su.access_token,`+
 		` su.refresh_token, su.token_type, su.token_expire, su.user_id `+
 		`FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id `+
@@ -257,6 +222,10 @@ func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int
 	return &info, nil
 }
 
+func (s *PostgresStore) GetRegisterWebhookInfoByRepo(ctx context.Context, repoID int64) (db.GetRegisterWebhookInfoByRepoRow, error) {
+	return s.queries.GetRegisterWebhookInfoByRepo(ctx, repoID)
+}
+
 // TODO: Create with existing webhook including update if webhook was manualy deleted
 func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error {
 	query := `INSERT INTO public.repo (service, owner, name, repo_service_id, webhook_id, service_user_id) VALUES `
@@ -273,7 +242,7 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.
 		`ON CONFLICT (service, repo_service_id) DO UPDATE ` +
 		`SET name = EXCLUDED.name, owner = EXCLUDED.owner, webhook_id = EXCLUDED.webhook_id`
 
-	_, err := s.db.ExecContext(ctx, query, values...)
+	_, err := s.conn.Exec(ctx, query, values...)
 	if err != nil {
 		return err
 	}
@@ -282,14 +251,19 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.
 }
 
 func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE public.repo SET webhook_id = $1 WHERE id = $2`,
-		webhookID, repoID)
-	return err
+	webhook := pgtype.Int8{Valid: false}
+	if webhookID != nil {
+		webhook = pgtype.Int8{Int64: *webhookID, Valid: true}
+	}
+	return s.queries.SetRepoWebhook(ctx, db.SetRepoWebhookParams{
+		ID:        repoID,
+		WebhookID: webhook,
+	})
 }
 
 //func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error) {
 //	pipeline := &models.Pipeline{}
-//	err := s.db.QueryRowContext(ctx, ""+
+//	err := s.conn.QueryRowContext(ctx, ""+
 //		"SELECT id, commit_sha, clone_url, status, url, started_at, finished_at, repo_id "+
 //		"FROM pipeline "+
 //		"WHERE id = $1",
@@ -308,7 +282,7 @@ func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int6
 		refreshToken sql.NullString
 		tokenExpire  sql.NullTime
 	)
-	err := s.db.QueryRowContext(ctx, ``+
+	err := s.conn.QueryRow(ctx, ``+
 		`SELECT su.username, su.access_token, su.refresh_token, su.token_type, su.token_expire, r.name `+
 		`FROM public.service_user su JOIN repo r ON su.id = r.service_user_id `+
 		`WHERE r.id = $1`,
@@ -329,13 +303,13 @@ func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int6
 }
 
 func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.conn.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
-	err = tx.QueryRowContext(ctx, ``+
+	err = tx.QueryRow(ctx, ``+
 		`INSERT INTO public.pipeline (status, context, clone_url, commit_sha, repo_id) `+
 		`VALUES ($1, $2, $3, $4) `+
 		`RETURNING id`,
@@ -346,13 +320,13 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 	}
 
 	pipeline.CreateURL()
-	_, err = tx.ExecContext(ctx, `UPDATE public.pipeline SET url = $1 WHERE id = $2`,
+	_, err = tx.Exec(ctx, `UPDATE public.pipeline SET url = $1 WHERE id = $2`,
 		pipeline.URL, pipeline.ID)
 	if err != nil {
 		return 0, err
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -374,7 +348,7 @@ func (s *PostgresStore) UpdatePipelineStatus(
 		set = `finished_at`
 	}
 
-	_, err := s.db.ExecContext(ctx, ``+
+	_, err := s.conn.Exec(ctx, ``+
 		`UPDATE public.pipeline `+
 		`SET status = $1, `+set+` = $2 `+
 		`WHERE id = $3`,
@@ -389,7 +363,7 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipeline
 		refreshToken sql.NullString
 		tokenExpire  sql.NullTime
 	)
-	err := s.db.QueryRowContext(ctx, ``+
+	err := s.conn.QueryRow(ctx, ``+
 		`SELECT p.url, p.commit_sha, p.context, p.started_at, r.service, r.owner,`+
 		` r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
 		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id)`+

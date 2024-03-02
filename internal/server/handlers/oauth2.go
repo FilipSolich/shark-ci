@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"net/http"
-
 	"log/slog"
+	"net/http"
+	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/session"
 	"github.com/shark-ci/shark-ci/internal/server/store"
@@ -46,17 +47,15 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "incorrect state", http.StatusBadRequest)
 		return
 	}
-
-	if !oauth2State.IsValid() {
+	if oauth2State.Expire.Before(time.Now()) {
 		http.Error(w, "oauth2 state expired", http.StatusBadRequest)
 		return
 	}
 
-	// Get Oauth2 token from auth service.
 	config := srv.OAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
-		slog.Error("cannot get OAuth2 token", "err", err, "service", srv.Name(), "code", code)
+		slog.Error("Cannot get OAuth2 token.", "err", err, "service", srv.Name(), "code", code)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -64,7 +63,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	// Get or create new ServiceUser and new User if needed.
 	serviceUser, err := srv.GetServiceUser(ctx, token)
 	if err != nil {
-		slog.Error("service: cannot get service user", "err", err)
+		slog.Error("Cannot get service user.", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -83,7 +82,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		err = h.s.UpdateServiceUserToken(ctx, serviceUserID, token)
 		if err != nil {
 			slog.Warn("store: cannot update user OAuth2 token", "err", err)
-			// TODO: Is old token still usable? Or should handler return here?
+			// TODO: Is old token still usable? Or should handler error return here?
 		}
 	}
 
@@ -92,7 +91,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	s.Values[session.SessionKey] = uID
 	err = s.Save(r, w)
 	if err != nil {
-		slog.Error("cannot save session", "err", err)
+		slog.Error("Cannot save session.", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

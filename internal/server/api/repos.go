@@ -3,10 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
-
-	"log/slog"
 
 	"github.com/gorilla/mux"
 	"github.com/shark-ci/shark-ci/internal/server/middleware"

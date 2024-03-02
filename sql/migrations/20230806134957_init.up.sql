@@ -15,7 +15,7 @@ CREATE TABLE public.service_user (
     refresh_token text,
     token_type text NOT NULL,
     token_expire timestamp,
-    user_id bigint,
+    user_id bigint NOT NULL,
     UNIQUE (service, username),
     FOREIGN KEY (user_id) REFERENCES public.user (id)
 );
@@ -32,7 +32,7 @@ CREATE TABLE public.repo (
     name text NOT NULL,
     repo_service_id bigint NOT NULL,
     webhook_id bigint,
-    service_user_id bigint,
+    service_user_id bigint NOT NULL,
     UNIQUE (service, repo_service_id),
     UNIQUE (service, webhook_id),
     UNIQUE (service, owner, name),
@@ -42,11 +42,12 @@ CREATE TABLE public.repo (
 CREATE TABLE public.pipeline (
     id bigserial PRIMARY KEY,
     url text UNIQUE,
-    status text NOT NULL, -- TODO: Should be an enum
+    status text NOT NULL,
+    context text NOT NULL,
     clone_url text NOT NULL,
     commit_sha text NOT NULL,
     started_at timestamp,
     finished_at timestamp,
-    repo_id bigint,
+    repo_id bigint NOT NULL,
     FOREIGN KEY (repo_id) REFERENCES public.repo (id)
 );

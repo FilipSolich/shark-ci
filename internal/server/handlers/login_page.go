@@ -1,18 +1,17 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
-
-	"log/slog"
 
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
-	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/internal/server/templates"
+	"github.com/shark-ci/shark-ci/internal/server/types"
+	"github.com/shark-ci/shark-ci/templates"
 )
 
 type LoginHandler struct {
@@ -35,7 +34,7 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oauth2State := &models.OAuth2State{
+	oauth2State := types.OAuth2State{
 		State:  state,
 		Expire: time.Now().Add(30 * time.Minute),
 	}
@@ -56,7 +55,4 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 	templates.LoginTmpl.Execute(w, map[string]any{
 		"URLs": data,
 	})
-	//templates.RenderTemplate(w, "login.html", map[string]any{
-	//	"URLs": data,
-	//})
 }

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
-	"github.com/shark-ci/shark-ci/internal/server/templates"
+	"github.com/shark-ci/shark-ci/templates"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +16,4 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	templates.IndexTmpl.Execute(w, map[string]any{
 		"ID": user.ID,
 	})
-	//templates.RenderTemplate(w, "index.html", map[string]any{
-	//	"ID": user.ID,
-	//})
 }

@@ -187,17 +187,17 @@ tasks:
   migrate:create:
     desc: Create new migration file
     cmds:
-      - migrate create -ext sql -dir migrations -format 20060102150405 {{.CLI_ARGS}}
+      - migrate create -ext sql -dir sql/migrations -format 20060102150405 {{.CLI_ARGS}}
 
   migrate:up:
     desc: Run migrations up
     cmds:
-      - migrate -path migrations -database ${DB_URI} -verbose up
+      - migrate -path sql/migrations -database ${DB_URI} -verbose up
 
   migrate:down:
     desc: Run migrations down
     cmds:
-      - migrate -path migrations -database ${DB_URI} -verbose down
+      - migrate -path sql/migrations -database ${DB_URI} -verbose down
 
   release:
     desc: Create new release

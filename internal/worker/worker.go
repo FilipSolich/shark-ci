@@ -5,12 +5,11 @@ import (
 	"context"
 	"io"
 	"log"
+	"log/slog"
 	"os"
 	"path"
 	"strings"
 	"time"
-
-	"log/slog"
 
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"

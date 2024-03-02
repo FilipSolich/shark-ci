@@ -22,7 +22,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/session"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/internal/server/templates"
+	"github.com/shark-ci/shark-ci/templates"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	templates.ParseTemplates()
 
 	slog.Info("connecting to PostgreSQL")
-	pgStore, err := store.NewPostgresStore(config.ServerConf.DB.URI)
+	pgStore, err := store.NewPostgresStore(context.TODO(), config.ServerConf.DB.URI)
 	if err != nil {
 		slog.Error("store: connecting to PostgreSQL failed", "err", err)
 		os.Exit(1)
@@ -104,9 +104,9 @@ func main() {
 	repos.Use(middleware.AuthMiddleware(pgStore))
 	repos.HandleFunc("", repoHandler.HandleRepos)
 	repos.HandleFunc("/register", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
-	repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
-	repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
-	repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
+	//repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
+	//repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
+	//repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
 
 	reposAPIHandler := api.NewRepoAPI(pgStore, services)
 

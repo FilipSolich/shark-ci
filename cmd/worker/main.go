@@ -2,17 +2,17 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"os/signal"
 
-	"log/slog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/shark-ci/shark-ci/internal/config"
 	"github.com/shark-ci/shark-ci/internal/message_queue"
 	pb "github.com/shark-ci/shark-ci/internal/proto"
 	"github.com/shark-ci/shark-ci/internal/worker"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {

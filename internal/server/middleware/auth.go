@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/shark-ci/shark-ci/internal/server/session"
 	"github.com/shark-ci/shark-ci/internal/server/store"
 )

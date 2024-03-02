@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/shark-ci/shark-ci/internal/server/models"
 	"golang.org/x/oauth2"
+
+	"github.com/shark-ci/shark-ci/internal/server/models"
 )
 
 type Work struct {

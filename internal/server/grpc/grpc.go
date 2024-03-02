@@ -3,9 +3,8 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"log/slog"
+	"time"
 
 	pb "github.com/shark-ci/shark-ci/internal/proto"
 	"github.com/shark-ci/shark-ci/internal/server/service"
