@@ -35,7 +35,7 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repos, err := h.s.GetReposByUser(ctx, user.ID)
+	repos, err := h.s.GetUserRepos(ctx, user.ID)
 	if err != nil {
 		slog.Error("Cannot get user repos", "userID", user.ID, "err", err)
 	}

@@ -60,7 +60,6 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get or create new ServiceUser and new User if needed.
 	serviceUser, err := srv.GetServiceUser(ctx, token)
 	if err != nil {
 		slog.Error("Cannot get service user.", "err", err)
@@ -68,27 +67,18 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var uID int64
-	serviceUserID, userID, err := h.s.GetServiceUserIDsByServiceUsername(ctx, serviceUser.Service, serviceUser.Username)
+	userID, err := h.s.GetUserID(ctx, serviceUser.Service, serviceUser.Username)
 	if err != nil {
-		uID, _, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
+		userID, _, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
 		if err != nil {
-			slog.Error("store: cannot create user and service user", "err", err)
+			slog.Error("Cannot create user and service user.", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else {
-		uID = userID
-		err = h.s.UpdateServiceUserToken(ctx, serviceUserID, token)
-		if err != nil {
-			slog.Warn("store: cannot update user OAuth2 token", "err", err)
-			// TODO: Is old token still usable? Or should handler error return here?
-		}
 	}
 
-	// Store session.
 	s, _ := session.Store.Get(r, "session")
-	s.Values[session.SessionKey] = uID
+	s.Values[session.SessionKey] = userID
 	err = s.Save(r, w)
 	if err != nil {
 		slog.Error("Cannot save session.", "err", err)

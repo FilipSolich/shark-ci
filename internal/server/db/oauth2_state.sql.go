@@ -37,24 +37,14 @@ func (q *Queries) CreateOAuth2State(ctx context.Context, arg CreateOAuth2StatePa
 	return err
 }
 
-const deleteOAuth2State = `-- name: DeleteOAuth2State :exec
+const getAndDeleteOAuth2State = `-- name: GetAndDeleteOAuth2State :one
 DELETE FROM public.oauth2_state
 WHERE state = $1
+RETURNING expire
 `
 
-func (q *Queries) DeleteOAuth2State(ctx context.Context, state uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteOAuth2State, state)
-	return err
-}
-
-const getOAuth2StateExpiration = `-- name: GetOAuth2StateExpiration :one
-SELECT expire
-FROM public.oauth2_state
-WHERE state = $1
-`
-
-func (q *Queries) GetOAuth2StateExpiration(ctx context.Context, state uuid.UUID) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, getOAuth2StateExpiration, state)
+func (q *Queries) GetAndDeleteOAuth2State(ctx context.Context, state uuid.UUID) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, getAndDeleteOAuth2State, state)
 	var expire pgtype.Timestamp
 	err := row.Scan(&expire)
 	return expire, err

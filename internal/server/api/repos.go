@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
-	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/internal/server/types"
@@ -34,7 +33,7 @@ func (api *RepoAPI) GetRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repos, err := api.s.GetReposByUser(ctx, user.ID)
+	repos, err := api.s.GetUserRepos(ctx, user.ID)
 	if err != nil {
 		if repos == nil {
 			slog.Error("store: cannot get user repos", "err", err, "userID", user.ID)
@@ -48,45 +47,45 @@ func (api *RepoAPI) GetRepos(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *RepoAPI) RefreshRepos(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user, ok := middleware.UserFromContext(ctx, w)
-	if !ok {
-		return
-	}
+	//ctx := r.Context()
+	//user, ok := middleware.UserFromContext(ctx, w)
+	//if !ok {
+	//	return
+	//}
 
-	serviceUsersInfo, err := api.s.GetServiceUsersRepoFetchInfo(ctx, user.ID)
-	if err != nil {
-		if serviceUsersInfo == nil {
-			slog.Error("store: cannot get service users", "err", err, "userID", user.ID)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		slog.Warn("store: cannot get all service users", "err", err, "userID", user.ID)
-	}
+	//serviceUsersInfo, err := api.s.GetServiceUsersRepoFetchInfo(ctx, user.ID)
+	//if err != nil {
+	//	if serviceUsersInfo == nil {
+	//		slog.Error("store: cannot get service users", "err", err, "userID", user.ID)
+	//		w.WriteHeader(http.StatusInternalServerError)
+	//		return
+	//	}
+	//	slog.Warn("store: cannot get all service users", "err", err, "userID", user.ID)
+	//}
 
-	allRepos := []models.Repo{}
-	for _, serviceUserInfo := range serviceUsersInfo {
-		srv, ok := api.services[serviceUserInfo.Service]
-		if !ok {
-			slog.Error("service: unknown service", "service", serviceUserInfo.Service)
-			continue
-		}
+	//allRepos := []models.Repo{}
+	//for _, serviceUserInfo := range serviceUsersInfo {
+	//	srv, ok := api.services[serviceUserInfo.Service]
+	//	if !ok {
+	//		slog.Error("service: unknown service", "service", serviceUserInfo.Service)
+	//		continue
+	//	}
 
-		repos, err := srv.GetUsersRepos(ctx, &serviceUserInfo.Token, serviceUserInfo.ID)
-		if err != nil {
-			slog.Error("service: cannot get user repositories from service", "err", err, "service", srv.Name())
-			continue
-		}
+	//	repos, err := srv.GetUsersRepos(ctx, &serviceUserInfo.Token, serviceUserInfo.ID)
+	//	if err != nil {
+	//		slog.Error("service: cannot get user repositories from service", "err", err, "service", srv.Name())
+	//		continue
+	//	}
 
-		allRepos = append(allRepos, repos...)
-	}
+	//	allRepos = append(allRepos, repos...)
+	//}
 
-	err = api.s.CreateOrUpdateRepos(ctx, allRepos)
-	if err != nil {
-		slog.Error("store: cannot create or update repos", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	//err = api.s.CreateOrUpdateRepos(ctx, allRepos)
+	//if err != nil {
+	//	slog.Error("store: cannot create or update repos", "err", err)
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
 
 	w.WriteHeader(http.StatusNoContent)
 }

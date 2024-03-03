@@ -10,6 +10,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/config"
 	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/store"
+	"github.com/shark-ci/shark-ci/internal/server/types"
 )
 
 var ErrEventNotSupported = errors.New("event is not supported")
@@ -48,7 +49,7 @@ type ServiceManager interface {
 	StatusName(status StatusState) string
 	OAuth2Config() *oauth2.Config
 
-	GetServiceUser(ctx context.Context, token *oauth2.Token) (*models.ServiceUser, error)
+	GetServiceUser(ctx context.Context, token *oauth2.Token) (types.ServiceUser, error)
 	GetUsersRepos(ctx context.Context, token *oauth2.Token, serviceUserID int64) ([]models.Repo, error)
 
 	CreateWebhook(ctx context.Context, token *oauth2.Token, owner string, repoName string) (int64, error)

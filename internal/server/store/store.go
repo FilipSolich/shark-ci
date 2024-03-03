@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"golang.org/x/oauth2"
 
 	"github.com/shark-ci/shark-ci/internal/server/db"
 	"github.com/shark-ci/shark-ci/internal/server/models"
@@ -16,24 +15,19 @@ import (
 type Storer interface {
 	Ping(ctx context.Context) error
 	Close(ctx context.Context) error
-
-	// Cleanup expired OAuth2 states.
 	Clean(ctx context.Context) error
 
 	GetAndDeleteOAuth2State(ctx context.Context, state uuid.UUID) (types.OAuth2State, error)
 	CreateOAuth2State(ctx context.Context, state types.OAuth2State) error
 
-	GetUser(ctx context.Context, userID int64) (*models.User, error)
-	CreateUserAndServiceUser(ctx context.Context, serviceUser *models.ServiceUser) (int64, int64, error)
-
-	GetServiceUserIDsByServiceUsername(ctx context.Context, service string, username string) (int64, int64, error)
-	GetServiceUsersRepoFetchInfo(ctx context.Context, userID int64) ([]*types.ServiceUserRepoFetchInfo, error)
-	UpdateServiceUserToken(ctx context.Context, serviceUserID int64, token *oauth2.Token) error
+	GetUser(ctx context.Context, userID int64) (types.User, error)
+	GetUserID(ctx context.Context, service string, username string) (int64, error)
+	CreateUserAndServiceUser(ctx context.Context, serviceUser types.ServiceUser) (int64, int64, error)
 
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
-	GetReposByUser(ctx context.Context, userID int64) ([]db.Repo, error)
+	GetUserRepos(ctx context.Context, userID int64) ([]db.Repo, error)
 	GetRepoWebhookChangeInfo(ctx context.Context, repoID int64) (*types.RepoWebhookChangeInfo, error)
-	GetRegisterWebhookInfoByRepo(ctx context.Context, repoID int64) (db.GetRegisterWebhookInfoByRepoRow, error)
+	GetRegisterWebhookInfoByRepo(ctx context.Context, repoID int64) (db.GetRegisterWebhookInfoRow, error)
 	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
 	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
 

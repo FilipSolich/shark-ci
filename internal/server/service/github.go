@@ -11,6 +11,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/config"
 	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/store"
+	"github.com/shark-ci/shark-ci/internal/server/types"
 )
 
 type GitHubManager struct {
@@ -55,15 +56,15 @@ func (m *GitHubManager) OAuth2Config() *oauth2.Config {
 	return m.oauth2Config
 }
 
-func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token) (*models.ServiceUser, error) {
+func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token) (types.ServiceUser, error) {
 	client := m.clientWithToken(ctx, token)
 
 	user, _, err := client.Users.Get(ctx, "")
 	if err != nil {
-		return nil, err
+		return types.ServiceUser{}, err
 	}
 
-	serviceUser := &models.ServiceUser{
+	serviceUser := types.ServiceUser{
 		Username:    user.GetLogin(),
 		Email:       user.GetEmail(),
 		Service:     m.Name(),

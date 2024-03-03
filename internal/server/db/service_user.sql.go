@@ -7,27 +7,57 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getServiceUserIDsByServiceUsername = `-- name: GetServiceUserIDsByServiceUsername :one
-SELECT id, user_id
-FROM public.service_user
-WHERE username = $1 AND service = $2
+const createServiceUser = `-- name: CreateServiceUser :one
+INSERT INTO public.service_user (service, username, email, access_token, refresh_token, token_type, token_expire, user_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id
 `
 
-type GetServiceUserIDsByServiceUsernameParams struct {
-	Username string
+type CreateServiceUserParams struct {
+	Service      Service
+	Username     string
+	Email        string
+	AccessToken  string
+	RefreshToken pgtype.Text
+	TokenType    string
+	TokenExpire  pgtype.Timestamp
+	UserID       int64
+}
+
+func (q *Queries) CreateServiceUser(ctx context.Context, arg CreateServiceUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createServiceUser,
+		arg.Service,
+		arg.Username,
+		arg.Email,
+		arg.AccessToken,
+		arg.RefreshToken,
+		arg.TokenType,
+		arg.TokenExpire,
+		arg.UserID,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getUserID = `-- name: GetUserID :one
+SELECT user_id
+FROM public.service_user
+WHERE service = $1 AND username = $2
+`
+
+type GetUserIDParams struct {
 	Service  Service
+	Username string
 }
 
-type GetServiceUserIDsByServiceUsernameRow struct {
-	ID     int64
-	UserID int64
-}
-
-func (q *Queries) GetServiceUserIDsByServiceUsername(ctx context.Context, arg GetServiceUserIDsByServiceUsernameParams) (GetServiceUserIDsByServiceUsernameRow, error) {
-	row := q.db.QueryRow(ctx, getServiceUserIDsByServiceUsername, arg.Username, arg.Service)
-	var i GetServiceUserIDsByServiceUsernameRow
-	err := row.Scan(&i.ID, &i.UserID)
-	return i, err
+func (q *Queries) GetUserID(ctx context.Context, arg GetUserIDParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getUserID, arg.Service, arg.Username)
+	var user_id int64
+	err := row.Scan(&user_id)
+	return user_id, err
 }

@@ -11,13 +11,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getRegisterWebhookInfoByRepo = `-- name: GetRegisterWebhookInfoByRepo :one
+const getRegisterWebhookInfo = `-- name: GetRegisterWebhookInfo :one
 SELECT r.service, r.owner, r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire
 FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id
 WHERE r.id = $1
 `
 
-type GetRegisterWebhookInfoByRepoRow struct {
+type GetRegisterWebhookInfoRow struct {
 	Service      Service
 	Owner        string
 	Name         string
@@ -27,9 +27,9 @@ type GetRegisterWebhookInfoByRepoRow struct {
 	TokenExpire  pgtype.Timestamp
 }
 
-func (q *Queries) GetRegisterWebhookInfoByRepo(ctx context.Context, id int64) (GetRegisterWebhookInfoByRepoRow, error) {
-	row := q.db.QueryRow(ctx, getRegisterWebhookInfoByRepo, id)
-	var i GetRegisterWebhookInfoByRepoRow
+func (q *Queries) GetRegisterWebhookInfo(ctx context.Context, id int64) (GetRegisterWebhookInfoRow, error) {
+	row := q.db.QueryRow(ctx, getRegisterWebhookInfo, id)
+	var i GetRegisterWebhookInfoRow
 	err := row.Scan(
 		&i.Service,
 		&i.Owner,
@@ -42,14 +42,14 @@ func (q *Queries) GetRegisterWebhookInfoByRepo(ctx context.Context, id int64) (G
 	return i, err
 }
 
-const getReposByUser = `-- name: GetReposByUser :many
+const getUserRepos = `-- name: GetUserRepos :many
 SELECT r.id, r.service, r.owner, r.name, r.repo_service_id, r.webhook_id, r.service_user_id
 FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id
 WHERE su.user_id = $1
 `
 
-func (q *Queries) GetReposByUser(ctx context.Context, userID int64) ([]Repo, error) {
-	rows, err := q.db.Query(ctx, getReposByUser, userID)
+func (q *Queries) GetUserRepos(ctx context.Context, userID int64) ([]Repo, error) {
+	rows, err := q.db.Query(ctx, getUserRepos, userID)
 	if err != nil {
 		return nil, err
 	}
