@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/shark-ci/shark-ci/internal/server/types"
@@ -18,7 +19,8 @@ func ContextWithUser(ctx context.Context, user types.User) context.Context {
 func UserFromContext(ctx context.Context, w http.ResponseWriter) (types.User, bool) {
 	user, ok := ctx.Value(userKey).(types.User)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
+		slog.Error("User not found in context.")
+		w.WriteHeader(http.StatusUnauthorized) // TODO: render unauthorized page or redirect to login page
 	}
 	return user, ok
 }

@@ -28,7 +28,9 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	repos, err := h.s.GetUserRepos(ctx, user.ID)
 	if err != nil {
-		slog.Error("Cannot get user repos", "userID", user.ID, "err", err)
+		slog.Error("Cannot get user repos.", "userID", user.ID, "err", err)
+		Error5xx(w, r, http.StatusInternalServerError)
+		return
 	}
 
 	err = templates.IndexTmpl.Execute(w, map[string]any{
@@ -36,6 +38,8 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Repos":    repos,
 	})
 	if err != nil {
-		slog.Error("Cannot execute template", "template", "index", "err", err)
+		slog.Error("Cannot execute template.", "template", "index", "err", err)
+		Error5xx(w, r, http.StatusInternalServerError)
+		return
 	}
 }

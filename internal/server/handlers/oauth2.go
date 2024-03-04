@@ -55,7 +55,7 @@ func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	config := srv.OAuth2Config()
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
-		slog.Error("Cannot get OAuth2 token.", "err", err, "service", srv.Name(), "code", code)
+		slog.Error("Cannot get OAuth2 token.", "service", srv.Name(), "code", code, "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

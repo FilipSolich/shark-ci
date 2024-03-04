@@ -1,7 +1,13 @@
 {{define "repo"}}
   <a href="/repo/{{.ID}}">
     <div class="border border-rounder">
-      <i class="bi bi-github"></i>
+      {{if eq .Service "GitHub"}}
+        <i class="bi bi-github"></i>
+      {{else if eq .Service "GitLab"}}
+        <i class="bi bi-gitlab"></i>
+      {{else}}
+        <i class="bi bi-git"></i>
+      {{end}}
       {{.Owner}}/{{.Name}}
     </div>
   </a>
