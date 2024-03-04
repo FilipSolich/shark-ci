@@ -6,12 +6,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type ServiceUserRepoFetchInfo struct {
-	ID      int64
-	Service string
-	Token   oauth2.Token
-}
-
 type ServiceUser struct {
 	ID           int64
 	Service      string
@@ -36,4 +30,10 @@ func (su ServiceUser) Token() *oauth2.Token {
 		token.Expiry = *su.TokenExpire
 	}
 	return token
+}
+
+type ServiceUserRepoFetchInfo struct {
+	ID      int64
+	Service string
+	Token   oauth2.Token
 }

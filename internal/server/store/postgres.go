@@ -131,8 +131,26 @@ func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service st
 	return repoID, nil
 }
 
-func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]db.Repo, error) {
-	return s.queries.GetUserRepos(ctx, userID)
+func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error) {
+	repos, err := s.queries.GetUserRepos(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get user repos with userID=%d: %w", userID, err)
+	}
+
+	var result []types.Repo
+	for _, repo := range repos {
+		result = append(result, types.Repo{
+			ID:            repo.ID,
+			Service:       string(repo.Service),
+			Owner:         repo.Owner,
+			Name:          repo.Name,
+			RepoServiceID: repo.RepoServiceID,
+			WebhookID:     ValueInt8(repo.WebhookID),
+			ServiceUserID: repo.ServiceUserID,
+		})
+	}
+
+	return result, nil
 }
 
 func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int64,
@@ -344,4 +362,11 @@ func NullableTimestamp(ptr *time.Time) pgtype.Timestamp {
 		return pgtype.Timestamp{Valid: false}
 	}
 	return pgtype.Timestamp{Time: *ptr, Valid: true}
+}
+
+func ValueInt8(value pgtype.Int8) *int64 {
+	if !value.Valid {
+		return nil
+	}
+	return &value.Int64
 }

@@ -1,19 +1,41 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
+	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/templates"
 )
 
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := middleware.UserFromContext(r.Context(), w)
+type IndexHandler struct {
+	s store.Storer
+}
+
+func NewIndexHandler(s store.Storer) *IndexHandler {
+	return &IndexHandler{
+		s: s,
+	}
+}
+
+func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, ok := middleware.UserFromContext(ctx, w)
 	if !ok {
 		return
 	}
 
-	templates.IndexTmpl.Execute(w, map[string]any{
-		"ID": user.ID,
+	repos, err := h.s.GetUserRepos(ctx, user.ID)
+	if err != nil {
+		slog.Error("Cannot get user repos", "userID", user.ID, "err", err)
+	}
+
+	err = templates.IndexTmpl.Execute(w, map[string]any{
+		"Username": user.Username,
+		"Repos":    repos,
 	})
+	if err != nil {
+		slog.Error("Cannot execute template", "template", "index", "err", err)
+	}
 }

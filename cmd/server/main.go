@@ -22,7 +22,6 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/session"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/templates"
 )
 
 func main() {
@@ -36,8 +35,6 @@ func main() {
 	}
 
 	session.InitSessionStore(config.ServerConf.SecretKey)
-
-	templates.ParseTemplates()
 
 	slog.Info("connecting to PostgreSQL")
 	pgStore, err := store.NewPostgresStore(context.TODO(), config.ServerConf.DB.URI)
@@ -81,6 +78,7 @@ func main() {
 
 	CSRF := csrf.Protect([]byte(config.ServerConf.SecretKey))
 
+	indexHandler := handlers.NewIndexHandler(pgStore)
 	loginHandler := handlers.NewLoginHandler(pgStore, services)
 	logoutHandler := handlers.NewLogoutHandler()
 	eventHandler := handlers.NewEventHandler(pgStore, rabbitMQ, services)
@@ -89,7 +87,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
-	r.Handle("/", middleware.AuthMiddleware(pgStore)(http.HandlerFunc(handlers.IndexHandler)))
+	r.Handle("/", middleware.AuthMiddleware(pgStore)(indexHandler))
 	r.HandleFunc("/login", loginHandler.HandleLoginPage)
 	r.HandleFunc("/logout", logoutHandler.HandleLogout)
 	r.HandleFunc("/event_handler/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)

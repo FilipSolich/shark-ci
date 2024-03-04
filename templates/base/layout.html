@@ -1,0 +1,12 @@
+{{define "layout"}}
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="">Shark CI</a>
+      <div>
+        <span class="navbar-text me-2">{{.Username}}</span>
+        <a href="/logout"><button class="btn btn-outline-light">Logout</button></a>
+      </div>
+    </div>
+  </nav>
+  {{template "main" .}}
+{{end}}

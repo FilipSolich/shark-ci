@@ -1,19 +1,15 @@
 package handlers
 
 import (
-	"html/template"
 	"log/slog"
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/csrf"
 	"golang.org/x/oauth2"
 
-	"github.com/shark-ci/shark-ci/internal/server/db"
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/templates"
 )
 
 type RepoHandler struct {
@@ -35,19 +31,19 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repos, err := h.s.GetUserRepos(ctx, user.ID)
+	_, err := h.s.GetUserRepos(ctx, user.ID)
 	if err != nil {
 		slog.Error("Cannot get user repos", "userID", user.ID, "err", err)
 	}
 	// TODO: Split repos by service
 
-	templates.ReposTmpl.Execute(w, struct {
-		CSRFField template.HTML
-		Repos     []db.Repo
-	}{
-		CSRFField: csrf.TemplateField(r),
-		Repos:     repos,
-	})
+	//templates.ReposTmpl.Execute(w, struct {
+	//	CSRFField template.HTML
+	//	Repos     []db.Repo
+	//}{
+	//	CSRFField: csrf.TemplateField(r),
+	//	Repos:     repos,
+	//})
 }
 
 func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request) {

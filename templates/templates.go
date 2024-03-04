@@ -3,27 +3,20 @@ package templates
 import (
 	"embed"
 	"html/template"
-	"log/slog"
-	"os"
 )
 
-//go:embed *.html
+//go:embed *.html base/*.html partials/*.html
 var templates embed.FS
-var IndexTmpl *template.Template
-var LoginTmpl *template.Template
-var ReposTmpl *template.Template
 
-func ParseTemplates() {
-	parseTemplate(&IndexTmpl, "_base.html", "_layout.html", "index.html")
-	parseTemplate(&LoginTmpl, "_base.html", "login.html")
-	parseTemplate(&ReposTmpl, "_base.html", "_layout.html", "repos.html")
+var (
+	IndexTmpl = template.Must(template.New("base.html").Funcs(FuncMap).ParseFS(templates, "base/base.html", "base/layout.html", "index.html", "partials/repo.html"))
+	LoginTmpl = template.Must(template.New("base.html").Funcs(FuncMap).ParseFS(templates, "base/base.html", "login.html"))
+)
+
+var FuncMap = template.FuncMap{
+	"Modulo": Modulo,
 }
 
-func parseTemplate(tmpl **template.Template, filename ...string) {
-	var err error
-	*tmpl, err = template.ParseFS(templates, filename...)
-	if err != nil {
-		slog.Error("Parsing template failed", "template", filename[len(filename)-1], "err", err)
-		os.Exit(1)
-	}
+func Modulo(a int, b int) bool {
+	return a%b == 0
 }

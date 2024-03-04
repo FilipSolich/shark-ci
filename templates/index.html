@@ -1,3 +1,16 @@
 {{define "main"}}
-  {{.ID}}
+  <div class="container text-center mt-3">
+    <div class="row row-cols-4">
+      {{range .Repos}}
+        <div class="col">
+          {{template "repo" .}}
+        </div>
+      {{end}}
+      <div class="col">
+        <div class="border border-rounder">
+          <i class="bi bi-plus-lg"></i>
+        </div>
+      </div>
+    </div>
+  </div>
 {{end}}

@@ -25,7 +25,8 @@ type Storer interface {
 	CreateUserAndServiceUser(ctx context.Context, serviceUser types.ServiceUser) (int64, int64, error)
 
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
-	GetUserRepos(ctx context.Context, userID int64) ([]db.Repo, error)
+	GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error)
+
 	GetRepoWebhookChangeInfo(ctx context.Context, repoID int64) (*types.RepoWebhookChangeInfo, error)
 	GetRegisterWebhookInfoByRepo(ctx context.Context, repoID int64) (db.GetRegisterWebhookInfoRow, error)
 	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
