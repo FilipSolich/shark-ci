@@ -67,9 +67,11 @@ func (s *PostgresStore) GetUser(ctx context.Context, userID int64) (types.User, 
 	if err != nil {
 		return types.User{}, fmt.Errorf("cannot get user with id=%d: %w", userID, err)
 	}
+
 	return types.User{ID: user.ID, Username: user.Username, Email: user.Email}, nil
 }
 
+// TODO: Rename on GetUserIDByServiceUser
 func (s *PostgresStore) GetUserID(ctx context.Context, service string, username string) (int64, error) {
 	userID, err := s.queries.GetUserID(ctx, db.GetUserIDParams{
 		Service:  db.Service(service),
@@ -78,6 +80,7 @@ func (s *PostgresStore) GetUserID(ctx context.Context, service string, username 
 	if err != nil {
 		return 0, fmt.Errorf("cannot get user ID with service=%s and username=%s: %w", service, username, err)
 	}
+
 	return userID, nil
 }
 
@@ -117,6 +120,28 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 	}
 
 	return userID, serviceUserID, nil
+}
+
+func (s *PostgresStore) GetServiceUserByUserID(ctx context.Context, service string, userID int64) (types.ServiceUser, error) {
+	serviceUser, err := s.queries.GetServiceUserByUserID(ctx, db.GetServiceUserByUserIDParams{
+		Service: db.Service(service),
+		UserID:  userID,
+	})
+	if err != nil {
+		return types.ServiceUser{}, fmt.Errorf("cannot get service user with service=%s and userID=%d: %w", service, userID, err)
+	}
+
+	return types.ServiceUser{
+		ID:           serviceUser.ID,
+		Service:      service,
+		Username:     serviceUser.Username,
+		Email:        serviceUser.Email,
+		AccessToken:  serviceUser.AccessToken,
+		RefreshToken: ValueText(serviceUser.RefreshToken),
+		TokenType:    serviceUser.TokenType,
+		TokenExpire:  ValueTime(serviceUser.TokenExpire),
+		UserID:       userID,
+	}, nil
 }
 
 func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error) {
@@ -369,4 +394,18 @@ func ValueInt8(value pgtype.Int8) *int64 {
 		return nil
 	}
 	return &value.Int64
+}
+
+func ValueText(value pgtype.Text) *string {
+	if !value.Valid {
+		return nil
+	}
+	return &value.String
+}
+
+func ValueTime(value pgtype.Timestamp) *time.Time {
+	if !value.Valid {
+		return nil
+	}
+	return &value.Time
 }

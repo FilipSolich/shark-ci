@@ -44,6 +44,44 @@ func (q *Queries) CreateServiceUser(ctx context.Context, arg CreateServiceUserPa
 	return id, err
 }
 
+const getServiceUserByUserID = `-- name: GetServiceUserByUserID :one
+SELECT id, username, username, email, access_token, refresh_token, token_type, token_expire
+FROM public.service_user
+WHERE user_id = $1 AND service = $2
+`
+
+type GetServiceUserByUserIDParams struct {
+	UserID  int64
+	Service Service
+}
+
+type GetServiceUserByUserIDRow struct {
+	ID           int64
+	Username     string
+	Username_2   string
+	Email        string
+	AccessToken  string
+	RefreshToken pgtype.Text
+	TokenType    string
+	TokenExpire  pgtype.Timestamp
+}
+
+func (q *Queries) GetServiceUserByUserID(ctx context.Context, arg GetServiceUserByUserIDParams) (GetServiceUserByUserIDRow, error) {
+	row := q.db.QueryRow(ctx, getServiceUserByUserID, arg.UserID, arg.Service)
+	var i GetServiceUserByUserIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Username_2,
+		&i.Email,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.TokenType,
+		&i.TokenExpire,
+	)
+	return i, err
+}
+
 const getUserID = `-- name: GetUserID :one
 SELECT user_id
 FROM public.service_user

@@ -10,6 +10,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/store"
+	"github.com/shark-ci/shark-ci/templates"
 )
 
 type RepoHandler struct {
@@ -21,6 +22,37 @@ func NewRepoHandler(s store.Storer, services service.Services) *RepoHandler {
 	return &RepoHandler{
 		s:        s,
 		services: services,
+	}
+}
+
+func (h *RepoHandler) FetchUnregistredRepos(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, ok := middleware.UserFromContext(ctx, w)
+	if !ok {
+		return
+	}
+
+	srv := h.services["GitHub"] // TODO Change
+
+	serviceUser, err := h.s.GetServiceUserByUserID(ctx, srv.Name(), user.ID)
+	if err != nil {
+		slog.Error("Cannot get service user.", "service", srv.Name(), "userID", user.ID, "err", err)
+		Error5xx(w, r, http.StatusInternalServerError)
+		return
+	}
+
+	repos, err := srv.GetUserRepos(ctx, serviceUser.Token(), serviceUser.ID)
+	if err != nil {
+		slog.Error("Cannot get user unregistered repos.", "service", srv.Name(), "userID", user.ID, "err", err)
+		Error5xx(w, r, http.StatusInternalServerError)
+		return
+	}
+
+	err = templates.ReposRegisterTmpl.Execute(w, map[string]any{"Repos": repos})
+	if err != nil {
+		slog.Error("Cannot execute template.", "template", templates.ReposRegisterTmpl.Name(), "err", err)
+		Error5xx(w, r, http.StatusInternalServerError)
+		return
 	}
 }
 

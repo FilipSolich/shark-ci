@@ -24,6 +24,8 @@ type Storer interface {
 	GetUserID(ctx context.Context, service string, username string) (int64, error)
 	CreateUserAndServiceUser(ctx context.Context, serviceUser types.ServiceUser) (int64, int64, error)
 
+	GetServiceUserByUserID(ctx context.Context, service string, userID int64) (types.ServiceUser, error)
+
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
 	GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error)
 

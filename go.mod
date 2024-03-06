@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/docker/docker v25.0.3+incompatible
 	github.com/go-git/go-git/v5 v5.11.0
-	github.com/google/go-github/v59 v59.0.0
+	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/csrf v1.7.2
 	github.com/gorilla/handlers v1.5.2

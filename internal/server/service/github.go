@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/go-github/v59/github"
+	"github.com/google/go-github/v60/github"
 	"golang.org/x/oauth2"
 	oauth2_github "golang.org/x/oauth2/github"
 
@@ -80,19 +80,19 @@ func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token)
 	return serviceUser, nil
 }
 
-func (m *GitHubManager) GetUsersRepos(ctx context.Context, token *oauth2.Token, serviceUserID int64) ([]models.Repo, error) {
+func (m *GitHubManager) GetUserRepos(ctx context.Context, token *oauth2.Token, serviceUserID int64) ([]types.Repo, error) {
 	client := m.clientWithToken(ctx, token)
 
 	// TODO: Experimenting feature - get all repos, not just owned by user.
 	// TODO: Add pagination.
-	r, _, err := client.Repositories.List(ctx, "", &github.RepositoryListOptions{ListOptions: github.ListOptions{PerPage: 50}})
+	r, _, err := client.Repositories.ListByAuthenticatedUser(ctx, &github.RepositoryListByAuthenticatedUserOptions{ListOptions: github.ListOptions{PerPage: 50}})
 
-	repos := make([]models.Repo, 0, len(r))
+	repos := make([]types.Repo, 0, len(r))
 	for _, repo := range r {
 		if repo.GetArchived() {
 			continue
 		}
-		repo := models.Repo{
+		repo := types.Repo{
 			RepoServiceID: repo.GetID(),
 			Name:          repo.GetName(),
 			Owner:         repo.GetOwner().GetLogin(),
@@ -111,10 +111,10 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, token *oauth2.Token, 
 	hook := &github.Hook{
 		Active: github.Bool(true),
 		Events: []string{"push", "pull_request"},
-		Config: map[string]any{
-			"url":          config.ServerConf.Host + "/event_handler/" + m.Name(),
-			"content_type": "json",
-			"secret":       config.ServerConf.SecretKey,
+		Config: &github.HookConfig{
+			ContentType: github.String("json"),
+			URL:         github.String(config.ServerConf.Host + "/event_handler/" + m.Name()),
+			Secret:      github.String(config.ServerConf.SecretKey),
 		},
 	}
 
@@ -133,7 +133,7 @@ func (m *GitHubManager) DeleteWebhook(ctx context.Context, token *oauth2.Token, 
 	return err
 }
 
-func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*models.Pipeline, error) {
+func (m *GitHubManager) HandleEvent(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Pipeline, error) {
 	payload, err := github.ValidatePayload(r, []byte(config.ServerConf.SecretKey))
 	if err != nil {
 		return nil, err
@@ -147,7 +147,8 @@ func (m *GitHubManager) HandleEvent(ctx context.Context, r *http.Request) (*mode
 	case *github.PushEvent:
 		return m.handlePush(ctx, event)
 	case *github.PingEvent:
-		return nil, NoErrPingEvent
+		w.Write([]byte("pong"))
+		return nil, nil
 	default:
 		return nil, ErrEventNotSupported
 	}

@@ -38,7 +38,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Repos":    repos,
 	})
 	if err != nil {
-		slog.Error("Cannot execute template.", "template", "index", "err", err)
+		slog.Error("Cannot execute template.", "template", templates.IndexTmpl.Name(), "err", err)
 		Error5xx(w, r, http.StatusInternalServerError)
 		return
 	}

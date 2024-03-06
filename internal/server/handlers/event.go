@@ -42,16 +42,18 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pipeline, err := srv.HandleEvent(ctx, r)
+	pipeline, err := srv.HandleEvent(ctx, w, r)
 	if err != nil {
-		if errors.Is(err, service.NoErrPingEvent) {
-			w.Write([]byte("pong"))
-		} else if errors.Is(err, service.ErrEventNotSupported) {
+		if errors.Is(err, service.ErrEventNotSupported) {
 			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
 		} else {
 			slog.Error("service: cannot hadle event", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+		return
+	}
+	if pipeline == nil {
+		// TODO: handle rest of event somewhere else so HandleEvent should return pipeline but just error
 		return
 	}
 

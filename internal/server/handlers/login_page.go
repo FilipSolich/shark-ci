@@ -52,7 +52,10 @@ func (h *LoginHandler) HandleLoginPage(w http.ResponseWriter, r *http.Request) {
 		data[s.Name()+"URL"] = url
 	}
 
-	templates.LoginTmpl.Execute(w, map[string]any{
-		"URLs": data,
-	})
+	err = templates.LoginTmpl.Execute(w, map[string]any{"URLs": data})
+	if err != nil {
+		slog.Error("Cannot execute template.", "template", templates.LoginTmpl.Name(), "err", err)
+		Error5xx(w, r, http.StatusInternalServerError)
+		return
+	}
 }
