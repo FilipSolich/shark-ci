@@ -1,0 +1,10 @@
+<ul class="list-group">
+  {{range .Repos}}
+    <li class="list-group-item">
+      <div>{{.Owner}}/{{.Name}}</div>
+      <button type="button" class="btn btn-primary" data-bs-dismiss="modal" hx-post="/repositories/register/{{.Service}}/{{.RepoServiceID}}">
+        Register
+      </button>
+    </li>
+  {{end}}
+</ul>

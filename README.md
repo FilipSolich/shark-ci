@@ -31,6 +31,7 @@ docker pull ghcr.io/shark-ci/worker:latest # Download CI runner
 |------------------------|---------------------------------|---------------------------|
 | `HOST`                 | `localhost`                     | Hostname                  |
 | `PORT`                 | `8000`                          | Port                      |
+| `GRPC_PORT`            | `9000`                          | GRPc port                 |
 | `SECRET_KEY`           |                                 | Random key for encryption |
 | `DB_URI`               | `postgres://localhost/shark-ci` | Postgres URI              |
 | `MQ_URI`               | `amqp://guest:guest@localhost`  | RabbitMQ URI              |
@@ -41,9 +42,10 @@ docker pull ghcr.io/shark-ci/worker:latest # Download CI runner
 
 ## Env variables worker
 
-| Key             | Default                        | Description              |
-|-----------------|--------------------------------|--------------------------|
-| `SERVER_HOST`   | `localhost`                    | Server hostname          |
-| `SERVER_PORT`   | `8000`                         | Server port              |
-| `MQ_URI`        | `amqp://guest:guest@localhost` | RabbitMQ URI             |
-| `REPOS_PATH`    | `./repos`                      | Path to repositories     |
+| Key           | Default                        | Description           |
+|---------------|--------------------------------|-----------------------|
+| `HOST`        | `localhost`                    | Server hostname       |
+| `GRPC_PORT`   | `9000`                         | Server port           |
+| `MAX_WORKERS` | env `GOMAXPROC`                | Max number of workers |
+| `MQ_URI`      | `amqp://guest:guest@localhost` | RabbitMQ URI          |
+| `REPOS_PATH`  | `./repos`                      | Path to repositories  |

@@ -2,8 +2,6 @@ version: '3'
 
 vars:
   MODULE: github.com/shark-ci/shark-ci
-  SERVER_BIN: server
-  WORKER_BIN: worker
   SERVER_IMAGE: shark-ci/server
   WORKER_IMAGE: shark-ci/worker
   DOCKER_REGISTRY: ghcr.io
@@ -28,7 +26,6 @@ tasks:
 
   build:server:
     desc: Build CI server
-    aliases: ["b:server"]
     cmds:
       - go build -o bin/server {{.MODULE}}/cmd/server
     sources:
@@ -40,7 +37,6 @@ tasks:
     method: timestamp
 
   build:worker:
-    aliases: ["b:worker"]
     desc: Build worker
     cmds:
       - go build -o bin/worker {{.MODULE}}/cmd/worker
@@ -61,7 +57,6 @@ tasks:
 
   run:server:
     desc: Run server
-    aliases: ["r:server"]
     deps:
       - build:server
     cmds:
@@ -69,7 +64,6 @@ tasks:
 
   run:worker:
     desc: Run worker
-    aliases: ["r:worker"]
     deps:
       - build:worker
     cmds:
@@ -94,27 +88,14 @@ tasks:
     cmds:
       - ngrok http --domain {{.NGROK_DOMAIN}} 8000
 
-  docker:up:
-    desc: Start docker containers
-    cmds:
-      - docker compose up
-
-  docker:dev:up:
-    desc: Start docker containers for development
-    aliases: ["d:dev:up"]
-    cmds:
-      - docker compose -f docker-compose.dev.yaml up
-
   docker:build:
     desc: Build docker images
-    aliases: ["d:b"]
     cmds:
       - task: docker:build:server
       - task: docker:build:worker
 
   docker:build:server:
     desc: Build CI server docker image
-    aliases: ["d:b:server"]
     cmds:
       - docker build --pull -f Dockerfile.server -t {{.SERVER_IMAGE}}
         --build-arg CREATED="{{.DATETIME}}"
@@ -123,7 +104,6 @@ tasks:
 
   docker:build:worker:
     desc: Build worker docker image
-    aliases: ["d:b:worker"]
     cmds:
       - docker build --pull -f Dockerfile.worker -t {{.WORKER_IMAGE}}
         --build-arg CREATED="{{.DATETIME}}"

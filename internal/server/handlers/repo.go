@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/gorilla/mux"
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/store"
@@ -32,7 +33,8 @@ func (h *RepoHandler) FetchUnregistredRepos(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	srv := h.services["GitHub"] // TODO Change
+	vars := mux.Vars(r)
+	srv := h.services[vars["service"]]
 
 	serviceUser, err := h.s.GetServiceUserByUserID(ctx, srv.Name(), user.ID)
 	if err != nil {
@@ -81,8 +83,9 @@ func (h *RepoHandler) HandleRepos(w http.ResponseWriter, r *http.Request) {
 func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	r.ParseForm()
-	repoIDString := r.Form.Get("repo_id")
+	vars := mux.Vars(r)
+	repoIDString := vars["repoID"]
+	_ = vars["service"]
 	repoID, err := strconv.ParseInt(repoIDString, 10, 64)
 	if err != nil {
 		slog.Error("Cannot parse repo_id", "id", repoIDString, "err", err)
