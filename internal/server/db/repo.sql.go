@@ -83,7 +83,7 @@ WHERE id = $2
 `
 
 type SetRepoWebhookParams struct {
-	WebhookID pgtype.Int8
+	WebhookID int64
 	ID        int64
 }
 

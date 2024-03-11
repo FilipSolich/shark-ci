@@ -8,7 +8,7 @@ type Repo struct {
 	Owner         string
 	Name          string
 	RepoServiceID int64
-	WebhookID     *int64
+	WebhookID     int64
 	ServiceUserID int64
 }
 

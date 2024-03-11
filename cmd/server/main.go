@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/gorilla/csrf"
@@ -15,14 +16,18 @@ import (
 	"github.com/shark-ci/shark-ci/internal/config"
 	"github.com/shark-ci/shark-ci/internal/message_queue"
 	pb "github.com/shark-ci/shark-ci/internal/proto"
-	"github.com/shark-ci/shark-ci/internal/server/api"
 	ciserverGrpc "github.com/shark-ci/shark-ci/internal/server/grpc"
-	"github.com/shark-ci/shark-ci/internal/server/handlers"
+	"github.com/shark-ci/shark-ci/internal/server/handler"
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/session"
 	"github.com/shark-ci/shark-ci/internal/server/store"
 )
+
+func fatal(msg string, err error) {
+	slog.Error(msg, "err", err)
+	os.Exit(1)
+}
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -30,71 +35,65 @@ func main() {
 
 	err := config.LoadServerConfigFromEnv()
 	if err != nil {
-		slog.Error("Loading config from environment failed.", "err", err)
-		os.Exit(1)
+		fatal("Loading config from environment failed.", err)
 	}
 
 	session.InitSessionStore(config.ServerConf.SecretKey)
 
-	slog.Info("connecting to PostgreSQL")
+	slog.Info("Connecting to PostgreSQL.")
 	pgStore, err := store.NewPostgresStore(context.TODO(), config.ServerConf.DB.URI)
 	if err != nil {
-		slog.Error("store: connecting to PostgreSQL failed", "err", err)
-		os.Exit(1)
+		fatal("Connecting to PostgreSQL failed.", err)
 	}
 	defer pgStore.Close(context.TODO())
 
 	err = pgStore.Ping(context.TODO())
 	if err != nil {
-		slog.Error("store: pinging to PostgreSQL failed", "err", err)
-		os.Exit(1)
+		fatal("Pinging to PostgreSQL failed.", err)
 	}
-	slog.Info("PostgreSQL connected")
+	slog.Info("PostgreSQL connected.")
 
-	slog.Info("connecting to RabbitMQ")
+	slog.Info("Connecting to RabbitMQ.")
 	rabbitMQ, err := message_queue.NewRabbitMQ(config.ServerConf.MQ.URI)
 	if err != nil {
-		slog.Error("mq: connecting to RabbitMQ failed", "err", err)
-		os.Exit(1)
+		fatal("Connecting to RabbitMQ failed.", err)
 	}
 	defer rabbitMQ.Close(context.TODO())
-	slog.Info("RabbitMQ connected")
+	slog.Info("RabbitMQ connected.")
 
 	store.Cleaner(pgStore, 24*time.Hour)
 
 	services := service.InitServices(pgStore)
 
-	slog.Info("starting gRPC server")
+	slog.Info("Starting gRPC server.")
 	lis, err := net.Listen("tcp", ":"+config.ServerConf.GRPCPort)
 	if err != nil {
-		slog.Error("failed to listen", "err", err)
-		os.Exit(1)
+		fatal("Failed to listen.", err)
 	}
 	s := grpc.NewServer()
 	grpcServer := ciserverGrpc.NewGRPCServer(pgStore, services)
 	pb.RegisterPipelineReporterServer(s, grpcServer)
 	go s.Serve(lis)
-	slog.Info("gRPC server running", "port", config.ServerConf.GRPCPort)
+	slog.Info("gRPC server is running.", "port", config.ServerConf.GRPCPort)
 
+	slog.Info("Starting HTTP server.")
 	CSRF := csrf.Protect([]byte(config.ServerConf.SecretKey))
 
-	indexHandler := handlers.NewIndexHandler(pgStore)
-	loginHandler := handlers.NewLoginHandler(pgStore, services)
-	logoutHandler := handlers.NewLogoutHandler()
-	eventHandler := handlers.NewEventHandler(pgStore, rabbitMQ, services)
-	oauth2Handler := handlers.NewOAuth2Handler(pgStore, services)
-	repoHandler := handlers.NewRepoHandler(pgStore, services)
+	indexHandler := handler.NewIndexHandler(pgStore)
+	eventHandler := handler.NewEventHandler(pgStore, rabbitMQ, services)
+	repoHandler := handler.NewRepoHandler(pgStore, services)
+	authHandler := handler.NewAuthHandler(pgStore, services)
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
 	r.Handle("/", middleware.AuthMiddleware(pgStore)(indexHandler))
-	r.HandleFunc("/login", loginHandler.HandleLoginPage)
-	r.HandleFunc("/logout", logoutHandler.HandleLogout)
+	r.HandleFunc("/login", authHandler.LoginPage)
+	r.HandleFunc("/logout", authHandler.Logout)
 	r.HandleFunc("/event_handler/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
 
 	// OAuth2 subrouter.
 	OAuth2 := r.PathPrefix("/oauth2").Subrouter()
-	OAuth2.HandleFunc("/callback", oauth2Handler.HandleCallback)
+	OAuth2.HandleFunc("/callback", authHandler.OAuth2Callback)
 
 	// Repositories subrouter.
 	repos := r.PathPrefix("/repositories").Subrouter()
@@ -103,21 +102,6 @@ func main() {
 	repos.HandleFunc("", repoHandler.HandleRepos)
 	repos.HandleFunc("/register/{service}/{repoID}", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/fetch-unregistered/{service}", repoHandler.FetchUnregistredRepos).Methods(http.MethodGet)
-	//repos.HandleFunc("/unregister", repoHandler.HandleUnregisterRepo).Methods(http.MethodPost)
-	//repos.HandleFunc("/activate", repoHandler.HandleActivateRepo).Methods(http.MethodPost)
-	//repos.HandleFunc("/deactivate", repoHandler.HandleDeactivateRepo).Methods(http.MethodPost)
-
-	reposAPIHandler := api.NewRepoAPI(pgStore, services)
-
-	api := r.PathPrefix("/api").Subrouter()
-	api.Use(middleware.AuthMiddleware(pgStore))
-	api.Use(middleware.ContentTypeMiddleware)
-
-	reposAPI := api.PathPrefix("/repos").Subrouter()
-	reposAPI.HandleFunc("", reposAPIHandler.GetRepos).Methods(http.MethodGet)
-	reposAPI.HandleFunc("/refresh", reposAPIHandler.RefreshRepos).Methods(http.MethodPost)
-	reposAPI.HandleFunc("/{repoID}/webhook", reposAPIHandler.CreateWebhook).Methods(http.MethodPost)
-	reposAPI.HandleFunc("/{repoID}/webhook", reposAPIHandler.DeleteWebhook).Methods(http.MethodDelete)
 
 	server := &http.Server{
 		Addr:         ":" + config.ServerConf.Port,
@@ -126,11 +110,16 @@ func main() {
 		WriteTimeout: 0,
 		IdleTimeout:  0,
 	}
-	slog.Info("server running", "addr", server.Addr)
 
-	err = server.ListenAndServe()
-	if err != nil {
-		slog.Error("server crashed", "err", err)
-		os.Exit(1)
-	}
+	go func() {
+		if err = server.ListenAndServe(); err != nil {
+			fatal("HTTP server error.", err)
+		}
+	}()
+	slog.Info("HTTP server is running.", "port", config.ServerConf.Port)
+
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt)
+	<-signalCh
+	slog.Info("Recived interrupt signal. Shuting down.")
 }

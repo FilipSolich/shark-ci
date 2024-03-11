@@ -1,7 +1,6 @@
-package handlers
+package handler
 
 import (
-	"log/slog"
 	"net/http"
 
 	"github.com/shark-ci/shark-ci/internal/server/middleware"
@@ -28,8 +27,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	repos, err := h.s.GetUserRepos(ctx, user.ID)
 	if err != nil {
-		slog.Error("Cannot get user repos.", "userID", user.ID, "err", err)
-		Error5xx(w, r, http.StatusInternalServerError)
+		Error5xx(w, http.StatusInternalServerError, "Cannot get user repos.", err)
 		return
 	}
 
@@ -38,8 +36,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Repos":    repos,
 	})
 	if err != nil {
-		slog.Error("Cannot execute template.", "template", templates.IndexTmpl.Name(), "err", err)
-		Error5xx(w, r, http.StatusInternalServerError)
+		Error5xx(w, http.StatusInternalServerError, "Cannot execute template", err)
 		return
 	}
 }

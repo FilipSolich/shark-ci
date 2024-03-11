@@ -170,7 +170,7 @@ func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]types
 			Owner:         repo.Owner,
 			Name:          repo.Name,
 			RepoServiceID: repo.RepoServiceID,
-			WebhookID:     ValueInt8(repo.WebhookID),
+			WebhookID:     repo.WebhookID,
 			ServiceUserID: repo.ServiceUserID,
 		})
 	}
@@ -233,13 +233,6 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.
 	}
 
 	return nil
-}
-
-func (s *PostgresStore) UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error {
-	return s.queries.SetRepoWebhook(ctx, db.SetRepoWebhookParams{
-		ID:        repoID,
-		WebhookID: NullableInt8(webhookID),
-	})
 }
 
 //func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error) {

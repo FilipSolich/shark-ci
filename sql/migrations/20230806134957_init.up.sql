@@ -31,7 +31,7 @@ CREATE TABLE public.repo (
     owner text NOT NULL,
     name text NOT NULL,
     repo_service_id bigint NOT NULL,
-    webhook_id bigint,
+    webhook_id bigint NOT NULL,
     service_user_id bigint NOT NULL,
     UNIQUE (service, repo_service_id),
     UNIQUE (service, webhook_id),

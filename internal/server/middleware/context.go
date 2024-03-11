@@ -19,8 +19,8 @@ func ContextWithUser(ctx context.Context, user types.User) context.Context {
 func UserFromContext(ctx context.Context, w http.ResponseWriter) (types.User, bool) {
 	user, ok := ctx.Value(userKey).(types.User)
 	if !ok {
-		slog.Error("User not found in context.")
-		w.WriteHeader(http.StatusUnauthorized) // TODO: render unauthorized page or redirect to login page
+		slog.Error("User not found in context. Probably unused AuthMiddleware when login is required.")
+		w.WriteHeader(http.StatusInternalServerError) // TODO: render 500
 	}
 	return user, ok
 }

@@ -32,7 +32,6 @@ type Storer interface {
 	GetRepoWebhookChangeInfo(ctx context.Context, repoID int64) (*types.RepoWebhookChangeInfo, error)
 	GetRegisterWebhookInfoByRepo(ctx context.Context, repoID int64) (db.GetRegisterWebhookInfoRow, error)
 	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
-	UpdateRepoWebhook(ctx context.Context, repoID int64, webhookID *int64) error
 
 	//GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
 	GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)

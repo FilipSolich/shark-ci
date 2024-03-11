@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"log/slog"
@@ -38,22 +38,19 @@ func (h *RepoHandler) FetchUnregistredRepos(w http.ResponseWriter, r *http.Reque
 
 	serviceUser, err := h.s.GetServiceUserByUserID(ctx, srv.Name(), user.ID)
 	if err != nil {
-		slog.Error("Cannot get service user.", "service", srv.Name(), "userID", user.ID, "err", err)
-		Error5xx(w, r, http.StatusInternalServerError)
+		Error5xx(w, http.StatusInternalServerError, "Cannot get service user.", err)
 		return
 	}
 
 	repos, err := srv.GetUserRepos(ctx, serviceUser.Token(), serviceUser.ID)
 	if err != nil {
-		slog.Error("Cannot get user unregistered repos.", "service", srv.Name(), "userID", user.ID, "err", err)
-		Error5xx(w, r, http.StatusInternalServerError)
+		Error5xx(w, http.StatusInternalServerError, "Cannot get user unregistered repos.", err)
 		return
 	}
 
 	err = templates.ReposRegisterTmpl.Execute(w, map[string]any{"Repos": repos})
 	if err != nil {
-		slog.Error("Cannot execute template.", "template", templates.ReposRegisterTmpl.Name(), "err", err)
-		Error5xx(w, r, http.StatusInternalServerError)
+		Error5xx(w, http.StatusInternalServerError, "Cannot execute template.", err)
 		return
 	}
 }
@@ -114,14 +111,15 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	webhookID, err := srv.CreateWebhook(ctx, token, info.Owner, info.Name)
+	// TODO
+	_, err = srv.CreateWebhook(ctx, token, info.Owner, info.Name)
 	if err != nil {
 		slog.Error("Cannot create webhook", "repoID", repoID, "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = h.s.UpdateRepoWebhook(ctx, repoID, &webhookID)
+	//err = h.s.UpdateRepoWebhook(ctx, repoID, &webhookID)
 	if err != nil {
 		slog.Error("Cannot update repo webhook", "repoID", repoID, "err", err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -14,8 +14,9 @@ var (
 
 	ReposRegisterTmpl = template.Must(template.ParseFS(templates, "partials/repos_register.html"))
 
-	Error404Tmpl = template.Must(template.New("base.html").Funcs(FuncMap).ParseFS(templates, "base/base.html", "errors/404.html"))
-	Error5xxTmpl = template.Must(template.New("base.html").Funcs(FuncMap).ParseFS(templates, "base/base.html", "errors/5xx.html"))
+	Error400Tmpl = template.Must(template.New("base.html").ParseFS(templates, "base/base.html", "errors/400.html"))
+	Error404Tmpl = template.Must(template.New("base.html").ParseFS(templates, "base/base.html", "errors/404.html"))
+	Error5xxTmpl = template.Must(template.New("base.html").ParseFS(templates, "base/base.html", "errors/5xx.html"))
 )
 
 var FuncMap = template.FuncMap{
