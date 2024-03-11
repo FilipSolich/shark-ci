@@ -26,7 +26,7 @@ func NewAuthHandler(s store.Storer, services service.Services) AuthHandler {
 	}
 }
 
-func (h AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
+func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	state, err := uuid.NewRandom()
 	if err != nil {
 		Error5xx(w, http.StatusInternalServerError, "Cannot generate UUID.", err)
@@ -110,7 +110,7 @@ func (h AuthHandler) OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := h.s.GetUserID(ctx, serviceUser.Service, serviceUser.Username)
+	userID, err := h.s.GetUserIDByServiceUser(ctx, serviceUser.Service, serviceUser.Username)
 	if err != nil {
 		userID, _, err = h.s.CreateUserAndServiceUser(ctx, serviceUser)
 		if err != nil {

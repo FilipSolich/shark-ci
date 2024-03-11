@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/shark-ci/shark-ci/internal/server/db"
 	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/types"
 )
@@ -21,17 +20,19 @@ type Storer interface {
 	CreateOAuth2State(ctx context.Context, state types.OAuth2State) error
 
 	GetUser(ctx context.Context, userID int64) (types.User, error)
-	GetUserID(ctx context.Context, service string, username string) (int64, error)
+	GetUserIDByServiceUser(ctx context.Context, service string, username string) (int64, error)
 	CreateUserAndServiceUser(ctx context.Context, serviceUser types.ServiceUser) (int64, int64, error)
 
 	GetServiceUserByUserID(ctx context.Context, service string, userID int64) (types.ServiceUser, error)
 
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
 	GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error)
+	CreateRepo(ctx context.Context, repo types.Repo) (int64, error)
 
-	GetRepoWebhookChangeInfo(ctx context.Context, repoID int64) (*types.RepoWebhookChangeInfo, error)
-	GetRegisterWebhookInfoByRepo(ctx context.Context, repoID int64) (db.GetRegisterWebhookInfoRow, error)
-	CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
+	// ---
+
+	//GetRepoWebhookChangeInfo(ctx context.Context, repoID int64) (*types.RepoWebhookChangeInfo, error)
+	//CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
 
 	//GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
 	GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)

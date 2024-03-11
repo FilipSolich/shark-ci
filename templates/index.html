@@ -3,14 +3,24 @@
     <div class="row row-cols-4">
       {{range .Repos}}
         <div class="col">
-          {{template "repo" .}}
+          <a href="/repo/{{.ID}}">
+            <div class="border border-rounder">
+              {{if eq .Service "GitHub"}}
+                <i class="bi bi-github"></i>
+              {{else if eq .Service "GitLab"}}
+                <i class="bi bi-gitlab"></i>
+              {{else}}
+                <i class="bi bi-git"></i>
+              {{end}}
+              {{.Owner}}/{{.Name}}
+            </div>
+          </a>
         </div>
       {{end}}
       <div class="col">
         <div class="border border-rounder" data-bs-toggle="modal" data-bs-target="#addRepoModal">
           <i class="bi bi-plus-lg"></i>
         </div>
-        <!-- TODO: Modal -->
         <div class="modal fade" id="addRepoModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
           <div class="modal-dialog">
             <div class="modal-content">

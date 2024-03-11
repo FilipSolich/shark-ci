@@ -77,7 +77,7 @@ func main() {
 	slog.Info("gRPC server is running.", "port", config.ServerConf.GRPCPort)
 
 	slog.Info("Starting HTTP server.")
-	CSRF := csrf.Protect([]byte(config.ServerConf.SecretKey))
+	CSRF := csrf.Protect([]byte(config.ServerConf.SecretKey), csrf.Path("/"))
 
 	indexHandler := handler.NewIndexHandler(pgStore)
 	eventHandler := handler.NewEventHandler(pgStore, rabbitMQ, services)
@@ -86,8 +86,8 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
-	r.Handle("/", middleware.AuthMiddleware(pgStore)(indexHandler))
-	r.HandleFunc("/login", authHandler.LoginPage)
+	r.Handle("/", middleware.AuthMiddleware(pgStore)(http.HandlerFunc(indexHandler.Index)))
+	r.HandleFunc("/login", authHandler.Login)
 	r.HandleFunc("/logout", authHandler.Logout)
 	r.HandleFunc("/event_handler/{service}", eventHandler.HandleEvent).Methods(http.MethodPost)
 
@@ -99,8 +99,7 @@ func main() {
 	repos := r.PathPrefix("/repositories").Subrouter()
 	repos.Use(CSRF)
 	repos.Use(middleware.AuthMiddleware(pgStore))
-	repos.HandleFunc("", repoHandler.HandleRepos)
-	repos.HandleFunc("/register/{service}/{repoID}", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
+	repos.HandleFunc("/register", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/fetch-unregistered/{service}", repoHandler.FetchUnregistredRepos).Methods(http.MethodGet)
 
 	server := &http.Server{

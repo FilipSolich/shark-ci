@@ -8,7 +8,7 @@ SELECT id, username, username, email, access_token, refresh_token, token_type, t
 FROM public.service_user
 WHERE user_id = $1 AND service = $2;
 
--- name: GetUserID :one
+-- name: GetUserIDByServiceUser :one
 SELECT user_id
 FROM public.service_user
 WHERE service = $1 AND username = $2;

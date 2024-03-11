@@ -18,12 +18,9 @@ func NewIndexHandler(s store.Storer) *IndexHandler {
 	}
 }
 
-func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *IndexHandler) Index(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	user, ok := middleware.UserFromContext(ctx, w)
-	if !ok {
-		return
-	}
+	user := middleware.UserFromContext(ctx, w)
 
 	repos, err := h.s.GetUserRepos(ctx, user.ID)
 	if err != nil {

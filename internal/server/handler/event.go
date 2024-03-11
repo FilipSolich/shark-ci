@@ -29,13 +29,8 @@ func NewEventHandler(s store.Storer, mq message_queue.MessageQueuer, services se
 
 func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	params := mux.Vars(r)
-	serviceName, ok := params["service"]
-	if !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
+	serviceName := mux.Vars(r)["service"]
 	srv, ok := h.services[serviceName]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)

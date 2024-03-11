@@ -7,39 +7,35 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getRegisterWebhookInfo = `-- name: GetRegisterWebhookInfo :one
-SELECT r.service, r.owner, r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire
-FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id
-WHERE r.id = $1
+const createRepo = `-- name: CreateRepo :one
+INSERT INTO public.repo (service, owner, name, repo_service_id, webhook_id, service_user_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id
 `
 
-type GetRegisterWebhookInfoRow struct {
-	Service      Service
-	Owner        string
-	Name         string
-	AccessToken  string
-	RefreshToken pgtype.Text
-	TokenType    string
-	TokenExpire  pgtype.Timestamp
+type CreateRepoParams struct {
+	Service       Service
+	Owner         string
+	Name          string
+	RepoServiceID int64
+	WebhookID     int64
+	ServiceUserID int64
 }
 
-func (q *Queries) GetRegisterWebhookInfo(ctx context.Context, id int64) (GetRegisterWebhookInfoRow, error) {
-	row := q.db.QueryRow(ctx, getRegisterWebhookInfo, id)
-	var i GetRegisterWebhookInfoRow
-	err := row.Scan(
-		&i.Service,
-		&i.Owner,
-		&i.Name,
-		&i.AccessToken,
-		&i.RefreshToken,
-		&i.TokenType,
-		&i.TokenExpire,
+func (q *Queries) CreateRepo(ctx context.Context, arg CreateRepoParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createRepo,
+		arg.Service,
+		arg.Owner,
+		arg.Name,
+		arg.RepoServiceID,
+		arg.WebhookID,
+		arg.ServiceUserID,
 	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getUserRepos = `-- name: GetUserRepos :many
@@ -74,20 +70,4 @@ func (q *Queries) GetUserRepos(ctx context.Context, userID int64) ([]Repo, error
 		return nil, err
 	}
 	return items, nil
-}
-
-const setRepoWebhook = `-- name: SetRepoWebhook :exec
-UPDATE public.repo
-SET webhook_id = $1
-WHERE id = $2
-`
-
-type SetRepoWebhookParams struct {
-	WebhookID int64
-	ID        int64
-}
-
-func (q *Queries) SetRepoWebhook(ctx context.Context, arg SetRepoWebhookParams) error {
-	_, err := q.db.Exec(ctx, setRepoWebhook, arg.WebhookID, arg.ID)
-	return err
 }

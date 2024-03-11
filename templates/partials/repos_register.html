@@ -2,9 +2,16 @@
   {{range .Repos}}
     <li class="list-group-item">
       <div>{{.Owner}}/{{.Name}}</div>
-      <button type="button" class="btn btn-primary" data-bs-dismiss="modal" hx-post="/repositories/register/{{.Service}}/{{.RepoServiceID}}">
-        Register
-      </button>
+      <form method="post" action="/repositories/register">
+        <input type="hidden" name="service" value="{{.Service}}">
+        <input type="hidden" name="repo_id" value="{{.RepoServiceID}}">
+        <input type="hidden" name="owner" value="{{.Owner}}">
+        <input type="hidden" name="name" value="{{.Name}}">
+        {{$.csrfField }}
+        <button type="submit" class="btn btn-primary">
+          Register
+        </button>
+      </form>
     </li>
   {{end}}
 </ul>

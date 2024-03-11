@@ -82,19 +82,19 @@ func (q *Queries) GetServiceUserByUserID(ctx context.Context, arg GetServiceUser
 	return i, err
 }
 
-const getUserID = `-- name: GetUserID :one
+const getUserIDByServiceUser = `-- name: GetUserIDByServiceUser :one
 SELECT user_id
 FROM public.service_user
 WHERE service = $1 AND username = $2
 `
 
-type GetUserIDParams struct {
+type GetUserIDByServiceUserParams struct {
 	Service  Service
 	Username string
 }
 
-func (q *Queries) GetUserID(ctx context.Context, arg GetUserIDParams) (int64, error) {
-	row := q.db.QueryRow(ctx, getUserID, arg.Service, arg.Username)
+func (q *Queries) GetUserIDByServiceUser(ctx context.Context, arg GetUserIDByServiceUserParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getUserIDByServiceUser, arg.Service, arg.Username)
 	var user_id int64
 	err := row.Scan(&user_id)
 	return user_id, err

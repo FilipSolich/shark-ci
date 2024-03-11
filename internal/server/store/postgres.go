@@ -71,9 +71,8 @@ func (s *PostgresStore) GetUser(ctx context.Context, userID int64) (types.User, 
 	return types.User{ID: user.ID, Username: user.Username, Email: user.Email}, nil
 }
 
-// TODO: Rename on GetUserIDByServiceUser
-func (s *PostgresStore) GetUserID(ctx context.Context, service string, username string) (int64, error) {
-	userID, err := s.queries.GetUserID(ctx, db.GetUserIDParams{
+func (s *PostgresStore) GetUserIDByServiceUser(ctx context.Context, service string, username string) (int64, error) {
+	userID, err := s.queries.GetUserIDByServiceUser(ctx, db.GetUserIDByServiceUserParams{
 		Service:  db.Service(service),
 		Username: username,
 	})
@@ -178,6 +177,22 @@ func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]types
 	return result, nil
 }
 
+func (s *PostgresStore) CreateRepo(ctx context.Context, repo types.Repo) (int64, error) {
+	repoID, err := s.queries.CreateRepo(ctx, db.CreateRepoParams{
+		Service:       db.Service(repo.Service),
+		Owner:         repo.Owner,
+		Name:          repo.Name,
+		RepoServiceID: repo.RepoServiceID,
+		WebhookID:     repo.WebhookID,
+		ServiceUserID: repo.ServiceUserID,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("cannot create repo: %w", err)
+	}
+
+	return repoID, nil
+}
+
 func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int64,
 ) (*types.RepoWebhookChangeInfo, error) {
 	var (
@@ -205,10 +220,6 @@ func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int
 	}
 
 	return &info, nil
-}
-
-func (s *PostgresStore) GetRegisterWebhookInfoByRepo(ctx context.Context, repoID int64) (db.GetRegisterWebhookInfoRow, error) {
-	return s.queries.GetRegisterWebhookInfo(ctx, repoID)
 }
 
 // TODO: Create with existing webhook including update if webhook was manualy deleted
