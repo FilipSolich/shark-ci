@@ -193,6 +193,10 @@ func (s *PostgresStore) CreateRepo(ctx context.Context, repo types.Repo) (int64,
 	return repoID, nil
 }
 
+func (s *PostgresStore) DeleteRepo(ctx context.Context, repoID int64) error {
+	return s.queries.DeleteRepo(ctx, repoID)
+}
+
 func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int64,
 ) (*types.RepoWebhookChangeInfo, error) {
 	var (

@@ -12,6 +12,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/internal/server/types"
 	"github.com/shark-ci/shark-ci/templates"
+	"golang.org/x/exp/slog"
 )
 
 type RepoHandler struct {
@@ -113,100 +114,29 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-//func (h *RepoHandler) HandleUnregisterRepo(w http.ResponseWriter, r *http.Request) {
-//	ctx := r.Context()
-//	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
-//	if err != nil {
-//		slog.Error("cannot get info from request", "err", err)
-//		w.WriteHeader(http.StatusInternalServerError)
-//		return
-//	}
-//
-//	err = srv.DeleteWebhook(ctx, serviceUser, repo)
-//	if err != nil {
-//		slog.Error("service: cannot delete webhook", "err", err)
-//		w.WriteHeader(http.StatusInternalServerError)
-//		return
-//	}
-//
-//	err = h.s.UpdateRepoWebhook(ctx, repo)
-//	if err != nil {
-//		slog.Error("store: cannot update webhook", "err", err)
-//		w.WriteHeader(http.StatusInternalServerError)
-//		return
-//	}
-//
-//	http.Redirect(w, r, "/repositories", http.StatusFound)
-//}
-//
-//func (h *RepoHandler) HandleActivateRepo(w http.ResponseWriter, r *http.Request) {
-//	h.changeRepoState(w, r, true)
-//}
-//
-//func (h *RepoHandler) HandleDeactivateRepo(w http.ResponseWriter, r *http.Request) {
-//	h.changeRepoState(w, r, false)
-//}
-//
-//func (h *RepoHandler) changeRepoState(w http.ResponseWriter, r *http.Request, active bool) {
-//	ctx := r.Context()
-//	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
-//	if err != nil {
-//		slog.Error("cannot get infor from request", "err", err)
-//		http.Error(w, err.Error(), http.StatusBadRequest)
-//		return
-//	}
-//
-//	repo, err = srv.ChangeWebhookState(ctx, serviceUser, repo, active)
-//	if err != nil {
-//		slog.Error("service: cannot change a webhook state", "err", err)
-//		w.WriteHeader(http.StatusInternalServerError)
-//		return
-//	}
-//
-//	err = h.s.UpdateRepoWebhook(ctx, repo)
-//	if err != nil {
-//		slog.Error("store: cannot update a webhook", "err", err)
-//		w.WriteHeader(http.StatusInternalServerError)
-//		return
-//	}
-//
-//	http.Redirect(w, r, "/repositories", http.StatusFound)
-//}
+func (h *RepoHandler) HandleDeleteRepo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
+	if err != nil {
+		slog.Error("cannot get info from request", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-//func (h *RepoHandler) getInfoFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.ServiceUser, *models.Repo, service.ServiceManager, error) {
-//	user, ok := middleware.UserFromContext(ctx, w)
-//	if !ok {
-//		return nil, nil, nil, errors.New("unauthorized user")
-//	}
-//
-//	r.ParseForm()
-//	repo, err := h.s.GetRepo(ctx, r.Form.Get("repo_id"))
-//	if err != nil {
-//		return nil, nil, nil, err
-//	}
-//
-//	srv, ok := h.services[repo.ServiceName]
-//	if !ok {
-//		return nil, nil, nil, fmt.Errorf("unknown service: %s", repo.ServiceName)
-//	}
-//
-//	serviceUser, err := h.s.GetServiceUserByUser(ctx, user, repo.ServiceName)
-//	if err != nil {
-//		return nil, nil, nil, err
-//	}
-//
-//	return serviceUser, repo, srv, nil
-//}
-//
-//func splitRepos(repos []*models.Repo) ([]*models.Repo, []*models.Repo) {
-//	registered := []*models.Repo{}
-//	notRegistered := []*models.Repo{}
-//	for _, repo := range repos {
-//		if repo.WebhookID == 0 {
-//			notRegistered = append(notRegistered, repo)
-//		} else {
-//			registered = append(registered, repo)
-//		}
-//	}
-//	return registered, notRegistered
-//}
+	repo, err = h.s.GetRepo(ctx, repo.ID)
+
+	err = srv.DeleteWebhook(ctx, serviceUser, repo)
+	if err != nil {
+		slog.Error("service: cannot delete webhook", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.s.DeleteRepo(ctx, repo.ID)
+	if err != nil {
+		Error5xx(w, http.StatusInternalServerError, "Cannot delete repo", err)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
+}

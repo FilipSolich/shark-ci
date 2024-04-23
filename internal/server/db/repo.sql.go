@@ -38,6 +38,16 @@ func (q *Queries) CreateRepo(ctx context.Context, arg CreateRepoParams) (int64, 
 	return id, err
 }
 
+const deleteRepo = `-- name: DeleteRepo :exec
+DELETE FROM public.repo
+WHERE id = $1
+`
+
+func (q *Queries) DeleteRepo(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteRepo, id)
+	return err
+}
+
 const getUserRepos = `-- name: GetUserRepos :many
 SELECT r.id, r.service, r.owner, r.name, r.repo_service_id, r.webhook_id, r.service_user_id
 FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id

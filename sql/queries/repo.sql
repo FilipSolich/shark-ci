@@ -7,3 +7,7 @@ WHERE su.user_id = $1;
 INSERT INTO public.repo (service, owner, name, repo_service_id, webhook_id, service_user_id)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id;
+
+-- name: DeleteRepo :exec
+DELETE FROM public.repo
+WHERE id = $1;

@@ -28,6 +28,7 @@ type Storer interface {
 	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
 	GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error)
 	CreateRepo(ctx context.Context, repo types.Repo) (int64, error)
+	DeleteRepo(ctx context.Context, repoID int64) error
 
 	// ---
 

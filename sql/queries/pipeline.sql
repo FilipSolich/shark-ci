@@ -14,6 +14,6 @@ SET status = $1, started_at = $2
 WHERE id = $3;
 
 -- name: PipelineFinished :exec
-Update public.pipeline
+UPDATE public.pipeline
 SET status = $1, finished_at = $2
 WHERE id = $3;
