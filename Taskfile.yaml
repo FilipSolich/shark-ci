@@ -179,25 +179,6 @@ tasks:
     cmds:
       - migrate -path sql/migrations -database ${DB_URI} -verbose down
 
-  release:
-    desc: Create new release
-    prompt: Do you want to create a new release?
-    deps:
-      - docker:build
-    cmds:
-      - git tag -s v{{.VERSION}} -m "Release v{{.VERSION}}"
-      - git push origin v{{.VERSION}}
-      - task: docker:tag
-      - task: docker:tag
-        vars:
-          TAG: "{{.VERSION}}"
-      - task: docker:push
-      - task: docker:push
-        vars:
-          TAG: "{{.VERSION}}"
-    requires:
-      vars: ["VERSION"]
-
   generate:
     desc: Generate code
     cmds:

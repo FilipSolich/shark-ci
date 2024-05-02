@@ -13,6 +13,7 @@ import (
 
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
+	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -121,7 +122,7 @@ func processWork(ctx context.Context, work types.Work, reposPath string, compres
 	}
 	defer cli.Close()
 
-	out, err := cli.ImagePull(ctx, pipeline.Image, dockertypes.ImagePullOptions{})
+	out, err := cli.ImagePull(ctx, pipeline.Image, imagetypes.PullOptions{})
 	if err != nil {
 		return err
 	}
@@ -140,7 +141,7 @@ func processWork(ctx context.Context, work types.Work, reposPath string, compres
 	}
 
 	// Start container.
-	err = cli.ContainerStart(ctx, container.ID, dockertypes.ContainerStartOptions{})
+	err = cli.ContainerStart(ctx, container.ID, containertypes.StartOptions{})
 	if err != nil {
 		return err
 	}
@@ -206,7 +207,7 @@ func processWork(ctx context.Context, work types.Work, reposPath string, compres
 	}
 
 	// Delete container.
-	err = cli.ContainerRemove(ctx, container.ID, dockertypes.ContainerRemoveOptions{Force: true})
+	err = cli.ContainerRemove(ctx, container.ID, containertypes.RemoveOptions{Force: true})
 	if err != nil {
 		return err
 	}

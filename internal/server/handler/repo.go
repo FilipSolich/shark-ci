@@ -12,7 +12,6 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/internal/server/types"
 	"github.com/shark-ci/shark-ci/templates"
-	"golang.org/x/exp/slog"
 )
 
 type RepoHandler struct {
@@ -115,28 +114,28 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *RepoHandler) HandleDeleteRepo(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
-	if err != nil {
-		slog.Error("cannot get info from request", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	//ctx := r.Context()
+	//serviceUser, repo, srv, err := h.getInfoFromRequest(ctx, w, r)
+	//if err != nil {
+	//	slog.Error("cannot get info from request", "err", err)
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
 
-	repo, err = h.s.GetRepo(ctx, repo.ID)
+	//repo, err = h.s.GetRepo(ctx, repo.ID)
 
-	err = srv.DeleteWebhook(ctx, serviceUser, repo)
-	if err != nil {
-		slog.Error("service: cannot delete webhook", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	//err = srv.DeleteWebhook(ctx, serviceUser, repo)
+	//if err != nil {
+	//	slog.Error("service: cannot delete webhook", "err", err)
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
 
-	err = h.s.DeleteRepo(ctx, repo.ID)
-	if err != nil {
-		Error5xx(w, http.StatusInternalServerError, "Cannot delete repo", err)
-		return
-	}
+	//err = h.s.DeleteRepo(ctx, repo.ID)
+	//if err != nil {
+	//	Error5xx(w, http.StatusInternalServerError, "Cannot delete repo", err)
+	//	return
+	//}
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
