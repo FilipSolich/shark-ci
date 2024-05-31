@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"golang.org/x/oauth2"
 
 	"github.com/shark-ci/shark-ci/internal/server/db"
 	"github.com/shark-ci/shark-ci/internal/server/models"
@@ -266,56 +267,41 @@ func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.
 //}
 
 func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error) {
-	var (
-		info         types.PipelineCreationInfo
-		refreshToken sql.NullString
-		tokenExpire  sql.NullTime
-	)
-	err := s.conn.QueryRow(ctx, ``+
-		`SELECT su.username, su.access_token, su.refresh_token, su.token_type, su.token_expire, r.name `+
-		`FROM public.service_user su JOIN repo r ON su.id = r.service_user_id `+
-		`WHERE r.id = $1`,
-		repoID).
-		Scan(&info.Username, &info.Token.AccessToken, &refreshToken, &info.Token.TokenType, &tokenExpire)
+	res, err := s.queries.GetPipelineCreationInfo(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	if refreshToken.Valid {
-		info.Token.RefreshToken = refreshToken.String
-	}
-	if tokenExpire.Valid {
-		info.Token.Expiry = tokenExpire.Time
-	}
-
-	return &info, nil
+	return &types.PipelineCreationInfo{
+		Username: res.Username,
+		RepoName: res.Name,
+		Token: oauth2.Token{
+			AccessToken:  res.AccessToken,
+			RefreshToken: *ValueText(res.RefreshToken),
+			TokenType:    res.TokenType,
+			Expiry:       *ValueTime(res.TokenExpire),
+		},
+	}, nil
 }
 
 func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
-	tx, err := s.conn.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback(ctx)
-
-	err = tx.QueryRow(ctx, ``+
-		`INSERT INTO public.pipeline (status, context, clone_url, commit_sha, repo_id) `+
-		`VALUES ($1, $2, $3, $4) `+
-		`RETURNING id`,
-		pipeline.Status, pipeline.Context, pipeline.CloneURL, pipeline.CommitSHA, pipeline.RepoID).
-		Scan(&pipeline.ID)
+	pipelineID, err := s.queries.CreatePipeline(ctx, db.CreatePipelineParams{
+		Status:    pipeline.Status,
+		Context:   pipeline.Context,
+		CloneUrl:  pipeline.CloneURL,
+		CommitSha: pipeline.CommitSHA,
+		RepoID:    pipeline.RepoID,
+	})
 	if err != nil {
 		return 0, err
 	}
 
+	pipeline.ID = pipelineID
 	pipeline.CreateURL()
-	_, err = tx.Exec(ctx, `UPDATE public.pipeline SET url = $1 WHERE id = $2`,
-		pipeline.URL, pipeline.ID)
-	if err != nil {
-		return 0, err
-	}
-
-	err = tx.Commit(ctx)
+	err = s.queries.SetPipelineUrl(ctx, db.SetPipelineUrlParams{
+		ID:  pipelineID,
+		Url: NullableText(&pipeline.URL),
+	})
 	if err != nil {
 		return 0, err
 	}

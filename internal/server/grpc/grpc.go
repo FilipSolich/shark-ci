@@ -24,7 +24,7 @@ func NewGRPCServer(s store.Storer, services service.Services) *GRPCServer {
 	}
 }
 
-func (s *GRPCServer) PipelineStart(ctx context.Context, in *pb.PipelineStartedRequest) (*pb.Empty, error) {
+func (s *GRPCServer) PipelineStarted(ctx context.Context, in *pb.PipelineStartedRequest) (*pb.Empty, error) {
 	err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetStartedAt().AsTime(), true)
 	return &pb.Empty{}, err
 }
@@ -69,7 +69,7 @@ func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, 
 	status := service.Status{
 		State:       statusState,
 		TargetURL:   info.URL,
-		Context:     info.Context,
+		Context:     "Running",
 		Description: desc,
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)

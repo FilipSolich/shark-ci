@@ -1,6 +1,11 @@
--- name: CreatePipeline :exec
-INSERT INTO public.pipeline (status,  clone_url, commit_sha, repo_id)
-VALUES ($1, $2, $3, $4)
+-- name: GetPipelineCreationInfo :one
+SELECT su.username, su.access_token, su.refresh_token, su.token_type, su.token_expire, r.name
+FROM public.service_user su JOIN repo r ON su.id = r.service_user_id
+WHERE r.id = $1;
+
+-- name: CreatePipeline :one
+INSERT INTO public.pipeline (status, context, clone_url, commit_sha, repo_id)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id;
 
 -- name: SetPipelineUrl :exec

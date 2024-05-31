@@ -1,4 +1,4 @@
-package message_queue
+package messagequeue
 
 import (
 	"context"

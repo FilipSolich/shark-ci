@@ -14,7 +14,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/shark-ci/shark-ci/internal/config"
-	"github.com/shark-ci/shark-ci/internal/message_queue"
+	"github.com/shark-ci/shark-ci/internal/messagequeue"
+	"github.com/shark-ci/shark-ci/internal/objectstore"
 	pb "github.com/shark-ci/shark-ci/internal/proto"
 	ciserverGrpc "github.com/shark-ci/shark-ci/internal/server/grpc"
 	"github.com/shark-ci/shark-ci/internal/server/handler"
@@ -52,16 +53,24 @@ func main() {
 		fatal("Pinging to PostgreSQL failed.", err)
 	}
 	slog.Info("PostgreSQL connected.")
+	store.Cleaner(pgStore, 24*time.Hour)
 
 	slog.Info("Connecting to RabbitMQ.")
-	rabbitMQ, err := message_queue.NewRabbitMQ(config.ServerConf.MQ.URI)
+	rabbitMQ, err := messagequeue.NewRabbitMQ(config.ServerConf.MQ.URI)
 	if err != nil {
 		fatal("Connecting to RabbitMQ failed.", err)
 	}
 	defer rabbitMQ.Close(context.TODO())
 	slog.Info("RabbitMQ connected.")
 
-	store.Cleaner(pgStore, 24*time.Hour)
+	objStore, err := objectstore.NewMinioObjectStore() // TODO: Pass to handler
+	if err != nil {
+		fatal("Connecting to Minio failed.", err)
+	}
+	err = objStore.CreateBucket(context.TODO(), "shark-ci-logs")
+	if err != nil {
+		fatal("Creating bucket in Minio failed.", err)
+	}
 
 	services := service.InitServices(pgStore)
 

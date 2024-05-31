@@ -18,5 +18,19 @@ services:
       - 5672:5672
       - 15672:15672
 
+  minio:
+    image: quay.io/minio/minio
+    environment:
+      - MINIO_VOLUMES=/data
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - miniodata:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    command: minio server --console-address ":9001"
+
 volumes:
   pgdata:
+  miniodata:

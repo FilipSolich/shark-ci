@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
 
-	"github.com/shark-ci/shark-ci/internal/message_queue"
+	"github.com/shark-ci/shark-ci/internal/messagequeue"
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/internal/types"
@@ -15,11 +15,11 @@ import (
 
 type EventHandler struct {
 	s        store.Storer
-	mq       message_queue.MessageQueuer
+	mq       messagequeue.MessageQueuer
 	services service.Services
 }
 
-func NewEventHandler(s store.Storer, mq message_queue.MessageQueuer, services service.Services) *EventHandler {
+func NewEventHandler(s store.Storer, mq messagequeue.MessageQueuer, services service.Services) *EventHandler {
 	return &EventHandler{
 		s:        s,
 		mq:       mq,
@@ -54,7 +54,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.s.CreatePipeline(ctx, pipeline)
 	if err != nil {
-		slog.Error("store: cannot create pipeline", "err", err)
+		slog.Error("Cannot create pipeline", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -80,7 +80,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	status := service.Status{
 		State:       service.StatusPending,
 		TargetURL:   pipeline.URL,
-		Context:     pipeline.Context, // TODO: Get context from somewhere
+		Context:     "SharkCI", // TODO: Get context from somewhere
 		Description: "Pipeline is pending",
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.Username, info.RepoName, pipeline.CommitSHA, status)

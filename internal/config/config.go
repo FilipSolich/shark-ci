@@ -51,7 +51,7 @@ func LoadServerConfigFromEnv() error {
 	config := ServerConfig{
 		Host:      stringEnv("HOST", "localhost"),
 		Port:      stringEnv("PORT", "8000"),
-		GRPCPort:  stringEnv("GRPC_PORT", "9000"),
+		GRPCPort:  stringEnv("GRPC_PORT", "8001"),
 		SecretKey: stringEnv("SECRET_KEY", ""),
 		DB: DatabaseConfig{
 			URI: stringEnv("DB_URI", "postgres://localhost/shark-ci"),
@@ -98,8 +98,8 @@ func LoadWorkerConfigFromEnv() error {
 	config := WorkerConfig{
 		MaxWorkers:       intEnv("MAX_WORKERS", runtime.GOMAXPROCS(0)),
 		ReposPath:        stringEnv("REPOS_PATH", "./repos"),
-		CIServerHost:     stringEnv("HOST", "localhost"),
-		CIServerGRPCPort: stringEnv("GRPC_PORT", "9000"),
+		CIServerHost:     stringEnv("GRPC_HOST", "localhost"),
+		CIServerGRPCPort: stringEnv("GRPC_PORT", "8001"),
 		MQ: MessageQueueConfig{
 			URI: stringEnv("MQ_URI", "amqp://guest:guest@localhost"),
 		},

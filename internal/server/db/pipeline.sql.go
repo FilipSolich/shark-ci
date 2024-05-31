@@ -11,27 +11,60 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createPipeline = `-- name: CreatePipeline :exec
-INSERT INTO public.pipeline (status,  clone_url, commit_sha, repo_id)
-VALUES ($1, $2, $3, $4)
+const createPipeline = `-- name: CreatePipeline :one
+INSERT INTO public.pipeline (status, context, clone_url, commit_sha, repo_id)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id
 `
 
 type CreatePipelineParams struct {
 	Status    string
+	Context   string
 	CloneUrl  string
 	CommitSha string
 	RepoID    int64
 }
 
-func (q *Queries) CreatePipeline(ctx context.Context, arg CreatePipelineParams) error {
-	_, err := q.db.Exec(ctx, createPipeline,
+func (q *Queries) CreatePipeline(ctx context.Context, arg CreatePipelineParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createPipeline,
 		arg.Status,
+		arg.Context,
 		arg.CloneUrl,
 		arg.CommitSha,
 		arg.RepoID,
 	)
-	return err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getPipelineCreationInfo = `-- name: GetPipelineCreationInfo :one
+SELECT su.username, su.access_token, su.refresh_token, su.token_type, su.token_expire, r.name
+FROM public.service_user su JOIN repo r ON su.id = r.service_user_id
+WHERE r.id = $1
+`
+
+type GetPipelineCreationInfoRow struct {
+	Username     string
+	AccessToken  string
+	RefreshToken pgtype.Text
+	TokenType    string
+	TokenExpire  pgtype.Timestamp
+	Name         string
+}
+
+func (q *Queries) GetPipelineCreationInfo(ctx context.Context, id int64) (GetPipelineCreationInfoRow, error) {
+	row := q.db.QueryRow(ctx, getPipelineCreationInfo, id)
+	var i GetPipelineCreationInfoRow
+	err := row.Scan(
+		&i.Username,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.TokenType,
+		&i.TokenExpire,
+		&i.Name,
+	)
+	return i, err
 }
 
 const pipelineFinished = `-- name: PipelineFinished :exec

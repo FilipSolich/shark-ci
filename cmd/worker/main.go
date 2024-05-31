@@ -10,7 +10,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/shark-ci/shark-ci/internal/config"
-	"github.com/shark-ci/shark-ci/internal/message_queue"
+	"github.com/shark-ci/shark-ci/internal/messagequeue"
+	"github.com/shark-ci/shark-ci/internal/objectstore"
 	pb "github.com/shark-ci/shark-ci/internal/proto"
 	"github.com/shark-ci/shark-ci/internal/worker"
 )
@@ -32,13 +33,24 @@ func main() {
 	}
 
 	slog.Info("Connecting to RabbitMQ.")
-	rabbitMQ, err := message_queue.NewRabbitMQ(config.WorkerConf.MQ.URI)
+	rabbitMQ, err := messagequeue.NewRabbitMQ(config.WorkerConf.MQ.URI)
 	if err != nil {
 		slog.Error("Connecting to RabbitMQ failed", "err", err)
 		os.Exit(1)
 	}
 	defer rabbitMQ.Close(context.TODO())
 	slog.Info("RabbitMQ connected.")
+
+	objStore, err := objectstore.NewMinioObjectStore() // TODO: Pass to handler
+	if err != nil {
+		slog.Error("Connecting to Minio failed.", "err", err)
+		os.Exit(1)
+	}
+	err = objStore.CreateBucket(context.TODO(), "shark-ci-logs")
+	if err != nil {
+		slog.Error("Creating bucket in Minio failed.", "err", err)
+		os.Exit(1)
+	}
 
 	slog.Info("Creating gRPC client.")
 	conn, err := grpc.Dial(config.WorkerConf.CIServerHost+":"+config.WorkerConf.CIServerGRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -50,13 +62,13 @@ func main() {
 	gRPCClient := pb.NewPipelineReporterClient(conn)
 	slog.Info("gRPC client created.")
 
-	err = worker.Run(rabbitMQ, gRPCClient, compressedReposPath)
+	err = worker.Run(rabbitMQ, objStore, gRPCClient, compressedReposPath)
 	if err != nil {
 		slog.Error("Running worker failed", "err", err)
 		os.Exit(1)
 	}
 
-	signalCh := make(chan os.Signal)
+	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, os.Interrupt)
 	<-signalCh
 }
