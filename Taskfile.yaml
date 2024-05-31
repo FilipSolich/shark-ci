@@ -97,7 +97,7 @@ tasks:
   docker:build:server:
     desc: Build CI server docker image
     cmds:
-      - docker build --pull -f Dockerfile.server -t {{.SERVER_IMAGE}}
+      - docker build --pull -f docker/Dockerfile.server -t {{.SERVER_IMAGE}}
         --build-arg CREATED="{{.DATETIME}}"
         --build-arg VERSION={{.VERSION}}
         --build-arg REVISION={{.REVISION}} .
@@ -105,7 +105,7 @@ tasks:
   docker:build:worker:
     desc: Build worker docker image
     cmds:
-      - docker build --pull -f Dockerfile.worker -t {{.WORKER_IMAGE}}
+      - docker build --pull -f docker/Dockerfile.worker -t {{.WORKER_IMAGE}}
         --build-arg CREATED="{{.DATETIME}}"
         --build-arg VERSION={{.VERSION}}
         --build-arg REVISION={{.REVISION}} .
