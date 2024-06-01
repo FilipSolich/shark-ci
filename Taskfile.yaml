@@ -4,7 +4,6 @@ vars:
   MODULE: github.com/shark-ci/shark-ci
   SERVER_IMAGE: shark-ci/server
   WORKER_IMAGE: shark-ci/worker
-  DOCKER_REGISTRY: ghcr.io
   DATETIME:
     sh: date --utc --rfc-3339=seconds
   VERSION:
@@ -100,7 +99,8 @@ tasks:
       - docker build --pull -f docker/Dockerfile.server -t {{.SERVER_IMAGE}}
         --build-arg CREATED="{{.DATETIME}}"
         --build-arg VERSION={{.VERSION}}
-        --build-arg REVISION={{.REVISION}} .
+        --build-arg REVISION={{.REVISION}}
+        .
 
   docker:build:worker:
     desc: Build worker docker image
@@ -108,61 +108,8 @@ tasks:
       - docker build --pull -f docker/Dockerfile.worker -t {{.WORKER_IMAGE}}
         --build-arg CREATED="{{.DATETIME}}"
         --build-arg VERSION={{.VERSION}}
-        --build-arg REVISION={{.REVISION}} .
-
-  docker:tag:
-    desc: Tag images
-    vars:
-      TAG: '{{default "latest" .TAG}}'
-    cmds:
-      - task: docker:tag:server
-        vars:
-          TAG: "{{.TAG}}"
-      - task: docker:tag:worker
-        vars:
-          TAG: "{{.TAG}}"
-
-  docker:tag:server:
-    desc: Tag CI server docker image
-    vars:
-      TAG: '{{default "latest" .TAG}}'
-    cmds:
-      - docker tag {{.SERVER_IMAGE}}:latest {{.SERVER_IMAGE}}:{{.TAG}}
-      - docker tag {{.SERVER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.SERVER_IMAGE}}:{{.TAG}}
-
-  docker:tag:worker:
-    desc: Tag worker docker image
-    vars:
-      TAG: '{{default "latest" .TAG}}'
-    cmds:
-      - docker tag {{.WORKER_IMAGE}}:latest {{.WORKER_IMAGE}}:{{.TAG}}
-      - docker tag {{.WORKER_IMAGE}}:latest {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.TAG}}
-
-  docker:push:
-    desc: Push images to container registry
-    vars:
-      TAG: '{{default "latest" .TAG}}'
-    cmds:
-      - task: docker:push:server
-        vars:
-          TAG: "{{.TAG}}"
-      - task: docker:push:worker
-        vars:
-          TAG: "{{.TAG}}"
-
-  docker:push:server:
-    desc: Push CI server to container registry
-    vars:
-      TAG: '{{default "latest" .TAG}}'
-    cmds:
-      - docker push {{.DOCKER_REGISTRY}}/{{.SERVER_IMAGE}}:{{.TAG}}
-
-  docker:push:worker:
-    desc: Push worker to container registry
-    vars:
-      TAG: '{{default "latest" .TAG}}'
-    cmds:
-      - docker push {{.DOCKER_REGISTRY}}/{{.WORKER_IMAGE}}:{{.TAG}}
+        --build-arg REVISION={{.REVISION}}
+        .
 
   migrate:create:
     desc: Create new migration file

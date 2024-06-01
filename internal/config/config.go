@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 )
@@ -38,9 +37,6 @@ type ServiceConfig struct {
 }
 
 type WorkerConfig struct {
-	MaxWorkers int
-	ReposPath  string
-
 	MQ MessageQueueConfig
 
 	CIServerHost     string
@@ -96,8 +92,6 @@ func (c ServerConfig) validate() error {
 
 func LoadWorkerConfigFromEnv() error {
 	config := WorkerConfig{
-		MaxWorkers:       intEnv("MAX_WORKERS", runtime.GOMAXPROCS(0)),
-		ReposPath:        stringEnv("REPOS_PATH", "./repos"),
 		CIServerHost:     stringEnv("GRPC_HOST", "localhost"),
 		CIServerGRPCPort: stringEnv("GRPC_PORT", "8001"),
 		MQ: MessageQueueConfig{

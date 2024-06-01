@@ -26,12 +26,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	compressedReposPath, err := worker.CreateTmpDir()
-	if err != nil {
-		slog.Error("Creating TMP dir failed.", "err", err)
-		os.Exit(1)
-	}
-
 	slog.Info("Connecting to RabbitMQ.")
 	rabbitMQ, err := messagequeue.NewRabbitMQ(config.WorkerConf.MQ.URI)
 	if err != nil {
@@ -62,7 +56,7 @@ func main() {
 	gRPCClient := pb.NewPipelineReporterClient(conn)
 	slog.Info("gRPC client created.")
 
-	err = worker.Run(rabbitMQ, objStore, gRPCClient, compressedReposPath)
+	err = worker.Run(rabbitMQ, objStore, gRPCClient)
 	if err != nil {
 		slog.Error("Running worker failed", "err", err)
 		os.Exit(1)
