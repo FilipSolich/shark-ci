@@ -46,6 +46,5 @@ docker pull ghcr.io/shark-ci/worker:latest # Download CI runner
 |---------------|--------------------------------|-----------------------|
 | `HOST`        | `localhost`                    | Server hostname       |
 | `GRPC_PORT`   | `9000`                         | Server port           |
-| `MAX_WORKERS` | env `GOMAXPROC`                | Max number of workers |
 | `MQ_URI`      | `amqp://guest:guest@localhost` | RabbitMQ URI          |
 | `REPOS_PATH`  | `./repos`                      | Path to repositories  |

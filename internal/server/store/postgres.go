@@ -13,7 +13,7 @@ import (
 
 	"github.com/shark-ci/shark-ci/internal/server/db"
 	"github.com/shark-ci/shark-ci/internal/server/models"
-	"github.com/shark-ci/shark-ci/internal/server/types"
+	"github.com/shark-ci/shark-ci/internal/types"
 )
 
 type PostgresStore struct {
@@ -286,8 +286,7 @@ func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int6
 
 func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
 	pipelineID, err := s.queries.CreatePipeline(ctx, db.CreatePipelineParams{
-		Status:    pipeline.Status,
-		Context:   pipeline.Context,
+		Status:    db.PipelineStatus(pipeline.Status),
 		CloneUrl:  pipeline.CloneURL,
 		CommitSha: pipeline.CommitSHA,
 		RepoID:    pipeline.RepoID,
@@ -309,26 +308,20 @@ func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pip
 	return pipeline.ID, nil
 }
 
-func (s *PostgresStore) UpdatePipelineStatus(
-	ctx context.Context, pipelineID int64, status string,
-	started_at *time.Time, finished_at *time.Time,
-) error {
-	var t time.Time
-	var set string
-	if started_at != nil {
-		t = *started_at
-		set = `started_at`
-	} else {
-		t = *finished_at
-		set = `finished_at`
-	}
+func (s *PostgresStore) PipelineStarted(ctx context.Context, pipelineID int64, status types.PipelineStatus, startedAt time.Time) error {
+	return s.queries.PipelineStarted(ctx, db.PipelineStartedParams{
+		ID:        pipelineID,
+		Status:    db.PipelineStatus(status),
+		StartedAt: pgtype.Timestamp{Time: startedAt, Valid: true},
+	})
+}
 
-	_, err := s.conn.Exec(ctx, ``+
-		`UPDATE public.pipeline `+
-		`SET status = $1, `+set+` = $2 `+
-		`WHERE id = $3`,
-		status, t, pipelineID)
-	return err
+func (s *PostgresStore) PipelineFinnished(ctx context.Context, pipelineID int64, status types.PipelineStatus, finnisedAt time.Time) error {
+	return s.queries.PipelineFinished(ctx, db.PipelineFinishedParams{
+		ID:         pipelineID,
+		Status:     db.PipelineStatus(status),
+		FinishedAt: pgtype.Timestamp{Time: finnisedAt, Valid: true},
+	})
 }
 
 func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64,

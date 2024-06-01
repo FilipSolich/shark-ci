@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/shark-ci/shark-ci/internal/server/models"
-	"github.com/shark-ci/shark-ci/internal/server/types"
+	"github.com/shark-ci/shark-ci/internal/types"
 )
 
 type Storer interface {
@@ -38,7 +38,8 @@ type Storer interface {
 	//GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
 	GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)
 	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
-	UpdatePipelineStatus(ctx context.Context, pipelineID int64, status string, started_at *time.Time, finished_at *time.Time) error
+	PipelineStarted(ctx context.Context, pipelineID int64, status types.PipelineStatus, startedAt time.Time) error
+	PipelineFinnished(ctx context.Context, pipelineID int64, status types.PipelineStatus, finnisedAt time.Time) error
 
 	GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64) (*types.PipelineStateChangeInfo, error)
 }

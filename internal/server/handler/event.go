@@ -78,7 +78,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := service.Status{
-		State:       service.StatusPending,
+		State:       types.Pending,
 		TargetURL:   pipeline.URL,
 		Context:     "SharkCI", // TODO: Get context from somewhere
 		Description: "Pipeline is pending",

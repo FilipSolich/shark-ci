@@ -9,7 +9,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/server/service"
 	"github.com/shark-ci/shark-ci/internal/server/session"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/internal/server/types"
+	"github.com/shark-ci/shark-ci/internal/types"
 	"github.com/shark-ci/shark-ci/templates"
 	"golang.org/x/oauth2"
 )

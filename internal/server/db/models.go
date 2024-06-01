@@ -12,6 +12,50 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type PipelineStatus string
+
+const (
+	PipelineStatusSuccess PipelineStatus = "success"
+	PipelineStatusPending PipelineStatus = "pending"
+	PipelineStatusRunning PipelineStatus = "running"
+	PipelineStatusError   PipelineStatus = "error"
+)
+
+func (e *PipelineStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PipelineStatus(s)
+	case string:
+		*e = PipelineStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PipelineStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPipelineStatus struct {
+	PipelineStatus PipelineStatus
+	Valid          bool // Valid is true if PipelineStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPipelineStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PipelineStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PipelineStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPipelineStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PipelineStatus), nil
+}
+
 type Service string
 
 const (
@@ -62,8 +106,7 @@ type Oauth2State struct {
 type Pipeline struct {
 	ID         int64
 	Url        pgtype.Text
-	Status     string
-	Context    string
+	Status     PipelineStatus
 	CloneUrl   string
 	CommitSha  string
 	StartedAt  pgtype.Timestamp

@@ -12,14 +12,13 @@ import (
 )
 
 const createPipeline = `-- name: CreatePipeline :one
-INSERT INTO public.pipeline (status, context, clone_url, commit_sha, repo_id)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO "pipeline" (status, clone_url, commit_sha, repo_id)
+VALUES ($1, $2, $3, $4)
 RETURNING id
 `
 
 type CreatePipelineParams struct {
-	Status    string
-	Context   string
+	Status    PipelineStatus
 	CloneUrl  string
 	CommitSha string
 	RepoID    int64
@@ -28,7 +27,6 @@ type CreatePipelineParams struct {
 func (q *Queries) CreatePipeline(ctx context.Context, arg CreatePipelineParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createPipeline,
 		arg.Status,
-		arg.Context,
 		arg.CloneUrl,
 		arg.CommitSha,
 		arg.RepoID,
@@ -40,7 +38,7 @@ func (q *Queries) CreatePipeline(ctx context.Context, arg CreatePipelineParams) 
 
 const getPipelineCreationInfo = `-- name: GetPipelineCreationInfo :one
 SELECT su.username, su.access_token, su.refresh_token, su.token_type, su.token_expire, r.name
-FROM public.service_user su JOIN repo r ON su.id = r.service_user_id
+FROM "service_user" su JOIN "repo" r ON su.id = r.service_user_id
 WHERE r.id = $1
 `
 
@@ -68,13 +66,13 @@ func (q *Queries) GetPipelineCreationInfo(ctx context.Context, id int64) (GetPip
 }
 
 const pipelineFinished = `-- name: PipelineFinished :exec
-UPDATE public.pipeline
+UPDATE "pipeline"
 SET status = $1, finished_at = $2
 WHERE id = $3
 `
 
 type PipelineFinishedParams struct {
-	Status     string
+	Status     PipelineStatus
 	FinishedAt pgtype.Timestamp
 	ID         int64
 }
@@ -85,13 +83,13 @@ func (q *Queries) PipelineFinished(ctx context.Context, arg PipelineFinishedPara
 }
 
 const pipelineStarted = `-- name: PipelineStarted :exec
-UPDATE public.pipeline
+UPDATE "pipeline"
 SET status = $1, started_at = $2
 WHERE id = $3
 `
 
 type PipelineStartedParams struct {
-	Status    string
+	Status    PipelineStatus
 	StartedAt pgtype.Timestamp
 	ID        int64
 }
@@ -102,7 +100,7 @@ func (q *Queries) PipelineStarted(ctx context.Context, arg PipelineStartedParams
 }
 
 const setPipelineUrl = `-- name: SetPipelineUrl :exec
-UPDATE public.pipeline
+UPDATE "pipeline"
 SET url = $1
 WHERE id = $2
 `

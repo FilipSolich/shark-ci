@@ -6,6 +6,15 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type PipelineStatus string
+
+const (
+	Success PipelineStatus = "success" // GitHub -> Success, GitLab -> Success
+	Pending PipelineStatus = "pending" // GitHub -> Pendign, GitLab -> Pending
+	Running PipelineStatus = "running" // GitHub -> Pending, GitLab -> Running
+	Error   PipelineStatus = "error"   // GitHub -> Error, GitLab -> Failed
+)
+
 type PipelineCreationInfo struct {
 	RepoName string
 	Username string

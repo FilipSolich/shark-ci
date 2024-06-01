@@ -11,7 +11,7 @@ import (
 	"github.com/shark-ci/shark-ci/internal/config"
 	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/store"
-	"github.com/shark-ci/shark-ci/internal/server/types"
+	"github.com/shark-ci/shark-ci/internal/types"
 )
 
 type GitHubManager struct {
@@ -37,15 +37,15 @@ func (*GitHubManager) Name() string {
 	return "GitHub"
 }
 
-func (*GitHubManager) StatusName(status StatusState) string {
+func (*GitHubManager) StatusName(status types.PipelineStatus) string {
 	switch status {
-	case StatusSuccess:
+	case types.Success:
 		return "success"
-	case StatusPending:
+	case types.Pending:
 		return "pending"
-	case StatusRunning:
+	case types.Running:
 		return "pending"
-	case StatusError:
+	case types.Error:
 		return "error"
 	default:
 		return ""
@@ -164,7 +164,7 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*m
 	pipeline := &models.Pipeline{
 		CommitSHA: commit,
 		CloneURL:  e.Repo.GetCloneURL(),
-		Status:    m.StatusName(StatusPending),
+		Status:    m.StatusName(types.Pending),
 		RepoID:    repoID,
 	}
 

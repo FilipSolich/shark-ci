@@ -10,7 +10,7 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO public.user (username, email)
+INSERT INTO "user" (username, email)
 VALUES ($1, $2)
 RETURNING id
 `
@@ -29,7 +29,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 
 const getUser = `-- name: GetUser :one
 SELECT id, username, email
-FROM public.user
+FROM "user"
 WHERE id = $1
 `
 

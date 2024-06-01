@@ -13,7 +13,7 @@ import (
 )
 
 const cleanOAuth2State = `-- name: CleanOAuth2State :exec
-DELETE FROM public.oauth2_state
+DELETE FROM "oauth2_state"
 WHERE expire < NOW()
 `
 
@@ -23,7 +23,7 @@ func (q *Queries) CleanOAuth2State(ctx context.Context) error {
 }
 
 const createOAuth2State = `-- name: CreateOAuth2State :exec
-INSERT INTO public.oauth2_state (state, expire)
+INSERT INTO "oauth2_state" (state, expire)
 VALUES ($1, $2)
 `
 
@@ -38,7 +38,7 @@ func (q *Queries) CreateOAuth2State(ctx context.Context, arg CreateOAuth2StatePa
 }
 
 const getAndDeleteOAuth2State = `-- name: GetAndDeleteOAuth2State :one
-DELETE FROM public.oauth2_state
+DELETE FROM "oauth2_state"
 WHERE state = $1
 RETURNING expire
 `
