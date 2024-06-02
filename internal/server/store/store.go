@@ -33,6 +33,8 @@ type Storer interface {
 	CreatePipeline(ctx context.Context, pipeline *types.Pipeline) (int64, error)
 	PipelineStarted(ctx context.Context, pipelineID int64, status types.PipelineStatus, startedAt time.Time) error
 	PipelineFinnished(ctx context.Context, pipelineID int64, status types.PipelineStatus, finnisedAt time.Time) error
+
+	CreatePipelineLog(ctx context.Context, log types.PipelineLog) (int64, error)
 }
 
 func Cleaner(s Storer, d time.Duration) {

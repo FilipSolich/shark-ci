@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	PipelineReporter_PipelineStarted_FullMethodName   = "/PipelineReporter/PipelineStarted"
 	PipelineReporter_PipelineFinnished_FullMethodName = "/PipelineReporter/PipelineFinnished"
+	PipelineReporter_CommandOutput_FullMethodName     = "/PipelineReporter/CommandOutput"
 )
 
 // PipelineReporterClient is the client API for PipelineReporter service.
@@ -29,6 +30,7 @@ const (
 type PipelineReporterClient interface {
 	PipelineStarted(ctx context.Context, in *PipelineStartedRequest, opts ...grpc.CallOption) (*Empty, error)
 	PipelineFinnished(ctx context.Context, in *PipelineFinnishedRequest, opts ...grpc.CallOption) (*Empty, error)
+	CommandOutput(ctx context.Context, in *CommandOutputRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type pipelineReporterClient struct {
@@ -57,12 +59,22 @@ func (c *pipelineReporterClient) PipelineFinnished(ctx context.Context, in *Pipe
 	return out, nil
 }
 
+func (c *pipelineReporterClient) CommandOutput(ctx context.Context, in *CommandOutputRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, PipelineReporter_CommandOutput_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PipelineReporterServer is the server API for PipelineReporter service.
 // All implementations must embed UnimplementedPipelineReporterServer
 // for forward compatibility
 type PipelineReporterServer interface {
 	PipelineStarted(context.Context, *PipelineStartedRequest) (*Empty, error)
 	PipelineFinnished(context.Context, *PipelineFinnishedRequest) (*Empty, error)
+	CommandOutput(context.Context, *CommandOutputRequest) (*Empty, error)
 	mustEmbedUnimplementedPipelineReporterServer()
 }
 
@@ -75,6 +87,9 @@ func (UnimplementedPipelineReporterServer) PipelineStarted(context.Context, *Pip
 }
 func (UnimplementedPipelineReporterServer) PipelineFinnished(context.Context, *PipelineFinnishedRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PipelineFinnished not implemented")
+}
+func (UnimplementedPipelineReporterServer) CommandOutput(context.Context, *CommandOutputRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CommandOutput not implemented")
 }
 func (UnimplementedPipelineReporterServer) mustEmbedUnimplementedPipelineReporterServer() {}
 
@@ -125,6 +140,24 @@ func _PipelineReporter_PipelineFinnished_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PipelineReporter_CommandOutput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommandOutputRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PipelineReporterServer).CommandOutput(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PipelineReporter_CommandOutput_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PipelineReporterServer).CommandOutput(ctx, req.(*CommandOutputRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PipelineReporter_ServiceDesc is the grpc.ServiceDesc for PipelineReporter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -139,6 +172,10 @@ var PipelineReporter_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PipelineFinnished",
 			Handler:    _PipelineReporter_PipelineFinnished_Handler,
+		},
+		{
+			MethodName: "CommandOutput",
+			Handler:    _PipelineReporter_CommandOutput_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

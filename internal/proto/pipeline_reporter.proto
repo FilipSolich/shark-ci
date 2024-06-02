@@ -8,6 +8,7 @@ option go_package = "github.com/shark-ci/shark-ci/internal/proto";
 service PipelineReporter{
     rpc PipelineStarted(PipelineStartedRequest) returns (Empty) {}
     rpc PipelineFinnished(PipelineFinnishedRequest) returns (Empty) {}
+    rpc CommandOutput(CommandOutputRequest) returns (Empty) {}
 }
 
 message Empty {}
@@ -27,4 +28,12 @@ message PipelineFinnishedRequest {
 enum PipelineFinnishedStatus {
     SUCCESS = 0;
     FAILURE = 1;
+}
+
+message CommandOutputRequest {
+    int64 pipeline_id = 1;
+    int32 order = 2;
+    string cmd = 3;
+    string output = 4;
+    int32 exit_code = 5;
 }

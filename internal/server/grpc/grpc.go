@@ -16,6 +16,8 @@ type GRPCServer struct {
 	services service.Services
 }
 
+var _ pb.PipelineReporterServer = &GRPCServer{}
+
 func NewGRPCServer(s store.Storer, services service.Services) *GRPCServer {
 	return &GRPCServer{
 		s:        s,
@@ -27,17 +29,20 @@ func (s *GRPCServer) PipelineStarted(ctx context.Context, in *pb.PipelineStarted
 	info, err := s.s.GetPipelineStateChangeInfo(ctx, in.PipelineId)
 	if err != nil {
 		slog.Error("store: cannot get info for pipeline state change", "pipelineID", in.PipelineId, "err", err)
+		return nil, err
 	}
 
 	srv, ok := s.services[info.Service]
 	if !ok {
 		slog.Error("service: service not found", "service", info.Service)
+		return nil, err
 	}
 
 	pipelineStatus := types.Running
 	err = s.s.PipelineStarted(ctx, in.PipelineId, pipelineStatus, in.GetStartedAt().AsTime())
 	if err != nil {
 		slog.Error("store: cannot update pipeline", "err", err)
+		return nil, err
 	}
 
 	status := service.Status{
@@ -49,6 +54,7 @@ func (s *GRPCServer) PipelineStarted(ctx context.Context, in *pb.PipelineStarted
 	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
 	if err != nil {
 		slog.Error("service: cannot create status", "err", err)
+		return nil, err
 	}
 	return &pb.Empty{}, err
 }
@@ -57,11 +63,13 @@ func (s *GRPCServer) PipelineFinnished(ctx context.Context, in *pb.PipelineFinni
 	info, err := s.s.GetPipelineStateChangeInfo(ctx, in.PipelineId)
 	if err != nil {
 		slog.Error("store: cannot get info for pipeline state change", "pipelineID", in.PipelineId, "err", err)
+		return nil, err
 	}
 
 	srv, ok := s.services[info.Service]
 	if !ok {
 		slog.Error("service: service not found", "service", info.Service)
+		return nil, err
 	}
 
 	pipelineStatus := types.Success
@@ -73,6 +81,7 @@ func (s *GRPCServer) PipelineFinnished(ctx context.Context, in *pb.PipelineFinni
 	err = s.s.PipelineFinnished(ctx, in.PipelineId, pipelineStatus, in.GetFinishedAt().AsTime())
 	if err != nil {
 		slog.Error("store: cannot update pipeline", "err", err)
+		return nil, err
 	}
 
 	status := service.Status{
@@ -84,6 +93,22 @@ func (s *GRPCServer) PipelineFinnished(ctx context.Context, in *pb.PipelineFinni
 	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
 	if err != nil {
 		slog.Error("service: cannot create status", "err", err)
+		return nil, err
+	}
+	return &pb.Empty{}, nil
+}
+
+func (s *GRPCServer) CommandOutput(ctx context.Context, in *pb.CommandOutputRequest) (*pb.Empty, error) {
+	_, err := s.s.CreatePipelineLog(ctx, types.PipelineLog{
+		Order:      int(in.Order),
+		Cmd:        in.Cmd,
+		Output:     in.Output,
+		ExitCode:   int(in.ExitCode),
+		PipelineID: in.PipelineId,
+	})
+	if err != nil {
+		slog.Error("Cannot create pipeline log.", "err", err)
+		return nil, err
 	}
 	return &pb.Empty{}, nil
 }

@@ -272,6 +272,16 @@ func (s *PostgresStore) PipelineFinnished(ctx context.Context, pipelineID int64,
 	})
 }
 
+func (s *PostgresStore) CreatePipelineLog(ctx context.Context, log types.PipelineLog) (int64, error) {
+	return s.queries.CreatePipelineLog(ctx, db.CreatePipelineLogParams{
+		Order:      int32(log.Order),
+		Cmd:        log.Cmd,
+		Output:     log.Output,
+		ExitCode:   int32(log.ExitCode),
+		PipelineID: log.PipelineID,
+	})
+}
+
 func NullableText(ptr *string) pgtype.Text {
 	if ptr == nil {
 		return pgtype.Text{Valid: false}

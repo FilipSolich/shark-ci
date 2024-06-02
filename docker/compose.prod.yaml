@@ -1,3 +1,5 @@
+name: shark-ci
+
 services:
   server:
     image: shark-ci/server
@@ -17,8 +19,6 @@ services:
     ports:
       - 8000:8000
       - 9000:9000
-    volumes:
-      - server:/var/lib/shark-ci
 
   worker:
     image: shark-ci/worker
@@ -58,4 +58,3 @@ services:
 
 volumes:
   pgdata:
-  server:

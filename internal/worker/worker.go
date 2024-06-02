@@ -19,25 +19,24 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/shark-ci/shark-ci/internal/messagequeue"
-	"github.com/shark-ci/shark-ci/internal/objectstore"
 	pb "github.com/shark-ci/shark-ci/internal/proto"
 	"github.com/shark-ci/shark-ci/internal/types"
 )
 
-func Run(mq messagequeue.MessageQueuer, objStore objectstore.ObjectStorer, gRPCCLient pb.PipelineReporterClient) error {
+func Run(mq messagequeue.MessageQueuer, gRPCCLient pb.PipelineReporterClient) error {
 	workCh, err := mq.WorkChannel()
 	if err != nil {
 		return err
 	}
 
 	for work := range workCh {
-		go runWorker(work, objStore, gRPCCLient)
+		go runWorker(work, gRPCCLient)
 	}
 
 	return nil
 }
 
-func runWorker(work types.Work, objStore objectstore.ObjectStorer, gRPCCLient pb.PipelineReporterClient) {
+func runWorker(work types.Work, gRPCCLient pb.PipelineReporterClient) {
 	logger := slog.With("PipelineID", work.Pipeline.ID)
 
 	tStart := time.Now()
@@ -51,7 +50,7 @@ func runWorker(work types.Work, objStore objectstore.ObjectStorer, gRPCCLient pb
 		logger.Warn("Sending pipeline start message failed.", "err", err)
 	}
 
-	err = processWork(context.TODO(), objStore, work)
+	err = processWork(context.TODO(), gRPCCLient, work)
 	tEnd := time.Now()
 	work.Pipeline.FinishedAt = &tEnd
 	if err != nil {
@@ -80,7 +79,7 @@ func runWorker(work types.Work, objStore objectstore.ObjectStorer, gRPCCLient pb
 	}
 }
 
-func processWork(ctx context.Context, objStore objectstore.ObjectStorer, work types.Work) error {
+func processWork(ctx context.Context, gRPCCLient pb.PipelineReporterClient, work types.Work) error {
 	dir, err := cloneRepo(ctx, work.Pipeline.CloneURL, work.Pipeline.CommitSHA, work.Token)
 	defer os.RemoveAll(dir)
 	if err != nil {
@@ -135,8 +134,7 @@ func processWork(ctx context.Context, objStore objectstore.ObjectStorer, work ty
 		return err
 	}
 
-	logsBuff := &bytes.Buffer{}
-	for _, cmd := range pipeline.Cmds {
+	for i, cmd := range pipeline.Cmds {
 		exec, err := cli.ContainerExecCreate(ctx, container.ID, dockertypes.ExecConfig{
 			AttachStdout: true,
 			AttachStderr: true,
@@ -151,6 +149,7 @@ func processWork(ctx context.Context, objStore objectstore.ObjectStorer, work ty
 			return err
 		}
 
+		logsBuff := &bytes.Buffer{}
 		_, err = stdcopy.StdCopy(logsBuff, logsBuff, hijacked.Reader)
 		if err != nil {
 			hijacked.Close()
@@ -158,7 +157,18 @@ func processWork(ctx context.Context, objStore objectstore.ObjectStorer, work ty
 		}
 		hijacked.Close()
 
-		_, err = cli.ContainerExecInspect(ctx, exec.ID) // TODO: Will containen status code.
+		execInspect, err := cli.ContainerExecInspect(ctx, exec.ID) // TODO: Will containen status code.
+		if err != nil {
+			return err
+		}
+
+		_, err = gRPCCLient.CommandOutput(context.TODO(), &pb.CommandOutputRequest{
+			PipelineId: work.Pipeline.ID,
+			Order:      int32(i + 1),
+			Cmd:        cmd,
+			Output:     logsBuff.String(),
+			ExitCode:   int32(execInspect.ExitCode),
+		})
 		if err != nil {
 			return err
 		}
@@ -175,9 +185,6 @@ func processWork(ctx context.Context, objStore objectstore.ObjectStorer, work ty
 	if err != nil {
 		return err
 	}
-
-	// Upload logs
-	objStore.UploadLogs(ctx, work.Pipeline.ID, logsBuff, int64(logsBuff.Len()))
 
 	return nil
 }

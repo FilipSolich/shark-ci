@@ -114,6 +114,15 @@ type Pipeline struct {
 	RepoID     int64
 }
 
+type PipelineLog struct {
+	ID         int64
+	Order      int32
+	Cmd        string
+	Output     string
+	ExitCode   int32
+	PipelineID int64
+}
+
 type Repo struct {
 	ID            int64
 	Service       Service

@@ -47,3 +47,11 @@ type PipelineStateChangeInfo struct {
 	Token     oauth2.Token
 	StartedAt *time.Time
 }
+
+type PipelineLog struct {
+	Order      int
+	Cmd        string
+	Output     string
+	ExitCode   int
+	PipelineID int64
+}

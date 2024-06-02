@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="0I85q6sH4Gij2uIIyvRQ" name="Page-1">
-        <mxGraphModel dx="1059" dy="1937" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1118" dy="1937" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -58,14 +58,6 @@
                 <mxCell id="76" style="edgeStyle=none;jumpSize=14;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;fontSize=16;startArrow=classic;startFill=1;startSize=14;endSize=14;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" parent="1" source="57" target="26" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="104" style="edgeStyle=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1.003;exitY=0.081;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="57" target="102">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="106" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Serve logs&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="104">
-                    <mxGeometry x="-0.4685" y="1" relative="1" as="geometry">
-                        <mxPoint x="26" y="-16" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
                 <mxCell id="57" value="CI Server" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
                     <mxGeometry x="290" y="74.5" width="120" height="310" as="geometry"/>
                 </mxCell>
@@ -99,7 +91,7 @@
                         <mxPoint x="28" y="-11" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="74" style="edgeStyle=none;jumpSize=14;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontSize=16;startArrow=none;startFill=0;startSize=14;endSize=14;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;" parent="1" source="38" target="57" edge="1">
+                <mxCell id="74" style="edgeStyle=none;jumpSize=14;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;fontSize=16;startArrow=none;startFill=0;startSize=14;endSize=14;sourcePerimeterSpacing=0;targetPerimeterSpacing=0;exitX=0;exitY=0.25;exitDx=0;exitDy=0;" parent="1" source="38" target="57" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="75" value="Report job staus" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=16;labelBackgroundColor=none;" parent="74" vertex="1" connectable="0">
@@ -178,19 +170,6 @@
                 </mxCell>
                 <mxCell id="15" value="" style="shape=image;imageAspect=0;aspect=fixed;verticalLabelPosition=bottom;verticalAlign=top;fontSize=16;strokeWidth=2;fillColor=#99FFFF;image=data:image/svg+xml,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MnB0IiBoZWlnaHQ9IjkycHQiIHZpZXdCb3g9IjAgMCA5MiA5MiI+PGRlZnM+PGNsaXBQYXRoIGlkPSJhIj48cGF0aCBkPSJNMCAuMTEzaDkxLjg4N1Y5MkgwWm0wIDAiLz48L2NsaXBQYXRoPjwvZGVmcz48ZyBjbGlwLXBhdGg9InVybCgjYSkiPjxwYXRoIHN0eWxlPSJzdHJva2U6bm9uZTtmaWxsLXJ1bGU6bm9uemVybztmaWxsOiNmMDNjMmU7ZmlsbC1vcGFjaXR5OjEiIGQ9Ik05MC4xNTYgNDEuOTY1IDUwLjAzNiAxLjg0OGE1LjkxOCA1LjkxOCAwIDAgMC04LjM3MiAwbC04LjMyOCA4LjMzMiAxMC41NjYgMTAuNTY2YTcuMDMgNy4wMyAwIDAgMSA3LjIzIDEuNjg0IDcuMDM0IDcuMDM0IDAgMCAxIDEuNjY5IDcuMjc3bDEwLjE4NyAxMC4xODRhNy4wMjggNy4wMjggMCAwIDEgNy4yNzggMS42NzIgNy4wNCA3LjA0IDAgMCAxIDAgOS45NTcgNy4wNSA3LjA1IDAgMCAxLTkuOTY1IDAgNy4wNDQgNy4wNDQgMCAwIDEtMS41MjgtNy42NmwtOS41LTkuNDk3VjU5LjM2YTcuMDQgNy4wNCAwIDAgMSAxLjg2IDExLjI5IDcuMDQgNy4wNCAwIDAgMS05Ljk1NyAwIDcuMDQgNy4wNCAwIDAgMSAwLTkuOTU4IDcuMDYgNy4wNiAwIDAgMSAyLjMwNC0xLjUzOVYzMy45MjZhNy4wNDkgNy4wNDkgMCAwIDEtMy44Mi05LjIzNEwyOS4yNDIgMTQuMjcyIDEuNzMgNDEuNzc3YTUuOTI1IDUuOTI1IDAgMCAwIDAgOC4zNzFMNDEuODUyIDkwLjI3YTUuOTI1IDUuOTI1IDAgMCAwIDguMzcgMGwzOS45MzQtMzkuOTM0YTUuOTI1IDUuOTI1IDAgMCAwIDAtOC4zNzEiLz48L2c+PC9zdmc+;" parent="98" vertex="1">
                     <mxGeometry x="10" y="10" width="60" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="102" value="S3" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
-                    <mxGeometry x="520" y="60" width="60" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="103" style="edgeStyle=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="102">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="690" y="100" as="sourcePoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="105" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;Store logs&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="103">
-                    <mxGeometry x="0.2364" y="2" relative="1" as="geometry">
-                        <mxPoint x="18" y="-15" as="offset"/>
-                    </mxGeometry>
                 </mxCell>
             </root>
         </mxGraphModel>
