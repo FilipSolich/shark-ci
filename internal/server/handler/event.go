@@ -42,7 +42,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, service.ErrEventNotSupported) {
 			http.Error(w, "cannot handle this type of event", http.StatusNotImplemented)
 		} else {
-			slog.Error("service: cannot hadle event", "err", err)
+			slog.Error("Cannot handle event.", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
@@ -80,7 +80,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	status := service.Status{
 		State:       types.Pending,
 		TargetURL:   pipeline.URL,
-		Context:     "SharkCI", // TODO: Get context from somewhere
+		Context:     "Shark CI",
 		Description: "Pipeline is pending",
 	}
 	err = srv.CreateStatus(ctx, &info.Token, info.Username, info.RepoName, pipeline.CommitSHA, status)

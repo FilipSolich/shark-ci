@@ -63,26 +63,18 @@ func (mq *RabbitMQ) SendWork(ctx context.Context, work types.Work) error {
 }
 
 func (mq *RabbitMQ) WorkChannel() (chan types.Work, error) {
-	// TODO: Why this doesn't work?
-	// err = channel.Qos(1, 0, false)
-	// if err != nil {
-	// 	channel.Close()
-	// 	return nil, err
-	// }
-
 	msgChannel, err := mq.channel.Consume(mq.queueName, "", true, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	workCh := make(chan types.Work, 100) // TODO: Should be buffered?
+	workCh := make(chan types.Work)
 	go func() {
 		for msg := range msgChannel {
 			var work types.Work
 			err := json.Unmarshal(msg.Body, &work)
 			if err != nil {
 				slog.Error("cannot unmarshal job from message queue", "err", err)
-				// TODO: Send error to CI server. Reason 500 internal server error.
 				continue
 			}
 

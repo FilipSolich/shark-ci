@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/types"
 )
 
@@ -30,14 +29,8 @@ type Storer interface {
 	CreateRepo(ctx context.Context, repo types.Repo) (int64, error)
 	DeleteRepo(ctx context.Context, repoID int64) error
 
-	// ---
-
-	//GetRepoWebhookChangeInfo(ctx context.Context, repoID int64) (*types.RepoWebhookChangeInfo, error)
-	//CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error
-
-	//GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error)
 	GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)
-	CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error)
+	CreatePipeline(ctx context.Context, pipeline *types.Pipeline) (int64, error)
 	PipelineStarted(ctx context.Context, pipelineID int64, status types.PipelineStatus, startedAt time.Time) error
 	PipelineFinnished(ctx context.Context, pipelineID int64, status types.PipelineStatus, finnisedAt time.Time) error
 

@@ -1,8 +1,10 @@
 package types
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/shark-ci/shark-ci/internal/config"
 	"golang.org/x/oauth2"
 )
 
@@ -15,6 +17,21 @@ const (
 	Error   PipelineStatus = "error"   // GitHub -> Error, GitLab -> Failed
 )
 
+type Pipeline struct {
+	ID         int64
+	URL        string
+	Status     string
+	CloneURL   string
+	CommitSHA  string
+	StartedAt  *time.Time
+	FinishedAt *time.Time
+	RepoID     int64
+}
+
+func (p *Pipeline) CreateURL() {
+	p.URL = fmt.Sprintf("%s/repos/%d/pipelines/%d", config.ServerConf.Host, p.RepoID, p.ID)
+}
+
 type PipelineCreationInfo struct {
 	RepoName string
 	Username string
@@ -24,7 +41,6 @@ type PipelineCreationInfo struct {
 type PipelineStateChangeInfo struct {
 	CommitSHA string
 	URL       string
-	Context   string
 	Service   string
 	RepoOwner string
 	RepoName  string

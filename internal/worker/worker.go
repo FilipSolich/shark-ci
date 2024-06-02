@@ -14,6 +14,7 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v3"
 
@@ -64,7 +65,7 @@ func runWorker(work types.Work, objStore objectstore.ObjectStorer, gRPCCLient pb
 		if err != nil {
 			slog.Warn("Sending pipeline end message failed.", "time", tEnd.Sub(tStart), "err", err)
 		}
-		logger.Info("Processing pipeline failed.", "err", err)
+		logger.Info("Processing pipeline failed.", "err", e)
 		return
 	}
 
@@ -80,15 +81,11 @@ func runWorker(work types.Work, objStore objectstore.ObjectStorer, gRPCCLient pb
 }
 
 func processWork(ctx context.Context, objStore objectstore.ObjectStorer, work types.Work) error {
-	dir, cleanFunc, err := cloneRepo(ctx, work.Pipeline.URL, work.Pipeline.CommitSHA, work.Token)
+	dir, err := cloneRepo(ctx, work.Pipeline.CloneURL, work.Pipeline.CommitSHA, work.Token)
+	defer os.RemoveAll(dir)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := cleanFunc(); err != nil {
-			slog.Error("Removing dir failed.", "err", err)
-		}
-	}()
 
 	// Parse pipeline.
 	file, err := os.Open(path.Join(dir, ".shark-ci/workflow.yaml"))
@@ -154,7 +151,7 @@ func processWork(ctx context.Context, objStore objectstore.ObjectStorer, work ty
 			return err
 		}
 
-		_, err = io.Copy(logsBuff, hijacked.Reader)
+		_, err = stdcopy.StdCopy(logsBuff, logsBuff, hijacked.Reader)
 		if err != nil {
 			hijacked.Close()
 			return err

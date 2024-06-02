@@ -8,7 +8,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/shark-ci/shark-ci/internal/config"
-	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/internal/types"
 )
@@ -42,6 +41,6 @@ type ServiceManager interface {
 	GetUserRepos(ctx context.Context, token *oauth2.Token, serviceUserID int64) ([]types.Repo, error)
 	CreateWebhook(ctx context.Context, token *oauth2.Token, owner string, repoName string) (int64, error)
 	DeleteWebhook(ctx context.Context, token *oauth2.Token, owner string, repoName string, webhookID int64) error
-	HandleEvent(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Pipeline, error)
+	HandleEvent(ctx context.Context, w http.ResponseWriter, r *http.Request) (*types.Pipeline, error)
 	CreateStatus(ctx context.Context, token *oauth2.Token, owner string, repoName string, commit string, status Status) error
 }

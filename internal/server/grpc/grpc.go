@@ -53,54 +53,37 @@ func (s *GRPCServer) PipelineStarted(ctx context.Context, in *pb.PipelineStarted
 	return &pb.Empty{}, err
 }
 
-// TODO: Update this implementation
 func (s *GRPCServer) PipelineFinnished(ctx context.Context, in *pb.PipelineFinnishedRequest) (*pb.Empty, error) {
-	//err := s.changePipelineState(ctx, in.GetPipelineId(), in.GetFinishedAt().AsTime(), false)
+	info, err := s.s.GetPipelineStateChangeInfo(ctx, in.PipelineId)
+	if err != nil {
+		slog.Error("store: cannot get info for pipeline state change", "pipelineID", in.PipelineId, "err", err)
+	}
+
+	srv, ok := s.services[info.Service]
+	if !ok {
+		slog.Error("service: service not found", "service", info.Service)
+	}
+
+	pipelineStatus := types.Success
+	description := "Pipeline finnished successfully"
+	if in.Status == pb.PipelineFinnishedStatus_FAILURE {
+		pipelineStatus = types.Error
+		description = "Pipeline failed"
+	}
+	err = s.s.PipelineFinnished(ctx, in.PipelineId, pipelineStatus, in.GetFinishedAt().AsTime())
+	if err != nil {
+		slog.Error("store: cannot update pipeline", "err", err)
+	}
+
+	status := service.Status{
+		State:       pipelineStatus,
+		TargetURL:   info.URL,
+		Context:     "Shark CI",
+		Description: description,
+	}
+	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
+	if err != nil {
+		slog.Error("service: cannot create status", "err", err)
+	}
 	return &pb.Empty{}, nil
 }
-
-//func (s *GRPCServer) changePipelineState(ctx context.Context, pipelineID int64, t time.Time, start bool) error {
-//	info, err := s.s.GetPipelineStateChangeInfo(ctx, pipelineID)
-//	if err != nil {
-//		slog.Error("store: cannot get info for pipeline state change", "pipelineID", pipelineID, "err", err)
-//		return err
-//	}
-//
-//	srv, ok := s.services[info.Service]
-//	if !ok {
-//		slog.Error("service: service not found", "service", info.Service)
-//		return err
-//	}
-//
-//	statusState := service.Running
-//	statusName := srv.StatusName(statusState)
-//	desc := "Pipeline is running"
-//	var startedAt *time.Time = &t
-//	var finishedAt *time.Time = nil
-//	if !start {
-//		statusState = service.Success
-//		statusName = srv.StatusName(statusState)
-//		desc = fmt.Sprintf("Pipeline finished successfully in %s", t.Sub(*info.StartedAt).Round(time.Second))
-//		startedAt = nil
-//		finishedAt = &t
-//	}
-//	err = s.s.UpdatePipelineStatus(ctx, pipelineID, statusName, startedAt, finishedAt)
-//	if err != nil {
-//		slog.Error("store: cannot update pipeline", "err", err)
-//		return err
-//	}
-//
-//	status := service.Status{
-//		State:       statusState,
-//		TargetURL:   info.URL,
-//		Context:     "Running",
-//		Description: desc,
-//	}
-//	err = srv.CreateStatus(ctx, &info.Token, info.RepoOwner, info.RepoName, info.CommitSHA, status)
-//	if err != nil {
-//		slog.Error("service: cannot create status", "err", err)
-//		return err
-//	}
-//
-//	return nil
-//}

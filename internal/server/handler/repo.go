@@ -101,7 +101,7 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 		Service:       srv.Name(),
 		Owner:         owner,
 		Name:          repoName,
-		RepoServiceID: repoID, // TODO: repoServiceID but ServiceUserID. Change name of one of them.
+		RepoServiceID: repoID,
 		WebhookID:     hookID,
 		ServiceUserID: serviceUser.ID,
 	})

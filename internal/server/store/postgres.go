@@ -12,7 +12,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/shark-ci/shark-ci/internal/server/db"
-	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/types"
 )
 
@@ -159,7 +158,7 @@ func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service st
 func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error) {
 	repos, err := s.queries.GetUserRepos(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get user repos with userID=%d: %w", userID, err)
+		return nil, fmt.Errorf("get user repos from DB: %w", err)
 	}
 
 	var result []types.Repo
@@ -198,74 +197,6 @@ func (s *PostgresStore) DeleteRepo(ctx context.Context, repoID int64) error {
 	return s.queries.DeleteRepo(ctx, repoID)
 }
 
-func (s *PostgresStore) GetRepoWebhookChangeInfo(ctx context.Context, repoID int64,
-) (*types.RepoWebhookChangeInfo, error) {
-	var (
-		info         = types.RepoWebhookChangeInfo{RepoID: repoID}
-		refreshToken sql.NullString
-		expire       sql.NullTime
-	)
-	err := s.conn.QueryRow(ctx, ``+
-		`SELECT r.service, r.owner, r.name, r.webhook_id,su.access_token,`+
-		` su.refresh_token, su.token_type, su.token_expire, su.user_id `+
-		`FROM public.repo r JOIN public.service_user su ON r.service_user_id = su.id `+
-		`WHERE r.id = $1`,
-		repoID).
-		Scan(&info.Service, &info.RepoOwner, &info.RepoName, &info.WebhookID, &info.Token.AccessToken,
-			&refreshToken, &info.Token.TokenType, &expire, &info.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	if refreshToken.Valid {
-		info.Token.RefreshToken = refreshToken.String
-	}
-	if expire.Valid {
-		info.Token.Expiry = expire.Time
-	}
-
-	return &info, nil
-}
-
-// TODO: Create with existing webhook including update if webhook was manualy deleted
-func (s *PostgresStore) CreateOrUpdateRepos(ctx context.Context, repos []models.Repo) error {
-	query := `INSERT INTO public.repo (service, owner, name, repo_service_id, webhook_id, service_user_id) VALUES `
-	values := []any{}
-	for i, repo := range repos {
-		if i > 0 {
-			query += ","
-		}
-
-		query += fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d) `, i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6)
-		values = append(values, repo.Service, repo.Owner, repo.Name, repo.RepoServiceID, repo.WebhookID, repo.ServiceUserID)
-	}
-	query += `` +
-		`ON CONFLICT (service, repo_service_id) DO UPDATE ` +
-		`SET name = EXCLUDED.name, owner = EXCLUDED.owner, webhook_id = EXCLUDED.webhook_id`
-
-	_, err := s.conn.Exec(ctx, query, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-//func (s *PostgresStore) GetPipeline(ctx context.Context, pipelineID int64) (*models.Pipeline, error) {
-//	pipeline := &models.Pipeline{}
-//	err := s.conn.QueryRowContext(ctx, ""+
-//		"SELECT id, commit_sha, clone_url, status, url, started_at, finished_at, repo_id "+
-//		"FROM pipeline "+
-//		"WHERE id = $1",
-//		pipelineID).
-//		Scan(&pipeline.ID, &pipeline.CommitSHA, &pipeline.CloneURL, &pipeline.Status, &pipeline.URL, &pipeline.StartedAt, &pipeline.FinishedAt, &pipeline.RepoID)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return pipeline, nil
-//}
-
 func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error) {
 	res, err := s.queries.GetPipelineCreationInfo(ctx, repoID)
 	if err != nil {
@@ -277,14 +208,14 @@ func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int6
 		RepoName: res.Name,
 		Token: oauth2.Token{
 			AccessToken:  res.AccessToken,
-			RefreshToken: *ValueText(res.RefreshToken),
+			RefreshToken: res.RefreshToken.String,
 			TokenType:    res.TokenType,
-			Expiry:       *ValueTime(res.TokenExpire),
+			Expiry:       res.TokenExpire.Time,
 		},
 	}, nil
 }
 
-func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *models.Pipeline) (int64, error) {
+func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *types.Pipeline) (int64, error) {
 	pipelineID, err := s.queries.CreatePipeline(ctx, db.CreatePipelineParams{
 		Status:    db.PipelineStatus(pipeline.Status),
 		CloneUrl:  pipeline.CloneURL,
@@ -332,13 +263,13 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipeline
 		tokenExpire  sql.NullTime
 	)
 	err := s.conn.QueryRow(ctx, ``+
-		`SELECT p.url, p.commit_sha, p.context, p.started_at, r.service, r.owner,`+
+		`SELECT p.url, p.commit_sha, p.started_at, r.service, r.owner,`+
 		` r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
 		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id)`+
 		` JOIN public.service_user su ON r.service_user_id = su.id `+
 		`WHERE p.id = $1`,
 		pipelineID).
-		Scan(&info.URL, &info.CommitSHA, &info.Context, &info.StartedAt, &info.Service,
+		Scan(&info.URL, &info.CommitSHA, &info.StartedAt, &info.Service,
 			&info.RepoOwner, &info.RepoName, &info.Token.AccessToken,
 			&refreshToken, &info.Token.TokenType, &tokenExpire)
 	if err != nil {
@@ -355,13 +286,6 @@ func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipeline
 	return &info, nil
 }
 
-func NullableInt8(ptr *int64) pgtype.Int8 {
-	if ptr == nil {
-		return pgtype.Int8{Valid: false}
-	}
-	return pgtype.Int8{Int64: *ptr, Valid: true}
-}
-
 func NullableText(ptr *string) pgtype.Text {
 	if ptr == nil {
 		return pgtype.Text{Valid: false}
@@ -374,13 +298,6 @@ func NullableTimestamp(ptr *time.Time) pgtype.Timestamp {
 		return pgtype.Timestamp{Valid: false}
 	}
 	return pgtype.Timestamp{Time: *ptr, Valid: true}
-}
-
-func ValueInt8(value pgtype.Int8) *int64 {
-	if !value.Valid {
-		return nil
-	}
-	return &value.Int64
 }
 
 func ValueText(value pgtype.Text) *string {

@@ -13,25 +13,15 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type CleanRepoFunc func() error
-
-func cloneRepo(ctx context.Context, cloneURL string, sha string, token oauth2.Token) (dir string, cleanFunc CleanRepoFunc, err error) {
+func cloneRepo(ctx context.Context, cloneURL string, sha string, token oauth2.Token) (dir string, err error) {
 	dir, err = os.MkdirTemp("/tmp", "shark-ci-*")
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
-	cleanFunc = func() error {
-		return os.RemoveAll(dir)
-	}
-	defer func() {
-		if err != nil {
-			err = cleanFunc()
-		}
-	}()
 
 	repo, err := git.PlainInit(dir, false)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	_, err = repo.CreateRemote(&git_config.RemoteConfig{
@@ -39,7 +29,7 @@ func cloneRepo(ctx context.Context, cloneURL string, sha string, token oauth2.To
 		URLs: []string{cloneURL},
 	})
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	err = repo.FetchContext(ctx, &git.FetchOptions{
@@ -55,19 +45,19 @@ func cloneRepo(ctx context.Context, cloneURL string, sha string, token oauth2.To
 		Progress: log.Writer(),
 	})
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	tree, err := repo.Worktree()
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 	err = tree.Checkout(&git.CheckoutOptions{
 		Hash: plumbing.NewHash(sha),
 	})
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
-	return dir, cleanFunc, err
+	return dir, err
 }

@@ -9,7 +9,6 @@ import (
 	oauth2_github "golang.org/x/oauth2/github"
 
 	"github.com/shark-ci/shark-ci/internal/config"
-	"github.com/shark-ci/shark-ci/internal/server/models"
 	"github.com/shark-ci/shark-ci/internal/server/store"
 	"github.com/shark-ci/shark-ci/internal/types"
 )
@@ -133,7 +132,7 @@ func (m *GitHubManager) DeleteWebhook(ctx context.Context, token *oauth2.Token, 
 	return err
 }
 
-func (m *GitHubManager) HandleEvent(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Pipeline, error) {
+func (m *GitHubManager) HandleEvent(ctx context.Context, w http.ResponseWriter, r *http.Request) (*types.Pipeline, error) {
 	payload, err := github.ValidatePayload(r, []byte(config.ServerConf.SecretKey))
 	if err != nil {
 		return nil, err
@@ -154,14 +153,14 @@ func (m *GitHubManager) HandleEvent(ctx context.Context, w http.ResponseWriter, 
 	}
 }
 
-func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*models.Pipeline, error) {
+func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*types.Pipeline, error) {
 	commit := e.HeadCommit.GetID()
 	repoID, err := m.s.GetRepoIDByServiceRepoID(ctx, m.Name(), e.Repo.GetID())
 	if err != nil {
 		return nil, err
 	}
 
-	pipeline := &models.Pipeline{
+	pipeline := &types.Pipeline{
 		CommitSHA: commit,
 		CloneURL:  e.Repo.GetCloneURL(),
 		Status:    m.StatusName(types.Pending),

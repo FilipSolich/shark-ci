@@ -111,6 +111,11 @@ tasks:
         --build-arg REVISION={{.REVISION}}
         .
 
+  docker:compose:
+    desc: Run docker-compose
+    cmds:
+      - docker compose -f docker/compose.yaml up
+
   migrate:create:
     desc: Create new migration file
     cmds:

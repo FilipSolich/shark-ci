@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"testing"
 
 	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 )
 
 //func TestProcessWork(t *testing.T) {
@@ -40,7 +40,7 @@ func TestDockerStart(t *testing.T) {
 		AttachStdout: true,
 		AttachStderr: true,
 		Detach:       true,
-		Cmd:          []string{"echo", "hello me", ">&2"},
+		Cmd:          []string{"echo", "hello me"},
 	})
 	if err != nil {
 		t.Errorf("Error: %v", err)
@@ -52,7 +52,7 @@ func TestDockerStart(t *testing.T) {
 	}
 
 	logsBuff := &bytes.Buffer{}
-	_, err = io.Copy(logsBuff, hijacked.Reader)
+	_, err = stdcopy.StdCopy(logsBuff, logsBuff, hijacked.Reader)
 	if err != nil {
 		hijacked.Close()
 		t.Errorf("Error: %v", err)
@@ -60,14 +60,14 @@ func TestDockerStart(t *testing.T) {
 	hijacked.Close()
 	fmt.Println(logsBuff.String())
 
-	///err = cli.ContainerKill(context.Background(), container.ID, "SIGKILL")
-	///if err != nil {
-	///	t.Errorf("Error: %v", err)
-	///}
+	err = cli.ContainerKill(context.Background(), container.ID, "SIGKILL")
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 
-	///// Delete container.
-	///err = cli.ContainerRemove(context.Background(), container.ID, containertypes.RemoveOptions{Force: true})
-	///if err != nil {
-	///	t.Errorf("Error: %v", err)
-	///}
+	// Delete container.
+	err = cli.ContainerRemove(context.Background(), container.ID, containertypes.RemoveOptions{Force: true})
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 }
