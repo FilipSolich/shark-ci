@@ -143,15 +143,10 @@ func (s *PostgresStore) GetServiceUserByUserID(ctx context.Context, service type
 }
 
 func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service types.Service, serviceRepoID int64) (int64, error) {
-	var repoID int64
-	err := s.conn.QueryRow(ctx, `SELECT id FROM public.repo WHERE service = $1 AND repo_service_id = $2`,
-		service, serviceRepoID).
-		Scan(&repoID)
-	if err != nil {
-		return 0, err
-	}
-
-	return repoID, nil
+	return s.queries.GetRepoIDByServiceRepoID(ctx, db.GetRepoIDByServiceRepoIDParams{
+		Service:       db.Service(service),
+		RepoServiceID: serviceRepoID,
+	})
 }
 
 func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error) {

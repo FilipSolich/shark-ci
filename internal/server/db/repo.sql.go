@@ -48,6 +48,24 @@ func (q *Queries) DeleteRepo(ctx context.Context, id int64) error {
 	return err
 }
 
+const getRepoIDByServiceRepoID = `-- name: GetRepoIDByServiceRepoID :one
+SELECT id
+FROM "repo"
+WHERE service = $1 AND repo_service_id = $2
+`
+
+type GetRepoIDByServiceRepoIDParams struct {
+	Service       Service
+	RepoServiceID int64
+}
+
+func (q *Queries) GetRepoIDByServiceRepoID(ctx context.Context, arg GetRepoIDByServiceRepoIDParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getRepoIDByServiceRepoID, arg.Service, arg.RepoServiceID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getUserRepos = `-- name: GetUserRepos :many
 SELECT r.id, r.service, r.owner, r.name, r.repo_service_id, r.webhook_id, r.service_user_id
 FROM "repo" r JOIN "service_user" su ON r.service_user_id = su.id
