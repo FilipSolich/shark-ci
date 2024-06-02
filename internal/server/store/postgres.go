@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -71,7 +70,7 @@ func (s *PostgresStore) GetUser(ctx context.Context, userID int64) (types.User, 
 	return types.User{ID: user.ID, Username: user.Username, Email: user.Email}, nil
 }
 
-func (s *PostgresStore) GetUserIDByServiceUser(ctx context.Context, service string, username string) (int64, error) {
+func (s *PostgresStore) GetUserIDByServiceUser(ctx context.Context, service types.Service, username string) (int64, error) {
 	userID, err := s.queries.GetUserIDByServiceUser(ctx, db.GetUserIDByServiceUserParams{
 		Service:  db.Service(service),
 		Username: username,
@@ -121,7 +120,7 @@ func (s *PostgresStore) CreateUserAndServiceUser(ctx context.Context, serviceUse
 	return userID, serviceUserID, nil
 }
 
-func (s *PostgresStore) GetServiceUserByUserID(ctx context.Context, service string, userID int64) (types.ServiceUser, error) {
+func (s *PostgresStore) GetServiceUserByUserID(ctx context.Context, service types.Service, userID int64) (types.ServiceUser, error) {
 	serviceUser, err := s.queries.GetServiceUserByUserID(ctx, db.GetServiceUserByUserIDParams{
 		Service: db.Service(service),
 		UserID:  userID,
@@ -143,7 +142,7 @@ func (s *PostgresStore) GetServiceUserByUserID(ctx context.Context, service stri
 	}, nil
 }
 
-func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error) {
+func (s *PostgresStore) GetRepoIDByServiceRepoID(ctx context.Context, service types.Service, serviceRepoID int64) (int64, error) {
 	var repoID int64
 	err := s.conn.QueryRow(ctx, `SELECT id FROM public.repo WHERE service = $1 AND repo_service_id = $2`,
 		service, serviceRepoID).
@@ -165,7 +164,7 @@ func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]types
 	for _, repo := range repos {
 		result = append(result, types.Repo{
 			ID:            repo.ID,
-			Service:       string(repo.Service),
+			Service:       types.Service(repo.Service),
 			Owner:         repo.Owner,
 			Name:          repo.Name,
 			RepoServiceID: repo.RepoServiceID,
@@ -257,33 +256,25 @@ func (s *PostgresStore) PipelineFinnished(ctx context.Context, pipelineID int64,
 
 func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64,
 ) (*types.PipelineStateChangeInfo, error) {
-	var (
-		info         types.PipelineStateChangeInfo
-		refreshToken sql.NullString
-		tokenExpire  sql.NullTime
-	)
-	err := s.conn.QueryRow(ctx, ``+
-		`SELECT p.url, p.commit_sha, p.started_at, r.service, r.owner,`+
-		` r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire `+
-		`FROM (public.pipeline p JOIN public.repo r ON p.repo_id = r.id)`+
-		` JOIN public.service_user su ON r.service_user_id = su.id `+
-		`WHERE p.id = $1`,
-		pipelineID).
-		Scan(&info.URL, &info.CommitSHA, &info.StartedAt, &info.Service,
-			&info.RepoOwner, &info.RepoName, &info.Token.AccessToken,
-			&refreshToken, &info.Token.TokenType, &tokenExpire)
+	res, err := s.queries.GetPipelineStateChangeInfo(ctx, pipelineID)
 	if err != nil {
 		return nil, err
 	}
 
-	if refreshToken.Valid {
-		info.Token.RefreshToken = refreshToken.String
-	}
-	if tokenExpire.Valid {
-		info.Token.Expiry = tokenExpire.Time
-	}
-
-	return &info, nil
+	return &types.PipelineStateChangeInfo{
+		CommitSHA: res.CommitSha,
+		URL:       res.Url.String,
+		Service:   types.Service(res.Service),
+		RepoOwner: res.Owner,
+		RepoName:  res.Name,
+		Token: oauth2.Token{
+			AccessToken:  res.AccessToken,
+			RefreshToken: res.RefreshToken.String,
+			TokenType:    res.TokenType,
+			Expiry:       res.TokenExpire.Time,
+		},
+		StartedAt: ValueTime(res.StartedAt),
+	}, nil
 }
 
 func NullableText(ptr *string) pgtype.Text {

@@ -4,7 +4,7 @@ import "golang.org/x/oauth2"
 
 type Repo struct {
 	ID            int64
-	Service       string
+	Service       Service
 	Owner         string
 	Name          string
 	RepoServiceID int64

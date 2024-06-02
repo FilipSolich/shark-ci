@@ -8,7 +8,7 @@ import (
 
 type ServiceUser struct {
 	ID           int64
-	Service      string
+	Service      Service
 	Username     string
 	Email        string
 	AccessToken  string

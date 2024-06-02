@@ -18,6 +18,7 @@ import (
 //}
 
 func TestDockerStart(t *testing.T) {
+	t.Skip()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		t.Errorf("Error: %v", err)

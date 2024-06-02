@@ -47,7 +47,7 @@ func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	for _, s := range h.services {
 		config := s.OAuth2Config()
 		url := config.AuthCodeURL(oauth2State.State.String(), oauth2.AccessTypeOffline)
-		data[s.Name()+"URL"] = url
+		data[string(s.Name())+"URL"] = url
 	}
 
 	err = templates.LoginTmpl.Execute(w, map[string]any{"URLs": data})
@@ -74,7 +74,7 @@ func (h AuthHandler) OAuth2Callback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	serviceName := r.URL.Query().Get("service")
 
-	srv, ok := h.services[serviceName]
+	srv, ok := h.services[types.Service(serviceName)]
 	if !ok {
 		Error400(w, "Unknown OAuth2 provider"+serviceName)
 		return

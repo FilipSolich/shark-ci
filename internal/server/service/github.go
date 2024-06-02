@@ -32,8 +32,8 @@ func NewGitHubManager(clientID string, clientSecret string, s store.Storer) *Git
 	}
 }
 
-func (*GitHubManager) Name() string {
-	return "GitHub"
+func (*GitHubManager) Name() types.Service {
+	return types.ServiceGitHub
 }
 
 func (*GitHubManager) StatusName(status types.PipelineStatus) string {
@@ -81,10 +81,10 @@ func (m *GitHubManager) GetServiceUser(ctx context.Context, token *oauth2.Token)
 
 func (m *GitHubManager) GetUserRepos(ctx context.Context, token *oauth2.Token, serviceUserID int64) ([]types.Repo, error) {
 	client := m.clientWithToken(ctx, token)
-
-	// TODO: Experimenting feature - get all repos, not just owned by user.
-	// TODO: Add pagination.
 	r, _, err := client.Repositories.ListByAuthenticatedUser(ctx, &github.RepositoryListByAuthenticatedUserOptions{ListOptions: github.ListOptions{PerPage: 50}})
+	if err != nil {
+		return nil, err
+	}
 
 	repos := make([]types.Repo, 0, len(r))
 	for _, repo := range r {
@@ -112,7 +112,7 @@ func (m *GitHubManager) CreateWebhook(ctx context.Context, token *oauth2.Token, 
 		Events: []string{"push", "pull_request"},
 		Config: &github.HookConfig{
 			ContentType: github.String("json"),
-			URL:         github.String(config.ServerConf.Host + "/event_handler/" + m.Name()),
+			URL:         github.String(config.ServerConf.Host + "/event_handler/" + string(m.Name())),
 			Secret:      github.String(config.ServerConf.SecretKey),
 		},
 	}

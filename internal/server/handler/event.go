@@ -31,7 +31,7 @@ func (h *EventHandler) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	serviceName := mux.Vars(r)["service"]
-	srv, ok := h.services[serviceName]
+	srv, ok := h.services[types.Service(serviceName)]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return

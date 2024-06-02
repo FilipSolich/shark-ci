@@ -35,7 +35,7 @@ func main() {
 	defer rabbitMQ.Close(context.TODO())
 	slog.Info("RabbitMQ connected.")
 
-	objStore, err := objectstore.NewMinioObjectStore() // TODO: Pass to handler
+	objStore, err := objectstore.NewMinioObjectStore()
 	if err != nil {
 		slog.Error("Connecting to Minio failed.", "err", err)
 		os.Exit(1)
@@ -47,7 +47,7 @@ func main() {
 	}
 
 	slog.Info("Creating gRPC client.")
-	conn, err := grpc.Dial(config.WorkerConf.CIServerHost+":"+config.WorkerConf.CIServerGRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(config.WorkerConf.CIServerHost+":"+config.WorkerConf.CIServerGRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		slog.Error("Connecting to gRPC server failed.", "addr", config.WorkerConf.CIServerHost+":"+config.WorkerConf.CIServerGRPCPort, "err", err)
 		os.Exit(1)

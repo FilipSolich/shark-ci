@@ -41,7 +41,7 @@ type PipelineCreationInfo struct {
 type PipelineStateChangeInfo struct {
 	CommitSHA string
 	URL       string
-	Service   string
+	Service   Service
 	RepoOwner string
 	RepoName  string
 	Token     oauth2.Token

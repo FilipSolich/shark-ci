@@ -31,7 +31,7 @@ func (h *RepoHandler) FetchUnregistredRepos(w http.ResponseWriter, r *http.Reque
 	user := middleware.UserFromContext(ctx, w)
 
 	srvName := mux.Vars(r)["service"]
-	srv, ok := h.services[srvName]
+	srv, ok := h.services[types.Service(srvName)]
 	if !ok {
 		Error400(w, fmt.Sprintf("Unknown service %s", srvName))
 		return
@@ -73,7 +73,7 @@ func (h *RepoHandler) HandleRegisterRepo(w http.ResponseWriter, r *http.Request)
 	owner := r.FormValue("owner")
 	repoName := r.FormValue("name")
 
-	srv, ok := h.services[srvName]
+	srv, ok := h.services[types.Service(srvName)]
 	if !ok {
 		Error400(w, fmt.Sprintf("Unknown service %s", srvName))
 		return

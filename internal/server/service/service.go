@@ -21,7 +21,7 @@ type Status struct {
 	Description string
 }
 
-type Services map[string]ServiceManager
+type Services map[types.Service]ServiceManager
 
 func InitServices(s store.Storer) Services {
 	services := Services{}
@@ -34,7 +34,7 @@ func InitServices(s store.Storer) Services {
 }
 
 type ServiceManager interface {
-	Name() string
+	Name() types.Service
 	StatusName(status types.PipelineStatus) string
 	OAuth2Config() *oauth2.Config
 	GetServiceUser(ctx context.Context, token *oauth2.Token) (types.ServiceUser, error)

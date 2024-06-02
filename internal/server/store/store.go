@@ -19,12 +19,12 @@ type Storer interface {
 	CreateOAuth2State(ctx context.Context, state types.OAuth2State) error
 
 	GetUser(ctx context.Context, userID int64) (types.User, error)
-	GetUserIDByServiceUser(ctx context.Context, service string, username string) (int64, error)
+	GetUserIDByServiceUser(ctx context.Context, service types.Service, username string) (int64, error)
 	CreateUserAndServiceUser(ctx context.Context, serviceUser types.ServiceUser) (int64, int64, error)
 
-	GetServiceUserByUserID(ctx context.Context, service string, userID int64) (types.ServiceUser, error)
+	GetServiceUserByUserID(ctx context.Context, service types.Service, userID int64) (types.ServiceUser, error)
 
-	GetRepoIDByServiceRepoID(ctx context.Context, service string, serviceRepoID int64) (int64, error)
+	GetRepoIDByServiceRepoID(ctx context.Context, service types.Service, serviceRepoID int64) (int64, error)
 	GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error)
 	CreateRepo(ctx context.Context, repo types.Repo) (int64, error)
 	DeleteRepo(ctx context.Context, repoID int64) error

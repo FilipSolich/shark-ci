@@ -65,6 +65,43 @@ func (q *Queries) GetPipelineCreationInfo(ctx context.Context, id int64) (GetPip
 	return i, err
 }
 
+const getPipelineStateChangeInfo = `-- name: GetPipelineStateChangeInfo :one
+SELECT p.url, p.commit_sha, p.started_at, r.service, r.owner, r.name, su.access_token, su.refresh_token, su.token_type, su.token_expire
+FROM public.pipeline p JOIN public.repo r ON p.repo_id = r.id JOIN public.service_user su ON r.service_user_id = su.id
+WHERE p.id = $1
+`
+
+type GetPipelineStateChangeInfoRow struct {
+	Url          pgtype.Text
+	CommitSha    string
+	StartedAt    pgtype.Timestamp
+	Service      Service
+	Owner        string
+	Name         string
+	AccessToken  string
+	RefreshToken pgtype.Text
+	TokenType    string
+	TokenExpire  pgtype.Timestamp
+}
+
+func (q *Queries) GetPipelineStateChangeInfo(ctx context.Context, id int64) (GetPipelineStateChangeInfoRow, error) {
+	row := q.db.QueryRow(ctx, getPipelineStateChangeInfo, id)
+	var i GetPipelineStateChangeInfoRow
+	err := row.Scan(
+		&i.Url,
+		&i.CommitSha,
+		&i.StartedAt,
+		&i.Service,
+		&i.Owner,
+		&i.Name,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.TokenType,
+		&i.TokenExpire,
+	)
+	return i, err
+}
+
 const pipelineFinished = `-- name: PipelineFinished :exec
 UPDATE "pipeline"
 SET status = $1, finished_at = $2
