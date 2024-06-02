@@ -1,3 +1,7 @@
+DROP TYPE IF EXISTS "service";
+
+DROP TYPE IF EXISTS "pipeline_status";
+
 DROP TABLE IF EXISTS "user";
 
 DROP TABLE IF EXISTS "service_user";

@@ -19,7 +19,7 @@ CREATE TABLE "service_user" (
     token_expire timestamp,
     user_id bigint NOT NULL,
     UNIQUE (service, username),
-    FOREIGN KEY (user_id) REFERENCES "user" (id)
+    FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE
 );
 
 CREATE TABLE "oauth2_state" (
@@ -38,7 +38,7 @@ CREATE TABLE "repo" (
     UNIQUE (service, repo_service_id),
     UNIQUE (service, webhook_id),
     UNIQUE (service, owner, name),
-    FOREIGN KEY (service_user_id) REFERENCES "service_user" (id)
+    FOREIGN KEY (service_user_id) REFERENCES "service_user" (id) ON DELETE CASCADE
 );
 
 CREATE TABLE "pipeline" (
@@ -50,5 +50,5 @@ CREATE TABLE "pipeline" (
     started_at timestamp,
     finished_at timestamp,
     repo_id bigint NOT NULL,
-    FOREIGN KEY (repo_id) REFERENCES "repo" (id)
+    FOREIGN KEY (repo_id) REFERENCES "repo" (id) ON DELETE CASCADE
 );

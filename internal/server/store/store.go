@@ -21,7 +21,6 @@ type Storer interface {
 	GetUser(ctx context.Context, userID int64) (types.User, error)
 	GetUserIDByServiceUser(ctx context.Context, service types.Service, username string) (int64, error)
 	CreateUserAndServiceUser(ctx context.Context, serviceUser types.ServiceUser) (int64, int64, error)
-
 	GetServiceUserByUserID(ctx context.Context, service types.Service, userID int64) (types.ServiceUser, error)
 
 	GetRepoIDByServiceRepoID(ctx context.Context, service types.Service, serviceRepoID int64) (int64, error)
@@ -30,11 +29,10 @@ type Storer interface {
 	DeleteRepo(ctx context.Context, repoID int64) error
 
 	GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)
+	GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64) (*types.PipelineStateChangeInfo, error)
 	CreatePipeline(ctx context.Context, pipeline *types.Pipeline) (int64, error)
 	PipelineStarted(ctx context.Context, pipelineID int64, status types.PipelineStatus, startedAt time.Time) error
 	PipelineFinnished(ctx context.Context, pipelineID int64, status types.PipelineStatus, finnisedAt time.Time) error
-
-	GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64) (*types.PipelineStateChangeInfo, error)
 }
 
 func Cleaner(s Storer, d time.Duration) {

@@ -209,6 +209,29 @@ func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int6
 	}, nil
 }
 
+func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64,
+) (*types.PipelineStateChangeInfo, error) {
+	res, err := s.queries.GetPipelineStateChangeInfo(ctx, pipelineID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.PipelineStateChangeInfo{
+		CommitSHA: res.CommitSha,
+		URL:       res.Url.String,
+		Service:   types.Service(res.Service),
+		RepoOwner: res.Owner,
+		RepoName:  res.Name,
+		Token: oauth2.Token{
+			AccessToken:  res.AccessToken,
+			RefreshToken: res.RefreshToken.String,
+			TokenType:    res.TokenType,
+			Expiry:       res.TokenExpire.Time,
+		},
+		StartedAt: ValueTime(res.StartedAt),
+	}, nil
+}
+
 func (s *PostgresStore) CreatePipeline(ctx context.Context, pipeline *types.Pipeline) (int64, error) {
 	pipelineID, err := s.queries.CreatePipeline(ctx, db.CreatePipelineParams{
 		Status:    db.PipelineStatus(pipeline.Status),
@@ -247,29 +270,6 @@ func (s *PostgresStore) PipelineFinnished(ctx context.Context, pipelineID int64,
 		Status:     db.PipelineStatus(status),
 		FinishedAt: pgtype.Timestamp{Time: finnisedAt, Valid: true},
 	})
-}
-
-func (s *PostgresStore) GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64,
-) (*types.PipelineStateChangeInfo, error) {
-	res, err := s.queries.GetPipelineStateChangeInfo(ctx, pipelineID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.PipelineStateChangeInfo{
-		CommitSHA: res.CommitSha,
-		URL:       res.Url.String,
-		Service:   types.Service(res.Service),
-		RepoOwner: res.Owner,
-		RepoName:  res.Name,
-		Token: oauth2.Token{
-			AccessToken:  res.AccessToken,
-			RefreshToken: res.RefreshToken.String,
-			TokenType:    res.TokenType,
-			Expiry:       res.TokenExpire.Time,
-		},
-		StartedAt: ValueTime(res.StartedAt),
-	}, nil
 }
 
 func NullableText(ptr *string) pgtype.Text {

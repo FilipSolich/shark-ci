@@ -1,6 +1,6 @@
 -- name: CleanOAuth2State :exec
 DELETE FROM "oauth2_state"
-WHERE expire < NOW();
+WHERE expire <= now();
 
 -- name: GetAndDeleteOAuth2State :one
 DELETE FROM "oauth2_state"

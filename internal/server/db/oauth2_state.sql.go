@@ -14,7 +14,7 @@ import (
 
 const cleanOAuth2State = `-- name: CleanOAuth2State :exec
 DELETE FROM "oauth2_state"
-WHERE expire < NOW()
+WHERE expire <= now()
 `
 
 func (q *Queries) CleanOAuth2State(ctx context.Context) error {
