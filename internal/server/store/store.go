@@ -25,9 +25,11 @@ type Storer interface {
 
 	GetRepoIDByServiceRepoID(ctx context.Context, service types.Service, serviceRepoID int64) (int64, error)
 	GetUserRepos(ctx context.Context, userID int64) ([]types.Repo, error)
+	UserOwnRepo(ctx context.Context, userID int64, repoID int64) (bool, error)
 	CreateRepo(ctx context.Context, repo types.Repo) (int64, error)
 	DeleteRepo(ctx context.Context, repoID int64) error
 
+	GetPipelinesByRepo(ctx context.Context, repoID int64) ([]types.Pipeline, error)
 	GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error)
 	GetPipelineStateChangeInfo(ctx context.Context, pipelineID int64) (*types.PipelineStateChangeInfo, error)
 	CreatePipeline(ctx context.Context, pipeline *types.Pipeline) (int64, error)

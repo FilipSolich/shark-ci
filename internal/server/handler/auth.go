@@ -47,7 +47,7 @@ func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	for _, s := range h.services {
 		config := s.OAuth2Config()
 		url := config.AuthCodeURL(oauth2State.State.String(), oauth2.AccessTypeOffline)
-		data[string(s.Name())+"URL"] = url
+		data[string(s.Name())] = url
 	}
 
 	err = templates.LoginTmpl.Execute(w, map[string]any{"URLs": data})

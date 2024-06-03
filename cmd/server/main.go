@@ -98,6 +98,7 @@ func main() {
 	repos := r.PathPrefix("/repositories").Subrouter()
 	repos.Use(CSRF)
 	repos.Use(middleware.AuthMiddleware(pgStore))
+	repos.HandleFunc("/{id}", repoHandler.HandleRepoPipelines).Methods(http.MethodGet)
 	repos.HandleFunc("/register", repoHandler.HandleRegisterRepo).Methods(http.MethodPost)
 	repos.HandleFunc("/fetch-unregistered/{service}", repoHandler.FetchUnregistredRepos).Methods(http.MethodGet)
 

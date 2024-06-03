@@ -99,3 +99,23 @@ func (q *Queries) GetUserRepos(ctx context.Context, userID int64) ([]Repo, error
 	}
 	return items, nil
 }
+
+const userOwnRepo = `-- name: UserOwnRepo :one
+SELECT EXISTS(
+    SELECT r.id
+    FROM "repo" r JOIN "service_user" su ON r.service_user_id = su.id
+    WHERE r.id = $1 AND su.user_id = $2
+)
+`
+
+type UserOwnRepoParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) UserOwnRepo(ctx context.Context, arg UserOwnRepoParams) (bool, error) {
+	row := q.db.QueryRow(ctx, userOwnRepo, arg.ID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}

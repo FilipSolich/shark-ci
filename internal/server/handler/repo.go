@@ -139,3 +139,38 @@ func (h *RepoHandler) HandleDeleteRepo(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
+
+func (h *RepoHandler) HandleRepoPipelines(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user := middleware.UserFromContext(ctx, w)
+	repoID, err := strconv.ParseInt(mux.Vars(r)["repo_id"], 10, 64)
+	if err != nil {
+		Error400(w, "Invalid repo ID")
+		return
+	}
+
+	ownRepo, err := h.s.UserOwnRepo(ctx, user.ID, repoID)
+	if err != nil {
+		Error5xx(w, http.StatusInternalServerError, "Cannot check if user own repo", err)
+		return
+	}
+	if !ownRepo {
+		Error404(w)
+		return
+	}
+
+	//pipelines, err := h.s.GetPipelinesByRepo(ctx, repoID)
+	//if err != nil {
+	//	Error5xx(w, http.StatusInternalServerError, "Cannot fetch repo pipelines", err)
+	//	return
+	//}
+
+	// TODO: Create template for this
+	//err = templates..Execute(w, map[string]any{
+	//	"Pipelines":          pipelines,
+	//})
+	//if err != nil {
+	//	Error5xx(w, http.StatusInternalServerError, "Cannot execute template.", err)
+	//	return
+	//}
+}

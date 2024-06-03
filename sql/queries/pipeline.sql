@@ -1,3 +1,8 @@
+-- name: GetPipelinesByRepo :many
+SELECT "id", "url", "status", "commit_sha", "started_at", "finished_at"
+FROM "pipeline"
+WHERE "repo_id" = $1;
+
 -- name: GetPipelineCreationInfo :one
 SELECT su.username, su.access_token, su.refresh_token, su.token_type, su.token_expire, r.name
 FROM "service_user" su JOIN "repo" r ON su.id = r.service_user_id

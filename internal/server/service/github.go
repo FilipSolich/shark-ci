@@ -163,7 +163,7 @@ func (m *GitHubManager) handlePush(ctx context.Context, e *github.PushEvent) (*t
 	pipeline := &types.Pipeline{
 		CommitSHA: commit,
 		CloneURL:  e.Repo.GetCloneURL(),
-		Status:    m.StatusName(types.Pending),
+		Status:    types.Pending,
 		RepoID:    repoID,
 	}
 

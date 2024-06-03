@@ -3,7 +3,7 @@
     <div class="row row-cols-4">
       {{range .Repos}}
         <div class="col">
-          <a href="/repo/{{.ID}}">
+          <a href="/repos/{{.ID}}/pipelines">
             <div class="border border-rounder">
               {{if eq .Service "GitHub"}}
                 <i class="bi bi-github"></i>
@@ -30,7 +30,6 @@
               </div>
               <div class="modal-body">
                 <button type="button" class="btn btn-primary" hx-get="/repositories/fetch-unregistered/GitHub" hx-swap="outerHTML">GitHub</button>
-                <!-- TODO: Add GitLab button -->
               </div>
             </div>
           </div>

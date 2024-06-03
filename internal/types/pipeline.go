@@ -20,7 +20,7 @@ const (
 type Pipeline struct {
 	ID         int64
 	URL        string
-	Status     string
+	Status     PipelineStatus
 	CloneURL   string
 	CommitSHA  string
 	StartedAt  *time.Time

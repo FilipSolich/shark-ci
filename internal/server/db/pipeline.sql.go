@@ -102,6 +102,48 @@ func (q *Queries) GetPipelineStateChangeInfo(ctx context.Context, id int64) (Get
 	return i, err
 }
 
+const getPipelinesByRepo = `-- name: GetPipelinesByRepo :many
+SELECT "id", "url", "status", "commit_sha", "started_at", "finished_at"
+FROM "pipeline"
+WHERE "repo_id" = $1
+`
+
+type GetPipelinesByRepoRow struct {
+	ID         int64
+	Url        pgtype.Text
+	Status     PipelineStatus
+	CommitSha  string
+	StartedAt  pgtype.Timestamp
+	FinishedAt pgtype.Timestamp
+}
+
+func (q *Queries) GetPipelinesByRepo(ctx context.Context, repoID int64) ([]GetPipelinesByRepoRow, error) {
+	rows, err := q.db.Query(ctx, getPipelinesByRepo, repoID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPipelinesByRepoRow
+	for rows.Next() {
+		var i GetPipelinesByRepoRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Url,
+			&i.Status,
+			&i.CommitSha,
+			&i.StartedAt,
+			&i.FinishedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pipelineFinished = `-- name: PipelineFinished :exec
 UPDATE "pipeline"
 SET status = $1, finished_at = $2

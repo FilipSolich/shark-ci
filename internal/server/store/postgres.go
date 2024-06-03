@@ -171,6 +171,13 @@ func (s *PostgresStore) GetUserRepos(ctx context.Context, userID int64) ([]types
 	return result, nil
 }
 
+func (s *PostgresStore) UserOwnRepo(ctx context.Context, userID int64, repoID int64) (bool, error) {
+	return s.queries.UserOwnRepo(ctx, db.UserOwnRepoParams{
+		ID:     repoID,
+		UserID: userID,
+	})
+}
+
 func (s *PostgresStore) CreateRepo(ctx context.Context, repo types.Repo) (int64, error) {
 	repoID, err := s.queries.CreateRepo(ctx, db.CreateRepoParams{
 		Service:       db.Service(repo.Service),
@@ -189,6 +196,27 @@ func (s *PostgresStore) CreateRepo(ctx context.Context, repo types.Repo) (int64,
 
 func (s *PostgresStore) DeleteRepo(ctx context.Context, repoID int64) error {
 	return s.queries.DeleteRepo(ctx, repoID)
+}
+
+func (s *PostgresStore) GetPipelinesByRepo(ctx context.Context, repoID int64) ([]types.Pipeline, error) {
+	res, err := s.queries.GetPipelinesByRepo(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []types.Pipeline
+	for _, pipeline := range res {
+		result = append(result, types.Pipeline{
+			ID:         pipeline.ID,
+			URL:        pipeline.Url.String,
+			Status:     types.PipelineStatus(pipeline.Status),
+			CommitSHA:  pipeline.CommitSha,
+			StartedAt:  ValueTime(pipeline.StartedAt),
+			FinishedAt: ValueTime(pipeline.FinishedAt),
+		})
+	}
+
+	return result, nil
 }
 
 func (s *PostgresStore) GetPipelineCreationInfo(ctx context.Context, repoID int64) (*types.PipelineCreationInfo, error) {

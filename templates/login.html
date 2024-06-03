@@ -1,5 +1,11 @@
 {{ define "layout" }}
-  {{ range .URLs }}
-    <a href="{{ . }}">link</a>
-  {{ end }}
+  <div class="container">
+    <div class="d-grid gap-2 col-3 mx-auto text-center">
+      {{ range $service, $url := .URLs }}
+        {{ if eq $service "GitHub"}}
+          <button type="button" class="btn btn-primary" hx-get="{{$url}}">GitHub</button>
+        {{ end }}
+      {{ end }}
+    </div>
+  </div>
 {{ end }}
